@@ -1,18 +1,18 @@
 from __future__ import annotations
 
 import logging
+import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.config import UPLOAD_DIR
 from backend.database import (
-
     accept_bid,
     add_comment,
     counter_bid,
@@ -30,9 +30,15 @@ from backend.database import (
     seed_initial_data,
     upvote_post,
 )
+from backend.gemma_service import (
+    analyze_civic_issue,
+    diagnose_home_repair,
+    pulsebot_chat,
+)
 from backend.models import (
     AcceptBidCreate,
     BidCreate,
+    ChatRequest,
     CivicPostCreate,
     CommentCreate,
     CounterBidCreate,
@@ -115,6 +121,57 @@ async def submit_civic_post(payload: CivicPostCreate) -> Dict[str, Any]:
     return created_post
 
 
+@app.post("/api/civic/report", status_code=status.HTTP_201_CREATED, tags=["Civic"])
+async def report_civic_issue_multimodal(
+    image: UploadFile = File(...),
+    description: str = Form(...),
+    location_city: str = Form(...),
+    lat: float = Form(0.0),
+    lng: float = Form(0.0),
+) -> Dict[str, Any]:
+    """
+    Multimodal civic issue reporting endpoint:
+    - Saves uploaded image to uploads/ with unique UUID filename
+    - Audits hazard with Gemma 4 multimodal AI service
+    - Records structured municipal incident in SQLite
+    """
+    image_bytes = await image.read()
+    file_ext = Path(image.filename or "image.jpg").suffix or ".jpg"
+    unique_filename = f"{uuid.uuid4().hex}{file_ext}"
+    saved_file_path = upload_folder / unique_filename
+    saved_file_path.write_bytes(image_bytes)
+
+    image_url = f"/uploads/{unique_filename}"
+
+    # Analyze via Gemma 4 / Gemini fallback
+    analysis = analyze_civic_issue(
+        image_bytes=image_bytes,
+        description=description,
+        location_city=location_city,
+    )
+
+    is_local_flag = 1 if analysis.get("is_local_municipal", True) else 0
+
+    post_record = {
+        "title": analysis.get("title") or "Reported Civic Hazard",
+        "description": analysis.get("summary") or description,
+        "image_url": image_url,
+        "location_city": location_city,
+        "lat": lat,
+        "lng": lng,
+        "department": analysis.get("department") or "Roads & Potholes",
+        "severity": analysis.get("severity") or "Moderate",
+        "is_local": is_local_flag,
+        "external_portals": analysis.get("external_portals") or [],
+        "status": "Reported",
+    }
+
+    created_post = create_civic_post(post_record)
+    created_post["comments"] = []
+    return created_post
+
+
+@app.post("/api/civic/{post_id}/upvote", tags=["Civic"])
 @app.post("/api/civic/posts/{post_id}/upvote", tags=["Civic"])
 async def upvote_civic_post(post_id: str) -> Dict[str, Any]:
     """Upvote an existing civic issue."""
@@ -125,6 +182,7 @@ async def upvote_civic_post(post_id: str) -> Dict[str, Any]:
     return {"id": post_id, "upvotes": new_count}
 
 
+@app.post("/api/civic/{post_id}/urgent", tags=["Civic"])
 @app.post("/api/civic/posts/{post_id}/urgent", tags=["Civic"])
 async def flag_civic_post_urgent(post_id: str) -> Dict[str, Any]:
     """Flag a civic issue as urgent emergency."""
@@ -135,6 +193,8 @@ async def flag_civic_post_urgent(post_id: str) -> Dict[str, Any]:
     return {"id": post_id, "urgent_flags": new_count}
 
 
+@app.post("/api/civic/{post_id}/comment", status_code=status.HTTP_201_CREATED, tags=["Civic"])
+@app.post("/api/civic/{post_id}/comments", status_code=status.HTTP_201_CREATED, tags=["Civic"])
 @app.post("/api/civic/posts/{post_id}/comments", status_code=status.HTTP_201_CREATED, tags=["Civic"])
 async def add_post_comment(post_id: str, payload: CommentCreate) -> Dict[str, Any]:
     """Add a community comment or update on a civic post."""
@@ -143,6 +203,20 @@ async def add_post_comment(post_id: str, payload: CommentCreate) -> Dict[str, An
         raise HTTPException(status_code=404, detail="Civic post not found")
     created_comment = add_comment(post_id=post_id, author=payload.author, comment=payload.comment)
     return created_comment
+
+
+# --- AI Chat / PulseBot Endpoints ---
+@app.post("/api/chat", tags=["AI"])
+async def chat_with_pulsebot(payload: ChatRequest) -> Dict[str, str]:
+    """
+    PulseBot conversational copilot endpoint:
+    Assists residents with municipal jurisdiction, fair repair pricing, and evidence collection.
+    """
+    reply = pulsebot_chat(
+        history=payload.history or [],
+        user_message=payload.message,
+    )
+    return {"reply": reply}
 
 
 # --- Service Jobs & Bids Endpoints ---
