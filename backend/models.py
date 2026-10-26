@@ -51,6 +51,7 @@ class CounterBidCreate(BaseModel):
 
 class AcceptBidCreate(BaseModel):
     """Schema for confirming and accepting a final agreed bid."""
+    job_id: Optional[str] = Field(None, description="Associated service job ID")
     final_price: str = Field(..., description="Final agreed price string (e.g., ₹600)")
 
 

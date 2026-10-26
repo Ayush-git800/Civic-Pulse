@@ -220,6 +220,6 @@ __marimo__/
 .streamlit/secrets.toml
 
 .env
-civicpulse.db
+civicpulse.db*
 uploads/*
-\!uploads/.gitkeep
+!uploads/.gitkeep

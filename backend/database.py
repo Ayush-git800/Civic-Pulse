@@ -331,7 +331,7 @@ def get_bid_by_id(bid_id: str) -> Optional[dict]:
 
 
 def create_bid(job_id: str, worker_name: str, worker_phone: str, bid_amount: int) -> dict:
-    """Create a new service bid on a job."""
+    """Create a new service bid on a job and update job status to Negotiating."""
     bid_id = str(uuid.uuid4())
     with db_lock:
         cursor = conn.cursor()
@@ -341,6 +341,11 @@ def create_bid(job_id: str, worker_name: str, worker_phone: str, bid_amount: int
             VALUES (?, ?, ?, ?, ?, 'Pending');
             """,
             (bid_id, job_id, worker_name, worker_phone, bid_amount),
+        )
+        # Update parent job status to Negotiating
+        cursor.execute(
+            "UPDATE service_jobs SET status = 'Negotiating' WHERE id = ?;",
+            (job_id,),
         )
         conn.commit()
 
@@ -371,7 +376,7 @@ def counter_bid(bid_id: str, counter_amount: int) -> dict:
 
 
 def accept_bid(bid_id: str, job_id: Optional[str] = None, final_price: str = "") -> dict:
-    """Accept a worker bid, assign the job, and update final negotiated price."""
+    """Accept a worker bid, confirm the job, and update final negotiated price."""
     with db_lock:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM service_bids WHERE id = ?;", (bid_id,))
@@ -391,21 +396,22 @@ def accept_bid(bid_id: str, job_id: Optional[str] = None, final_price: str = "")
             "UPDATE service_bids SET status = 'Rejected' WHERE job_id = ? AND id != ?;",
             (resolved_job_id, bid_id),
         )
-        # Update job status and final price
+        # Update job status to Confirmed and final price
         cursor.execute(
             """
             UPDATE service_jobs
-            SET status = 'Assigned', final_price = ?
+            SET status = 'Confirmed', final_price = ?
             WHERE id = ?;
             """,
             (final_price, resolved_job_id),
         )
         conn.commit()
 
-    updated = get_bid_by_id(bid_id)
-    if not updated:
+    updated_bid = get_bid_by_id(bid_id)
+    updated_job = get_service_job_by_id(resolved_job_id)
+    if not updated_bid:
         raise ValueError(f"Bid not found with id: {bid_id}")
-    return updated
+    return {"bid": updated_bid, "job": updated_job}
 
 
 def seed_initial_data() -> None:

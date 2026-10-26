@@ -284,6 +284,74 @@
       </div>
     </section>
 
+    <!-- ==================== HACKATHON SUBMISSION & TEAM SHOWCASE ==================== -->
+    <section class="mt-14 pt-8 border-t border-slate-200/80">
+      <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-indigo-900/50 relative overflow-hidden">
+        <div class="absolute -right-12 -top-12 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+          <!-- Left: Mission & Badges -->
+          <div class="space-y-2.5 max-w-xl">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <i data-lucide="award" class="w-3 h-3 text-amber-400"></i>
+                <span>Gemma Hackathon Submission</span>
+              </span>
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[11px] font-bold">
+                Categories: Open Source • Best Use of Gemma
+              </span>
+            </div>
+            <h3 class="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
+              <span>Built by</span>
+              <span class="bg-gradient-to-r from-indigo-400 via-purple-300 to-violet-300 bg-clip-text text-transparent">Team Version Controllers</span>
+            </h3>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              CivicPulse combines multimodal physical hazard inspection powered by <strong>Gemma 4</strong> with a decentralized gig marketplace protecting residents from repair overcharging.
+            </p>
+          </div>
+
+          <!-- Right: 4 Team Members Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full xl:w-auto">
+            <!-- Ayush Chauhan -->
+            <div class="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-center hover:bg-white/15 transition-all">
+              <div class="w-10 h-10 mx-auto rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center font-black text-sm text-white shadow-sm mb-2">
+                AC
+              </div>
+              <div class="font-bold text-xs text-white truncate">Ayush Chauhan</div>
+              <div class="text-[10px] text-indigo-200 mt-0.5">Full-Stack / AI Lead</div>
+            </div>
+
+            <!-- Rishav Ranjan -->
+            <div class="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-center hover:bg-white/15 transition-all">
+              <div class="w-10 h-10 mx-auto rounded-xl bg-gradient-to-tr from-violet-500 to-purple-500 flex items-center justify-center font-black text-sm text-white shadow-sm mb-2">
+                RR
+              </div>
+              <div class="font-bold text-xs text-white truncate">Rishav Ranjan</div>
+              <div class="text-[10px] text-indigo-200 mt-0.5">Backend Systems</div>
+            </div>
+
+            <!-- Radhika Sahay -->
+            <div class="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-center hover:bg-white/15 transition-all">
+              <div class="w-10 h-10 mx-auto rounded-xl bg-gradient-to-tr from-pink-500 to-rose-500 flex items-center justify-center font-black text-sm text-white shadow-sm mb-2">
+                RS
+              </div>
+              <div class="font-bold text-xs text-white truncate">Radhika Sahay</div>
+              <div class="text-[10px] text-indigo-200 mt-0.5">Frontend / UI-UX</div>
+            </div>
+
+            <!-- Hardik Kumar -->
+            <div class="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-center hover:bg-white/15 transition-all">
+              <div class="w-10 h-10 mx-auto rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-500 flex items-center justify-center font-black text-sm text-white shadow-sm mb-2">
+                HK
+              </div>
+              <div class="font-bold text-xs text-white truncate">Hardik Kumar</div>
+              <div class="text-[10px] text-indigo-200 mt-0.5">AI Data & Testing</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- ==================== MODAL: REPORT CIVIC ISSUE ==================== -->
@@ -522,12 +590,15 @@
   </div>
 
   <!-- Minimal Footer -->
-  <footer class="bg-white/80 border-t border-slate-200/80 py-6 text-xs text-slate-500 mt-auto">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-      <div class="flex items-center gap-2">
-        <div class="w-5 h-5 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px]">CP</div>
-        <span class="font-bold text-slate-800">CivicPulse</span>
-        <span>• Open Source Public Infrastructure & Hyperlocal Gig Mesh</span>
+  <footer class="bg-white/90 border-t border-slate-200/80 py-6 text-xs text-slate-500 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-center sm:text-left">
+        <div class="flex items-center gap-2">
+          <div class="w-5 h-5 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px]">CP</div>
+          <span class="font-bold text-slate-800">CivicPulse</span>
+        </div>
+        <span class="hidden sm:inline text-slate-300">•</span>
+        <span>Built with ❤️ by <strong class="text-slate-800">Team Version Controllers</strong> (Ayush Chauhan, Rishav Ranjan, Radhika Sahay, Hardik Kumar)</span>
       </div>
       <div class="flex items-center gap-4 text-slate-500">
         <a href="/docs" target="_blank" class="hover:text-indigo-600 font-medium">FastAPI Interactive Docs</a>
