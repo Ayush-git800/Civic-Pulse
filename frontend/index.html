@@ -101,6 +101,12 @@
           </span>
           <span>Gemma 4 Multimodal Engine Live</span>
         </div>
+
+        <!-- Team Version Controllers Badge -->
+        <div class="hidden xl:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100/90 border border-slate-200/90 text-slate-700 text-xs font-semibold shadow-xs">
+          <i data-lucide="users" class="w-3.5 h-3.5 text-indigo-600"></i>
+          <span>Team: <strong class="text-slate-900">Version Controllers</strong></span>
+        </div>
       </div>
 
       <!-- Center Segmented Pill Navigation Tabs -->
@@ -450,6 +456,9 @@
       <!-- Quick Prompt Chips -->
       <div class="p-3 bg-indigo-50/60 border-b border-indigo-100 flex flex-col gap-1.5 text-[11px]">
         <span class="text-[10px] font-bold text-indigo-900 uppercase tracking-wider">Recommended Inquiries:</span>
+        <button onclick="sendChip('Who developed CivicPulse?')" class="text-left px-3 py-1.5 bg-white hover:bg-indigo-50/80 border border-indigo-200/80 rounded-xl text-slate-700 font-medium transition-colors truncate">
+          👥 Who built CivicPulse? (Team Version Controllers)
+        </button>
         <button onclick="sendChip('Is a leaking street pipe a civic issue?')" class="text-left px-3 py-1.5 bg-white hover:bg-indigo-50/80 border border-indigo-200/80 rounded-xl text-slate-700 font-medium transition-colors truncate">
           💧 Leaking street pipe: Civic or Private?
         </button>
