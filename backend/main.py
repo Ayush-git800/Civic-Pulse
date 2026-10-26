@@ -83,6 +83,11 @@ upload_folder = Path(UPLOAD_DIR)
 upload_folder.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(upload_folder)), name="uploads")
 
+# Mount /static for serving frontend static assets
+static_folder = Path(__file__).resolve().parent.parent / "frontend" / "static"
+static_folder.mkdir(parents=True, exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(static_folder)), name="static")
+
 # Frontend directory
 FRONTEND_PATH = Path(__file__).resolve().parent.parent / "frontend" / "index.html"
 
@@ -103,7 +108,8 @@ async def health_check() -> Dict[str, str]:
     return {"status": "healthy", "service": "CivicPulse"}
 
 
-# --- Civic Grievance Endpoints ---
+# --- Civic Grievance Endpoints (Phase 2) ---
+
 @app.get("/api/civic/posts", tags=["Civic"])
 async def list_civic_posts() -> List[Dict[str, Any]]:
     """Retrieve all civic posts with their attached comments."""
@@ -115,7 +121,7 @@ async def list_civic_posts() -> List[Dict[str, Any]]:
 
 @app.post("/api/civic/posts", status_code=status.HTTP_201_CREATED, tags=["Civic"])
 async def submit_civic_post(payload: CivicPostCreate) -> Dict[str, Any]:
-    """Report a new civic issue in the neighborhood."""
+    """Report a new civic issue in the neighborhood via JSON schema."""
     created_post = create_civic_post(payload.model_dump())
     created_post["comments"] = []
     return created_post
@@ -125,15 +131,17 @@ async def submit_civic_post(payload: CivicPostCreate) -> Dict[str, Any]:
 async def report_civic_issue_multimodal(
     image: UploadFile = File(...),
     description: str = Form(...),
-    location_city: str = Form(...),
-    lat: float = Form(0.0),
-    lng: float = Form(0.0),
+    location_city: str = Form("Sector 62, Noida"),
+    lat: float = Form(28.6289),
+    lng: float = Form(77.3670),
 ) -> Dict[str, Any]:
     """
-    Multimodal civic issue reporting endpoint:
-    - Saves uploaded image to uploads/ with unique UUID filename
-    - Audits hazard with Gemma 4 multimodal AI service
-    - Records structured municipal incident in SQLite
+    1. POST /api/civic/report:
+    - Accepts multipart form data (image, description, location_city, lat, lng).
+    - Saves uploaded binary image into uploads/ with a unique UUID filename.
+    - Audits hazard using Gemma 4 Multimodal model with fallback to Gemini 2.5 Flash.
+    - Inserts structured record directly into SQLite civic_posts table via create_civic_post().
+    - Returns created post object with an HTTP 201 status code.
     """
     image_bytes = await image.read()
     file_ext = Path(image.filename or "image.jpg").suffix or ".jpg"
@@ -143,7 +151,7 @@ async def report_civic_issue_multimodal(
 
     image_url = f"/uploads/{unique_filename}"
 
-    # Analyze via Gemma 4 / Gemini fallback
+    # Audit via Gemma 4 / Gemini fallback engine
     analysis = analyze_civic_issue(
         image_bytes=image_bytes,
         description=description,
@@ -153,13 +161,13 @@ async def report_civic_issue_multimodal(
     is_local_flag = 1 if analysis.get("is_local_municipal", True) else 0
 
     post_record = {
-        "title": analysis.get("title") or "Reported Civic Hazard",
+        "title": analysis.get("title") or "Reported Municipal Hazard",
         "description": analysis.get("summary") or description,
         "image_url": image_url,
         "location_city": location_city,
         "lat": lat,
         "lng": lng,
-        "department": analysis.get("department") or "Roads & Potholes",
+        "department": analysis.get("department") or "Roads & Transport",
         "severity": analysis.get("severity") or "Moderate",
         "is_local": is_local_flag,
         "external_portals": analysis.get("external_portals") or [],
@@ -174,30 +182,43 @@ async def report_civic_issue_multimodal(
 @app.post("/api/civic/{post_id}/upvote", tags=["Civic"])
 @app.post("/api/civic/posts/{post_id}/upvote", tags=["Civic"])
 async def upvote_civic_post(post_id: str) -> Dict[str, Any]:
-    """Upvote an existing civic issue."""
+    """
+    2. POST /api/civic/{post_id}/upvote:
+    - Calls database upvote_post(post_id).
+    - Returns {"post_id": post_id, "upvotes": updated_count}.
+    """
     post = get_civic_post_by_id(post_id)
     if not post:
         raise HTTPException(status_code=404, detail="Civic post not found")
     new_count = upvote_post(post_id)
-    return {"id": post_id, "upvotes": new_count}
+    return {"post_id": post_id, "id": post_id, "upvotes": new_count}
 
 
 @app.post("/api/civic/{post_id}/urgent", tags=["Civic"])
 @app.post("/api/civic/posts/{post_id}/urgent", tags=["Civic"])
 async def flag_civic_post_urgent(post_id: str) -> Dict[str, Any]:
-    """Flag a civic issue as urgent emergency."""
+    """
+    3. POST /api/civic/{post_id}/urgent:
+    - Calls database flag_urgent_post(post_id).
+    - Returns {"post_id": post_id, "urgent_flags": updated_count}.
+    """
     post = get_civic_post_by_id(post_id)
     if not post:
         raise HTTPException(status_code=404, detail="Civic post not found")
     new_count = flag_urgent_post(post_id)
-    return {"id": post_id, "urgent_flags": new_count}
+    return {"post_id": post_id, "id": post_id, "urgent_flags": new_count}
 
 
 @app.post("/api/civic/{post_id}/comment", status_code=status.HTTP_201_CREATED, tags=["Civic"])
 @app.post("/api/civic/{post_id}/comments", status_code=status.HTTP_201_CREATED, tags=["Civic"])
 @app.post("/api/civic/posts/{post_id}/comments", status_code=status.HTTP_201_CREATED, tags=["Civic"])
 async def add_post_comment(post_id: str, payload: CommentCreate) -> Dict[str, Any]:
-    """Add a community comment or update on a civic post."""
+    """
+    4. POST /api/civic/{post_id}/comment:
+    - Accepts CommentCreate body (author: str, comment: str).
+    - Calls database add_comment().
+    - Returns the created comment.
+    """
     post = get_civic_post_by_id(post_id)
     if not post:
         raise HTTPException(status_code=404, detail="Civic post not found")
@@ -205,18 +226,21 @@ async def add_post_comment(post_id: str, payload: CommentCreate) -> Dict[str, An
     return created_comment
 
 
-# --- AI Chat / PulseBot Endpoints ---
+# --- AI Chat / PulseBot Endpoints (Phase 2) ---
+
 @app.post("/api/chat", tags=["AI"])
 async def chat_with_pulsebot(payload: ChatRequest) -> Dict[str, str]:
     """
-    PulseBot conversational copilot endpoint:
-    Assists residents with municipal jurisdiction, fair repair pricing, and evidence collection.
+    5. POST /api/chat:
+    - Accepts ChatRequest body (message: str, history: list[dict]).
+    - Calls gemma_service.pulsebot_chat().
+    - Returns {"reply": reply_text}.
     """
-    reply = pulsebot_chat(
+    reply_text = pulsebot_chat(
         history=payload.history or [],
         user_message=payload.message,
     )
-    return {"reply": reply}
+    return {"reply": reply_text}
 
 
 # --- Home Utility & Service Marketplace Endpoints (Phase 3) ---
@@ -234,16 +258,9 @@ async def list_service_jobs() -> List[Dict[str, Any]]:
 async def create_service_job_with_ai(
     media: UploadFile = File(...),
     description: str = Form(...),
-    location_city: str = Form(...),
+    location_city: str = Form("Sector 62, Noida"),
 ) -> Dict[str, Any]:
-    """
-    1. POST /api/services/create:
-    - Saves media to uploads/ with a unique UUID filename.
-    - Calls diagnose_home_repair() from gemma_service.py.
-    - Inserts record into service_jobs with fields:
-      id, title, description, category, media_url, location_city, estimated_price, status='Open'.
-    - Returns the created job with diagnosis and fair price range.
-    """
+    """Post household service defect with Gemma AI technical diagnosis and price estimation."""
     media_bytes = await media.read()
     file_ext = Path(media.filename or "media.jpg").suffix or ".jpg"
     unique_filename = f"{uuid.uuid4().hex}{file_ext}"
@@ -259,10 +276,9 @@ async def create_service_job_with_ai(
     )
 
     category = diagnosis.get("category") or "Plumber"
-    estimated_price = diagnosis.get("fair_price_bracket") or "₹300 - ₹600"
+    estimated_price = diagnosis.get("fair_price_bracket") or "₹350 - ₹550"
     title = diagnosis.get("title") or "Household Repair Requirement"
 
-    # Full description includes diagnosis details and safety alert
     full_description = description
     if diagnosis.get("diagnosis"):
         full_description = f"{description}\n\n[Gemma Diagnosis]: {diagnosis.get('diagnosis')}"
@@ -300,10 +316,7 @@ async def submit_service_job(payload: ServiceJobCreate) -> Dict[str, Any]:
 @app.get("/api/services/{job_id}/bids", tags=["Services"])
 @app.get("/api/services/jobs/{job_id}/bids", tags=["Services"])
 async def get_service_job_bids(job_id: str) -> List[Dict[str, Any]]:
-    """
-    2. GET /api/services/{job_id}/bids:
-    - Returns all bids associated with the given job_id from SQLite.
-    """
+    """Returns all bids associated with the given job_id from SQLite."""
     job = get_service_job_by_id(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Service job not found")
@@ -313,13 +326,7 @@ async def get_service_job_bids(job_id: str) -> List[Dict[str, Any]]:
 @app.post("/api/services/{job_id}/bid", status_code=status.HTTP_201_CREATED, tags=["Services"])
 @app.post("/api/services/jobs/{job_id}/bids", status_code=status.HTTP_201_CREATED, tags=["Services"])
 async def submit_bid_on_job(job_id: str, payload: BidCreate) -> Dict[str, Any]:
-    """
-    3. POST /api/services/{job_id}/bid:
-    - Accepts BidCreate schema (worker_name: str, worker_phone: str, bid_amount: int).
-    - Inserts into service_bids with status='Pending'.
-    - Updates the parent job status to 'Negotiating'.
-    - Returns the created bid.
-    """
+    """Submit worker bid on job and advance job status to Negotiating."""
     job = get_service_job_by_id(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Service job not found")
@@ -335,12 +342,7 @@ async def submit_bid_on_job(job_id: str, payload: BidCreate) -> Dict[str, Any]:
 
 @app.post("/api/services/bids/{bid_id}/counter", tags=["Services"])
 async def submit_counter_bid(bid_id: str, payload: CounterBidCreate) -> Dict[str, Any]:
-    """
-    4. POST /api/services/bids/{bid_id}/counter:
-    - Accepts CounterBidCreate schema (counter_amount: int).
-    - Updates counter_amount for the bid in service_bids.
-    - Returns the updated bid.
-    """
+    """Submit resident counter offer for a worker bid."""
     try:
         updated_bid = counter_bid(bid_id=bid_id, counter_amount=payload.counter_amount)
         return updated_bid
@@ -355,13 +357,7 @@ async def confirm_accepted_bid(
     payload: AcceptBidCreate,
     job_id: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """
-    5. POST /api/services/bids/{bid_id}/accept:
-    - Accepts AcceptBidCreate schema (job_id: str, final_price: str).
-    - Updates the bid status to 'Accepted'.
-    - Updates the parent job status to 'Confirmed' and stores final_price.
-    - Returns the confirmed job and bid record.
-    """
+    """Accept worker bid, confirm job contract, and lock final price."""
     effective_job_id = payload.job_id or job_id
     try:
         result = accept_bid(bid_id=bid_id, job_id=effective_job_id, final_price=payload.final_price)
