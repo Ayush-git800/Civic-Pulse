@@ -13,7 +13,7 @@ from backend.config import GEMINI_API_KEY
 logger = logging.getLogger("civicpulse.gemma")
 
 PRIMARY_MODEL = "gemma-4-26b-a4b-it"
-FALLBACK_MODEL = "gemini-2.5-flash"
+FALLBACK_MODELS = ["gemini-3.5-flash", "gemini-3.8-flash", "gemini-flash-latest"]
 
 VALID_DEPARTMENTS = [
     "Roads & Transport",
@@ -116,56 +116,66 @@ def _clean_and_extract_json(raw_text: str) -> Optional[Dict[str, Any]]:
 def _execute_with_resilient_fallback(
     contents: List[Any],
     system_instruction: str,
-    temperature: float = 0.2,
+    temperature: float = 0.3,
 ) -> Optional[str]:
     """
     Executes inference against PRIMARY_MODEL ('gemma-4-26b-a4b-it').
-    Catches rate-limits (HTTP 429 / ResourceExhausted / APIError) and falls back
-    to FALLBACK_MODEL ('gemini-2.5-flash').
+    For Gemma models, system instructions must be embedded directly in prompt contents
+    (as Gemma API does not accept system_instruction in GenerateContentConfig).
+    Catches rate-limits / API errors and falls back gracefully through FALLBACK_MODELS.
     """
     client = _get_genai_client()
     if not client:
         return None
 
-    config = types.GenerateContentConfig(
-        temperature=temperature,
-        system_instruction=system_instruction,
-    )
-
     # 1. Primary Attempt: gemma-4-26b-a4b-it
     try:
         logger.info("Calling primary model: %s", PRIMARY_MODEL)
+        # Prepend system instruction into contents for Gemma
+        gemma_contents: List[Any] = []
+        instruction_prepended = False
+        for c in contents:
+            if isinstance(c, str) and not instruction_prepended:
+                gemma_contents.append(f"[System Instruction]\n{system_instruction}\n\n{c}")
+                instruction_prepended = True
+            else:
+                gemma_contents.append(c)
+        if not instruction_prepended and system_instruction:
+            gemma_contents.insert(0, f"[System Instruction]\n{system_instruction}\n\n")
+
+        gemma_config = types.GenerateContentConfig(temperature=temperature)
         response = client.models.generate_content(
             model=PRIMARY_MODEL,
-            contents=contents,
-            config=config,
+            contents=gemma_contents,
+            config=gemma_config,
         )
         if response and response.text:
             return response.text
     except Exception as primary_exc:
         logger.warning(
-            "Primary model '%s' failed or exhausted quota: %s. Initiating resilient fallback to '%s'.",
+            "Primary model '%s' failed or exhausted quota: %s. Initiating resilient fallback chain.",
             PRIMARY_MODEL,
             primary_exc,
-            FALLBACK_MODEL,
         )
 
-    # 2. Resilient Fallback: gemini-2.5-flash
-    try:
-        logger.info("Calling fallback model: %s", FALLBACK_MODEL)
-        response = client.models.generate_content(
-            model=FALLBACK_MODEL,
-            contents=contents,
-            config=config,
-        )
-        if response and response.text:
-            return response.text
-    except Exception as fallback_exc:
-        logger.error(
-            "Fallback model '%s' also encountered an error: %s",
-            FALLBACK_MODEL,
-            fallback_exc,
-        )
+    # 2. Resilient Fallbacks (Gemini 3.5 / 3.8 / Flash-Latest)
+    fallback_config = types.GenerateContentConfig(
+        temperature=temperature,
+        system_instruction=system_instruction,
+    )
+
+    for fallback_model in FALLBACK_MODELS:
+        try:
+            logger.info("Calling fallback model: %s", fallback_model)
+            response = client.models.generate_content(
+                model=fallback_model,
+                contents=contents,
+                config=fallback_config,
+            )
+            if response and response.text:
+                return response.text
+        except Exception as fb_exc:
+            logger.warning("Fallback model '%s' failed: %s", fallback_model, fb_exc)
 
     return None
 
