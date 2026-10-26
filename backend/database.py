@@ -1,0 +1,546 @@
+from __future__ import annotations
+
+import json
+import sqlite3
+import threading
+import uuid
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
+# Path to database file
+DB_PATH = Path(__file__).resolve().parent.parent / "civicpulse.db"
+
+# Thread-safe database lock for SQLite writes
+db_lock = threading.Lock()
+
+# Persistent SQLite connection with check_same_thread=False
+conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+conn.row_factory = sqlite3.Row
+# Enable foreign keys and WAL mode for better concurrency
+conn.execute("PRAGMA foreign_keys = ON;")
+conn.execute("PRAGMA journal_mode = WAL;")
+
+
+def init_db() -> None:
+    """Initialize SQLite database tables if they do not exist."""
+    with db_lock:
+        cursor = conn.cursor()
+        
+        # 1. Civic Posts Table
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS civic_posts (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                description TEXT NOT NULL,
+                image_url TEXT,
+                location_city TEXT NOT NULL,
+                lat REAL,
+                lng REAL,
+                department TEXT NOT NULL,
+                severity TEXT NOT NULL,
+                is_local INTEGER DEFAULT 1,
+                external_portals TEXT,
+                upvotes INTEGER DEFAULT 0,
+                urgent_flags INTEGER DEFAULT 0,
+                status TEXT DEFAULT 'Reported',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            """
+        )
+
+        # 2. Civic Comments Table
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS civic_comments (
+                id TEXT PRIMARY KEY,
+                post_id TEXT NOT NULL,
+                author TEXT NOT NULL,
+                comment TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (post_id) REFERENCES civic_posts (id) ON DELETE CASCADE
+            );
+            """
+        )
+
+        # 3. Service Jobs Table
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS service_jobs (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                description TEXT NOT NULL,
+                category TEXT NOT NULL,
+                media_url TEXT,
+                location_city TEXT NOT NULL,
+                estimated_price TEXT,
+                final_price TEXT,
+                status TEXT DEFAULT 'Open',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            """
+        )
+
+        # 4. Service Bids Table
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS service_bids (
+                id TEXT PRIMARY KEY,
+                job_id TEXT NOT NULL,
+                worker_name TEXT NOT NULL,
+                worker_phone TEXT NOT NULL,
+                bid_amount INTEGER NOT NULL,
+                counter_amount INTEGER,
+                status TEXT DEFAULT 'Pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (job_id) REFERENCES service_jobs (id) ON DELETE CASCADE
+            );
+            """
+        )
+        conn.commit()
+
+
+def _format_post(row: Union[sqlite3.Row, dict]) -> dict:
+    """Format civic post row and deserialize JSON fields."""
+    item = dict(row)
+    raw_portals = item.get("external_portals")
+    if isinstance(raw_portals, str):
+        try:
+            item["external_portals"] = json.loads(raw_portals)
+        except Exception:
+            item["external_portals"] = [p.strip() for p in raw_portals.split(",") if p.strip()] if raw_portals else []
+    elif raw_portals is None:
+        item["external_portals"] = []
+    return item
+
+
+def get_all_civic_posts() -> list[dict]:
+    """Retrieve all civic posts ordered by newest first."""
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM civic_posts ORDER BY created_at DESC;")
+        rows = cursor.fetchall()
+        return [_format_post(r) for r in rows]
+
+
+def get_civic_post_by_id(post_id: str) -> Optional[dict]:
+    """Retrieve a single civic post by its ID."""
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM civic_posts WHERE id = ?;", (post_id,))
+        row = cursor.fetchone()
+        return _format_post(row) if row else None
+
+
+def create_civic_post(post_data: dict) -> dict:
+    """Insert a new civic post into the database."""
+    post_id = post_data.get("id") or str(uuid.uuid4())
+    title = post_data["title"]
+    description = post_data["description"]
+    image_url = post_data.get("image_url")
+    location_city = post_data.get("location_city", "Unknown")
+    lat = post_data.get("lat")
+    lng = post_data.get("lng")
+    department = post_data.get("department", "General")
+    severity = post_data.get("severity", "Medium")
+    is_local = int(post_data.get("is_local", 1))
+
+    external_portals = post_data.get("external_portals", [])
+    if isinstance(external_portals, (list, dict)):
+        portals_json = json.dumps(external_portals)
+    elif isinstance(external_portals, str):
+        portals_json = external_portals
+    else:
+        portals_json = "[]"
+
+    upvotes = int(post_data.get("upvotes", 0))
+    urgent_flags = int(post_data.get("urgent_flags", 0))
+    status = post_data.get("status", "Reported")
+
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO civic_posts (
+                id, title, description, image_url, location_city,
+                lat, lng, department, severity, is_local,
+                external_portals, upvotes, urgent_flags, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+            """,
+            (
+                post_id,
+                title,
+                description,
+                image_url,
+                location_city,
+                lat,
+                lng,
+                department,
+                severity,
+                is_local,
+                portals_json,
+                upvotes,
+                urgent_flags,
+                status,
+            ),
+        )
+        conn.commit()
+
+    created = get_civic_post_by_id(post_id)
+    if not created:
+        raise RuntimeError(f"Failed to create civic post {post_id}")
+    return created
+
+
+def upvote_post(post_id: str) -> int:
+    """Increment upvotes count for a civic post and return new count."""
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE civic_posts SET upvotes = upvotes + 1 WHERE id = ?;",
+            (post_id,),
+        )
+        conn.commit()
+        cursor.execute("SELECT upvotes FROM civic_posts WHERE id = ?;", (post_id,))
+        row = cursor.fetchone()
+        return row["upvotes"] if row else 0
+
+
+def flag_urgent_post(post_id: str) -> int:
+    """Increment urgent flag count for a civic post and return new count."""
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE civic_posts SET urgent_flags = urgent_flags + 1 WHERE id = ?;",
+            (post_id,),
+        )
+        conn.commit()
+        cursor.execute("SELECT urgent_flags FROM civic_posts WHERE id = ?;", (post_id,))
+        row = cursor.fetchone()
+        return row["urgent_flags"] if row else 0
+
+
+def add_comment(post_id: str, author: str, comment: str) -> dict:
+    """Add a new comment to a civic post."""
+    comment_id = str(uuid.uuid4())
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO civic_comments (id, post_id, author, comment)
+            VALUES (?, ?, ?, ?);
+            """,
+            (comment_id, post_id, author, comment),
+        )
+        conn.commit()
+        cursor.execute("SELECT * FROM civic_comments WHERE id = ?;", (comment_id,))
+        row = cursor.fetchone()
+        return dict(row)
+
+
+def get_comments(post_id: str) -> list[dict]:
+    """Retrieve all comments for a specific post."""
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT * FROM civic_comments WHERE post_id = ? ORDER BY created_at ASC;",
+            (post_id,),
+        )
+        rows = cursor.fetchall()
+        return [dict(r) for r in rows]
+
+
+def get_all_service_jobs() -> list[dict]:
+    """Retrieve all service jobs ordered by newest first."""
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM service_jobs ORDER BY created_at DESC;")
+        rows = cursor.fetchall()
+        return [dict(r) for r in rows]
+
+
+def get_service_job_by_id(job_id: str) -> Optional[dict]:
+    """Retrieve a single service job by its ID."""
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM service_jobs WHERE id = ?;", (job_id,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+
+def create_service_job(job_data: dict) -> dict:
+    """Insert a new household service job."""
+    job_id = job_data.get("id") or str(uuid.uuid4())
+    title = job_data["title"]
+    description = job_data["description"]
+    category = job_data["category"]
+    media_url = job_data.get("media_url")
+    location_city = job_data.get("location_city", "Unknown")
+    estimated_price = job_data.get("estimated_price")
+    final_price = job_data.get("final_price")
+    status = job_data.get("status", "Open")
+
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO service_jobs (
+                id, title, description, category, media_url,
+                location_city, estimated_price, final_price, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+            """,
+            (
+                job_id,
+                title,
+                description,
+                category,
+                media_url,
+                location_city,
+                estimated_price,
+                final_price,
+                status,
+            ),
+        )
+        conn.commit()
+
+    created = get_service_job_by_id(job_id)
+    if not created:
+        raise RuntimeError(f"Failed to create service job {job_id}")
+    return created
+
+
+def get_bids_for_job(job_id: str) -> list[dict]:
+    """Retrieve all bids for a given job ordered by creation date."""
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT * FROM service_bids WHERE job_id = ? ORDER BY created_at ASC;",
+            (job_id,),
+        )
+        rows = cursor.fetchall()
+        return [dict(r) for r in rows]
+
+
+def get_bid_by_id(bid_id: str) -> Optional[dict]:
+    """Retrieve a single bid by its ID."""
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM service_bids WHERE id = ?;", (bid_id,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+
+def create_bid(job_id: str, worker_name: str, worker_phone: str, bid_amount: int) -> dict:
+    """Create a new service bid on a job."""
+    bid_id = str(uuid.uuid4())
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO service_bids (id, job_id, worker_name, worker_phone, bid_amount, status)
+            VALUES (?, ?, ?, ?, ?, 'Pending');
+            """,
+            (bid_id, job_id, worker_name, worker_phone, bid_amount),
+        )
+        conn.commit()
+
+    created = get_bid_by_id(bid_id)
+    if not created:
+        raise RuntimeError(f"Failed to create bid {bid_id}")
+    return created
+
+
+def counter_bid(bid_id: str, counter_amount: int) -> dict:
+    """Submit a counter offer for a worker's bid."""
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            UPDATE service_bids
+            SET counter_amount = ?, status = 'Countered'
+            WHERE id = ?;
+            """,
+            (counter_amount, bid_id),
+        )
+        conn.commit()
+
+    updated = get_bid_by_id(bid_id)
+    if not updated:
+        raise ValueError(f"Bid not found with id: {bid_id}")
+    return updated
+
+
+def accept_bid(bid_id: str, job_id: Optional[str] = None, final_price: str = "") -> dict:
+    """Accept a worker bid, assign the job, and update final negotiated price."""
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM service_bids WHERE id = ?;", (bid_id,))
+        bid = cursor.fetchone()
+        if not bid:
+            raise ValueError(f"Bid not found with id: {bid_id}")
+
+        resolved_job_id = job_id or bid["job_id"]
+
+        # Accept selected bid
+        cursor.execute(
+            "UPDATE service_bids SET status = 'Accepted' WHERE id = ?;",
+            (bid_id,),
+        )
+        # Mark other bids for this job as Rejected
+        cursor.execute(
+            "UPDATE service_bids SET status = 'Rejected' WHERE job_id = ? AND id != ?;",
+            (resolved_job_id, bid_id),
+        )
+        # Update job status and final price
+        cursor.execute(
+            """
+            UPDATE service_jobs
+            SET status = 'Assigned', final_price = ?
+            WHERE id = ?;
+            """,
+            (final_price, resolved_job_id),
+        )
+        conn.commit()
+
+    updated = get_bid_by_id(bid_id)
+    if not updated:
+        raise ValueError(f"Bid not found with id: {bid_id}")
+    return updated
+
+
+def seed_initial_data() -> None:
+    """Seed realistic Indian demo data for civic posts and service jobs if empty."""
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) AS count FROM civic_posts;")
+        civic_count = cursor.fetchone()["count"]
+
+        cursor.execute("SELECT COUNT(*) AS count FROM service_jobs;")
+        jobs_count = cursor.fetchone()["count"]
+
+    if civic_count == 0:
+        # Seed realistic Indian municipal concerns
+        demo_posts = [
+            {
+                "id": "post-demo-001",
+                "title": "Deep Pothole near Sector 62 Metro Station",
+                "description": (
+                    "Dangerous crater-sized pothole right after exiting the metro station towards "
+                    "the electronic city roundabout. Two-wheelers frequently skid during waterlogging, "
+                    "causing immediate hazard for daily commuters."
+                ),
+                "image_url": "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=800&q=80",
+                "location_city": "Noida",
+                "lat": 28.6271,
+                "lng": 77.3617,
+                "department": "Road & Infrastructure",
+                "severity": "High",
+                "is_local": 1,
+                "external_portals": ["CPGRAMS", "UP Jansunwai", "Noida Authority Citizen App"],
+                "upvotes": 42,
+                "urgent_flags": 14,
+                "status": "In Review",
+            },
+            {
+                "id": "post-demo-002",
+                "title": "Overflowing Garbage Dumpster along Indirapuram Market",
+                "description": (
+                    "Community garbage dump near Shipra Mall market has not been cleared for over 4 days. "
+                    "Stray cattle are scattering plastic bags across the road, and the stench is severely "
+                    "affecting local shopkeepers and nearby apartments."
+                ),
+                "image_url": "https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&q=80",
+                "location_city": "Ghaziabad",
+                "lat": 28.6434,
+                "lng": 77.3752,
+                "department": "Sanitation & Waste Management",
+                "severity": "Critical",
+                "is_local": 1,
+                "external_portals": ["Swachhata-MoHUA", "Nagar Nigam Ghaziabad Portal"],
+                "upvotes": 68,
+                "urgent_flags": 27,
+                "status": "Reported",
+            },
+            {
+                "id": "post-demo-003",
+                "title": "Broken High-Tension Streetlight on Link Road",
+                "description": (
+                    "A 200m stretch on Anand Vihar Link Road has been plunged into total darkness for "
+                    "a week due to a snapped overhead wire and burnt fixture. High risk of mugging and "
+                    "pedestrian accidents at night."
+                ),
+                "image_url": "https://images.unsplash.com/photo-1509114397022-ed747cca3f65?auto=format&fit=crop&w=800&q=80",
+                "location_city": "Delhi NCR",
+                "lat": 28.6315,
+                "lng": 77.3168,
+                "department": "Electrical & Public Lighting",
+                "severity": "Medium",
+                "is_local": 1,
+                "external_portals": ["BSES Complaints", "MCD 311"],
+                "upvotes": 19,
+                "urgent_flags": 5,
+                "status": "Reported",
+            },
+        ]
+
+        for post in demo_posts:
+            create_civic_post(post)
+
+        # Seed starter comments for each post
+        demo_comments = [
+            ("post-demo-001", "Aarav Sharma", "Two bike riders slipped here yesterday during the evening drizzle! Needs urgent gravel patching."),
+            ("post-demo-001", "Pooja Verma", "Raised grievance ticket on Noida Authority citizen portal as well (#NOI-94821). Upvoted!"),
+            ("post-demo-002", "Rajesh Gupta (RWA Sec)", "Sanitation truck missed morning round 3 days in a row. It is breeding dengue mosquitoes."),
+            ("post-demo-002", "Neha Saxena", "Tagged Nagar Nigam Ghaziabad commissioner on Twitter/X with photos."),
+            ("post-demo-003", "Vikas Malhotra", "Pole number is BSES-DL-412. It's very risky for women walking from the bus stop."),
+        ]
+
+        for post_id, author, comment in demo_comments:
+            add_comment(post_id=post_id, author=author, comment=comment)
+
+    if jobs_count == 0:
+        # Seed realistic household service jobs
+        demo_jobs = [
+            {
+                "id": "job-demo-001",
+                "title": "Main Kitchen Drain Leaking",
+                "description": (
+                    "Under-sink PVC u-trap pipe cracked and dirty water is leaking onto wooden modular "
+                    "cabinets whenever sink is used. Need an experienced plumber with replacement pipe parts."
+                ),
+                "category": "Plumbing",
+                "media_url": "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=800&q=80",
+                "location_city": "Noida Sector 62",
+                "estimated_price": "₹500 - ₹800",
+                "final_price": None,
+                "status": "Open",
+            },
+            {
+                "id": "job-demo-002",
+                "title": "MCB Trip Switch Burning Smell",
+                "description": (
+                    "Air conditioner 32A MCB trips repeatedly with faint burning plastic odor. "
+                    "Requires immediate electrical inspection to avoid short circuit or wiring damage."
+                ),
+                "category": "Electrical",
+                "media_url": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=800&q=80",
+                "location_city": "Ghaziabad",
+                "estimated_price": "₹700 - ₹1200",
+                "final_price": None,
+                "status": "Open",
+            },
+        ]
+
+        for job in demo_jobs:
+            create_service_job(job)
+
+        # Seed realistic starter bids
+        demo_bids = [
+            ("job-demo-001", "Ramesh Kumar (Expert Plumber)", "+91 98765 43210", 600),
+            ("job-demo-001", "Verma Sanitary Works", "+91 98112 23344", 500),
+            ("job-demo-002", "Sharma Electric Solutions", "+91 98990 01122", 850),
+            ("job-demo-002", "QuickFix Home Electricals", "+91 97118 82233", 750),
+        ]
+
+        for job_id, worker_name, worker_phone, bid_amount in demo_bids:
+            create_bid(job_id=job_id, worker_name=worker_name, worker_phone=worker_phone, bid_amount=bid_amount)
