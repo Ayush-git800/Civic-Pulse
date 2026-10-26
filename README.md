@@ -6,3 +6,5 @@
 - Contributor: Hardik Kumar
 
 - Contributor: rishavgiri1106-dotcom
+
+- Contributor: rishavgiri1106-dotcom
