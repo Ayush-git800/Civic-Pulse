@@ -219,7 +219,8 @@ async def chat_with_pulsebot(payload: ChatRequest) -> Dict[str, str]:
     return {"reply": reply}
 
 
-# --- Service Jobs & Bids Endpoints ---
+# --- Home Utility & Service Marketplace Endpoints (Phase 3) ---
+
 @app.get("/api/services/jobs", tags=["Services"])
 async def list_service_jobs() -> List[Dict[str, Any]]:
     """Retrieve all household service jobs with their attached bids."""
@@ -229,20 +230,100 @@ async def list_service_jobs() -> List[Dict[str, Any]]:
     return jobs
 
 
+@app.post("/api/services/create", status_code=status.HTTP_201_CREATED, tags=["Services"])
+async def create_service_job_with_ai(
+    media: UploadFile = File(...),
+    description: str = Form(...),
+    location_city: str = Form(...),
+) -> Dict[str, Any]:
+    """
+    1. POST /api/services/create:
+    - Saves media to uploads/ with a unique UUID filename.
+    - Calls diagnose_home_repair() from gemma_service.py.
+    - Inserts record into service_jobs with fields:
+      id, title, description, category, media_url, location_city, estimated_price, status='Open'.
+    - Returns the created job with diagnosis and fair price range.
+    """
+    media_bytes = await media.read()
+    file_ext = Path(media.filename or "media.jpg").suffix or ".jpg"
+    unique_filename = f"{uuid.uuid4().hex}{file_ext}"
+    saved_file_path = upload_folder / unique_filename
+    saved_file_path.write_bytes(media_bytes)
+
+    media_url = f"/uploads/{unique_filename}"
+
+    # Diagnose defect via Gemma service
+    diagnosis = diagnose_home_repair(
+        image_bytes=media_bytes,
+        description=description,
+    )
+
+    category = diagnosis.get("category") or "Plumber"
+    estimated_price = diagnosis.get("fair_price_bracket") or "₹300 - ₹600"
+    title = diagnosis.get("title") or "Household Repair Requirement"
+
+    # Full description includes diagnosis details and safety alert
+    full_description = description
+    if diagnosis.get("diagnosis"):
+        full_description = f"{description}\n\n[Gemma Diagnosis]: {diagnosis.get('diagnosis')}"
+    if diagnosis.get("safety_alert") and diagnosis.get("safety_alert") != "None":
+        full_description += f"\n[Safety Alert]: {diagnosis.get('safety_alert')}"
+
+    job_record = {
+        "id": str(uuid.uuid4()),
+        "title": title,
+        "description": full_description,
+        "category": category,
+        "media_url": media_url,
+        "location_city": location_city,
+        "estimated_price": estimated_price,
+        "final_price": None,
+        "status": "Open",
+    }
+
+    created_job = create_service_job(job_record)
+    created_job["diagnosis"] = diagnosis.get("diagnosis")
+    created_job["fair_price_bracket"] = estimated_price
+    created_job["safety_alert"] = diagnosis.get("safety_alert")
+    created_job["bids"] = []
+    return created_job
+
+
 @app.post("/api/services/jobs", status_code=status.HTTP_201_CREATED, tags=["Services"])
 async def submit_service_job(payload: ServiceJobCreate) -> Dict[str, Any]:
-    """Post a new household service job."""
+    """Directly post a household service job."""
     created_job = create_service_job(payload.model_dump())
     created_job["bids"] = []
     return created_job
 
 
-@app.post("/api/services/jobs/{job_id}/bids", status_code=status.HTTP_201_CREATED, tags=["Services"])
-async def submit_bid_for_job(job_id: str, payload: BidCreate) -> Dict[str, Any]:
-    """Submit a worker bid for a specific household service job."""
+@app.get("/api/services/{job_id}/bids", tags=["Services"])
+@app.get("/api/services/jobs/{job_id}/bids", tags=["Services"])
+async def get_service_job_bids(job_id: str) -> List[Dict[str, Any]]:
+    """
+    2. GET /api/services/{job_id}/bids:
+    - Returns all bids associated with the given job_id from SQLite.
+    """
     job = get_service_job_by_id(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Service job not found")
+    return get_bids_for_job(job_id)
+
+
+@app.post("/api/services/{job_id}/bid", status_code=status.HTTP_201_CREATED, tags=["Services"])
+@app.post("/api/services/jobs/{job_id}/bids", status_code=status.HTTP_201_CREATED, tags=["Services"])
+async def submit_bid_on_job(job_id: str, payload: BidCreate) -> Dict[str, Any]:
+    """
+    3. POST /api/services/{job_id}/bid:
+    - Accepts BidCreate schema (worker_name: str, worker_phone: str, bid_amount: int).
+    - Inserts into service_bids with status='Pending'.
+    - Updates the parent job status to 'Negotiating'.
+    - Returns the created bid.
+    """
+    job = get_service_job_by_id(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Service job not found")
+
     created_bid = create_bid(
         job_id=job_id,
         worker_name=payload.worker_name,
@@ -254,7 +335,12 @@ async def submit_bid_for_job(job_id: str, payload: BidCreate) -> Dict[str, Any]:
 
 @app.post("/api/services/bids/{bid_id}/counter", tags=["Services"])
 async def submit_counter_bid(bid_id: str, payload: CounterBidCreate) -> Dict[str, Any]:
-    """Submit a counter offer amount for a worker bid."""
+    """
+    4. POST /api/services/bids/{bid_id}/counter:
+    - Accepts CounterBidCreate schema (counter_amount: int).
+    - Updates counter_amount for the bid in service_bids.
+    - Returns the updated bid.
+    """
     try:
         updated_bid = counter_bid(bid_id=bid_id, counter_amount=payload.counter_amount)
         return updated_bid
@@ -264,14 +350,21 @@ async def submit_counter_bid(bid_id: str, payload: CounterBidCreate) -> Dict[str
 
 @app.post("/api/services/bids/{bid_id}/accept", tags=["Services"])
 @app.post("/api/services/jobs/{job_id}/bids/{bid_id}/accept", tags=["Services"])
-async def accept_service_bid(
+async def confirm_accepted_bid(
     bid_id: str,
     payload: AcceptBidCreate,
     job_id: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Accept a worker bid, locking in the final price and marking the job assigned."""
+    """
+    5. POST /api/services/bids/{bid_id}/accept:
+    - Accepts AcceptBidCreate schema (job_id: str, final_price: str).
+    - Updates the bid status to 'Accepted'.
+    - Updates the parent job status to 'Confirmed' and stores final_price.
+    - Returns the confirmed job and bid record.
+    """
+    effective_job_id = payload.job_id or job_id
     try:
-        updated_bid = accept_bid(bid_id=bid_id, job_id=job_id, final_price=payload.final_price)
-        return updated_bid
+        result = accept_bid(bid_id=bid_id, job_id=effective_job_id, final_price=payload.final_price)
+        return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
