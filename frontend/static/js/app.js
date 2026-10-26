@@ -12,7 +12,10 @@ const state = {
   civicPosts: [],
   serviceJobs: [],
   chatHistory: [],
-  activeFilter: 'ALL',
+  civicCategory: 'ALL',
+  civicSearch: '',
+  serviceCategory: 'ALL',
+  serviceSearch: '',
 };
 
 // Lifecycle initialization
@@ -24,6 +27,103 @@ document.addEventListener('DOMContentLoaded', () => {
   loadCivicFeed();
   loadServicesFeed();
 });
+
+// --- High-Quality SVG Graphic Fallbacks for Offline & Missing Media ---
+function getFallbackSvg(category) {
+  const cat = (category || '').toLowerCase();
+  let bg = '#1e1b4b'; // deep indigo
+  let accent = '#6366f1';
+  let title = 'Infrastructure Hazard Evidence';
+  let icon = '⚠️';
+
+  if (cat.includes('road') || cat.includes('pothole') || cat.includes('tarmac') || cat.includes('highway')) {
+    bg = '#0f172a';
+    accent = '#f59e0b';
+    title = 'Road & Pothole Defect';
+    icon = '🚧';
+  } else if (cat.includes('waste') || cat.includes('sanitation') || cat.includes('garbage')) {
+    bg = '#14532d';
+    accent = '#22c55e';
+    title = 'Solid Waste & Sanitation Incident';
+    icon = '🗑️';
+  } else if (cat.includes('water') || cat.includes('sewage') || cat.includes('drain') || cat.includes('plumb')) {
+    bg = '#083344';
+    accent = '#06b6d4';
+    title = 'Water Supply & Drainage';
+    icon = '💧';
+  } else if (cat.includes('electr') || cat.includes('wire') || cat.includes('light')) {
+    bg = '#3b0764';
+    accent = '#a855f7';
+    title = 'Electrical & Public Lighting';
+    icon = '⚡';
+  } else if (cat.includes('carpent')) {
+    bg = '#431407';
+    accent = '#f97316';
+    title = 'Carpentry & Woodwork Repair';
+    icon = '🪚';
+  } else if (cat.includes('appliance')) {
+    bg = '#1e1b4b';
+    accent = '#818cf8';
+    title = 'Appliance Diagnostics';
+    icon = '❄️';
+  }
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+    <defs>
+      <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="${bg}" />
+        <stop offset="100%" stop-color="#020617" />
+      </linearGradient>
+      <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#bg)" />
+    <rect width="100%" height="100%" fill="url(#grid)" />
+    <circle cx="400" cy="160" r="64" fill="${accent}" fill-opacity="0.22" />
+    <text x="400" y="180" font-family="system-ui, -apple-system, sans-serif" font-size="52" text-anchor="middle">${icon}</text>
+    <text x="400" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="700" fill="#f8fafc" text-anchor="middle">${title}</text>
+    <text x="400" y="295" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="500" fill="#94a3b8" text-anchor="middle">CivicPulse Photographic Evidence Archive</text>
+  </svg>`;
+
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+
+function handleImgError(imgEl, category) {
+  if (!imgEl) return;
+  imgEl.onerror = null; // Prevent loop
+  imgEl.src = getFallbackSvg(category);
+}
+
+// Fullscreen Image Lightbox Inspector
+function openImageModal(imgUrl, title, category) {
+  const modal = document.getElementById('modal-image-lightbox');
+  const img = document.getElementById('lightbox-img');
+  const titleEl = document.getElementById('lightbox-title');
+  const subEl = document.getElementById('lightbox-subtitle');
+  if (!modal || !img) return;
+
+  img.src = imgUrl;
+  img.onerror = () => {
+    img.src = getFallbackSvg(category);
+  };
+  if (titleEl) titleEl.textContent = title || 'Forensic Evidence Inspection';
+  if (subEl) subEl.textContent = category ? `Department: ${category}` : 'High-Resolution Photographic Evidence';
+  modal.classList.remove('hidden');
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeImageModal() {
+  const modal = document.getElementById('modal-image-lightbox');
+  if (modal) modal.classList.add('hidden');
+}
+
+function copyTicket(postId) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(postId);
+  }
+  showToast(`Ticket #${postId.substring(0, 8)} ID copied!`);
+}
 
 // --- Toast Notification System ---
 function showToast(message, type = 'success') {
@@ -124,25 +224,108 @@ function switchTab(tab) {
   const servicesView = document.getElementById('view-services');
   const btnCivic = document.getElementById('tab-btn-civic');
   const btnServices = document.getElementById('tab-btn-services');
+  const mobBtnCivic = document.getElementById('mobile-tab-btn-civic');
+  const mobBtnServices = document.getElementById('mobile-tab-btn-services');
 
   if (tab === 'civic') {
     civicView.classList.remove('hidden');
     servicesView.classList.add('hidden');
 
-    btnCivic.className =
+    if (btnCivic) btnCivic.className =
       'flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/90 transition-all';
-    btnServices.className =
+    if (btnServices) btnServices.className =
       'flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all';
+
+    if (mobBtnCivic) mobBtnCivic.className = 'flex-1 py-2 text-center text-xs font-bold rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200';
+    if (mobBtnServices) mobBtnServices.className = 'flex-1 py-2 text-center text-xs font-bold rounded-xl bg-white text-slate-600 border border-slate-200';
   } else {
     civicView.classList.add('hidden');
     servicesView.classList.remove('hidden');
 
-    btnServices.className =
+    if (btnServices) btnServices.className =
       'flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/90 transition-all';
-    btnCivic.className =
+    if (btnCivic) btnCivic.className =
       'flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all';
+
+    if (mobBtnCivic) mobBtnCivic.className = 'flex-1 py-2 text-center text-xs font-bold rounded-xl bg-white text-slate-600 border border-slate-200';
+    if (mobBtnServices) mobBtnServices.className = 'flex-1 py-2 text-center text-xs font-bold rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200';
   }
   if (window.lucide) lucide.createIcons();
+}
+
+// --- Search & Category Filtering ---
+function setCivicCategory(cat, btnEl) {
+  state.civicCategory = cat;
+  document.querySelectorAll('.civic-filter-pill').forEach((b) => {
+    b.className = 'civic-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap';
+  });
+  if (btnEl) {
+    btnEl.className = 'civic-filter-pill active px-3 py-1.5 rounded-xl font-bold bg-indigo-600 text-white shadow-xs transition-all whitespace-nowrap';
+  }
+  applyCivicFilters();
+}
+
+function handleCivicFilter() {
+  const inp = document.getElementById('civic-search-input');
+  state.civicSearch = (inp ? inp.value : '').toLowerCase().trim();
+  applyCivicFilters();
+}
+
+function applyCivicFilters() {
+  let filtered = [...state.civicPosts];
+  if (state.civicCategory && state.civicCategory !== 'ALL') {
+    if (state.civicCategory === 'CENTRAL') {
+      filtered = filtered.filter((p) => p.is_local === 0 || p.is_local === false);
+    } else {
+      const q = state.civicCategory.toLowerCase();
+      filtered = filtered.filter((p) => (p.department || '').toLowerCase().includes(q));
+    }
+  }
+  if (state.civicSearch) {
+    filtered = filtered.filter(
+      (p) =>
+        (p.title || '').toLowerCase().includes(state.civicSearch) ||
+        (p.description || '').toLowerCase().includes(state.civicSearch) ||
+        (p.location_city || '').toLowerCase().includes(state.civicSearch) ||
+        (p.department || '').toLowerCase().includes(state.civicSearch)
+    );
+  }
+  renderCivicCards(filtered);
+}
+
+function setServiceCategory(cat, btnEl) {
+  state.serviceCategory = cat;
+  document.querySelectorAll('.service-filter-pill').forEach((b) => {
+    b.className = 'service-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all whitespace-nowrap';
+  });
+  if (btnEl) {
+    btnEl.className = 'service-filter-pill active px-3 py-1.5 rounded-xl font-bold bg-emerald-600 text-white shadow-xs transition-all whitespace-nowrap';
+  }
+  applyServiceFilters();
+}
+
+function handleServiceFilter() {
+  const inp = document.getElementById('service-search-input');
+  state.serviceSearch = (inp ? inp.value : '').toLowerCase().trim();
+  applyServiceFilters();
+}
+
+function applyServiceFilters() {
+  let filtered = [...state.serviceJobs];
+  if (state.serviceCategory && state.serviceCategory !== 'ALL') {
+    const q = state.serviceCategory.toLowerCase();
+    filtered = filtered.filter((j) => (j.category || '').toLowerCase().includes(q));
+  }
+  if (state.serviceSearch) {
+    filtered = filtered.filter(
+      (j) =>
+        (j.title || '').toLowerCase().includes(state.serviceSearch) ||
+        (j.description || '').toLowerCase().includes(state.serviceSearch) ||
+        (j.location_city || '').toLowerCase().includes(state.serviceSearch) ||
+        (j.category || '').toLowerCase().includes(state.serviceSearch)
+    );
+  }
+  renderServiceCards(filtered);
 }
 
 // --- 3. Civic Feed Management ---
@@ -151,7 +334,7 @@ async function loadCivicFeed() {
   try {
     const res = await fetch('/api/civic/posts');
     state.civicPosts = await res.json();
-    renderCivicCards(state.civicPosts);
+    applyCivicFilters();
   } catch (err) {
     grid.innerHTML = `
       <div class="col-span-full p-8 text-center bg-white rounded-2xl border border-slate-200/80 shadow-xs">
@@ -223,8 +406,11 @@ function renderCivicCards(posts) {
         <div class="w-12 h-12 mx-auto rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mb-3">
           <i data-lucide="check-circle" class="w-6 h-6"></i>
         </div>
-        <h3 class="text-sm font-bold text-slate-800">All clear in this jurisdiction</h3>
-        <p class="text-xs text-slate-500 mt-1">No pending civic grievances reported yet.</p>
+        <h3 class="text-sm font-bold text-slate-800">No matching civic grievances</h3>
+        <p class="text-xs text-slate-500 mt-1">Try clearing filters or search query.</p>
+        <button onclick="setCivicCategory('ALL'); if(document.getElementById('civic-search-input')) document.getElementById('civic-search-input').value=''; handleCivicFilter();" class="mt-3 px-3.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl transition-all">
+          Clear All Filters
+        </button>
       </div>
     `;
     if (window.lucide) lucide.createIcons();
@@ -232,7 +418,7 @@ function renderCivicCards(posts) {
   }
 
   grid.innerHTML = posts
-    .map((post) => {
+    .map((post, index) => {
       const isCentral = post.is_local === 0 || post.is_local === false;
       const portals = Array.isArray(post.external_portals) ? post.external_portals : [];
       const comments = post.comments || [];
@@ -246,12 +432,12 @@ function renderCivicCards(posts) {
             const url = typeof p === 'object' ? p.url : 'https://pgportal.gov.in';
             const reason = typeof p === 'object' && p.reason ? p.reason : 'Specialized statutory authority jurisdiction.';
             return `
-              <a href="${url}" target="_blank" rel="noopener noreferrer" class="group flex items-start gap-2.5 p-2.5 rounded-xl bg-white/90 hover:bg-white border border-rose-200/70 shadow-xs hover:shadow-md transition-all">
-                <div class="p-1 rounded-lg bg-rose-50 text-rose-600 group-hover:scale-105 transition-transform">
+              <a href="${url}" target="_blank" rel="noopener noreferrer" class="group/portal flex items-start gap-2.5 p-2.5 rounded-xl bg-white/95 hover:bg-white border border-rose-200/70 shadow-xs hover:shadow-md transition-all">
+                <div class="p-1.5 rounded-lg bg-rose-50 text-rose-600 group-hover/portal:scale-105 transition-transform flex-shrink-0">
                   <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
                 </div>
                 <div>
-                  <div class="text-[11px] font-bold text-slate-900 group-hover:text-rose-700 flex items-center gap-1">
+                  <div class="text-[11px] font-bold text-slate-900 group-hover/portal:text-rose-700 flex items-center gap-1">
                     <span>${escapeHtml(name)}</span>
                     <span class="text-slate-400 font-normal">↗</span>
                   </div>
@@ -292,15 +478,19 @@ function renderCivicCards(posts) {
         .join('');
 
       return `
-        <article class="group bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_32px_-6px_rgba(79,70,229,0.12)] hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between overflow-hidden">
+        <article class="animate-fade-up card-hover-lift group bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_32px_-6px_rgba(79,70,229,0.12)] flex flex-col justify-between overflow-hidden" style="animation-delay: ${index * 70}ms;">
           <div>
-            <!-- Image with Zoom Effect -->
+            <!-- Image with Zoom & Evidence Lightbox Trigger -->
             ${
               post.image_url
                 ? `
-              <div class="relative h-48 overflow-hidden bg-slate-100">
-                <img src="${post.image_url}" alt="${escapeHtml(post.title)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent"></div>
+              <div class="relative h-48 overflow-hidden bg-slate-100 cursor-pointer group/img" onclick="openImageModal('${post.image_url}', '${escapeHtml(post.title)}', '${escapeHtml(post.department)}')">
+                <img src="${post.image_url}" alt="${escapeHtml(post.title)}" onerror="handleImgError(this, '${escapeHtml(post.department)}')" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/65 via-transparent to-transparent"></div>
+                <div class="absolute top-2.5 right-2.5 px-2 py-1 rounded-lg bg-black/50 backdrop-blur-md text-white text-[10px] font-semibold opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center gap-1 shadow-sm">
+                  <i data-lucide="maximize-2" class="w-3 h-3"></i>
+                  <span>Inspect</span>
+                </div>
                 <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white text-[11px] font-semibold">
                   <span class="flex items-center gap-1 drop-shadow-sm"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-400"></i> ${escapeHtml(post.location_city)}</span>
                   <span class="px-2 py-0.5 rounded-full bg-black/40 backdrop-blur-md border border-white/20">${escapeHtml(post.status || 'Reported')}</span>
@@ -334,21 +524,26 @@ function renderCivicCards(posts) {
           <div class="px-5 pb-5 pt-3 border-t border-slate-100/90 bg-slate-50/40">
             <div class="flex items-center justify-between gap-2">
               <div class="flex items-center gap-2">
-                <button onclick="handleUpvote('${post.id}')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-50 border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-300 text-xs font-bold transition-all shadow-xs">
+                <button onclick="handleUpvote('${post.id}', this)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-50 border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-300 text-xs font-bold transition-all shadow-xs">
                   <i data-lucide="heart" class="w-3.5 h-3.5 text-rose-500"></i>
                   <span>Upvote</span>
                   <span id="upvotes-count-${post.id}" class="text-slate-900 font-extrabold ml-0.5">${post.upvotes || 0}</span>
                 </button>
-                <button onclick="handleFlagUrgent('${post.id}')" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white hover:bg-rose-50 border border-slate-200 text-slate-700 hover:text-rose-600 hover:border-rose-300 text-xs font-bold transition-all shadow-xs" title="Flag as critical civic emergency">
+                <button onclick="handleFlagUrgent('${post.id}', this)" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white hover:bg-rose-50 border border-slate-200 text-slate-700 hover:text-rose-600 hover:border-rose-300 text-xs font-bold transition-all shadow-xs" title="Flag as critical civic emergency">
                   <i data-lucide="flame" class="w-3.5 h-3.5 text-amber-500"></i>
                   <span id="urgent-count-${post.id}">${post.urgent_flags || 0}</span>
                 </button>
               </div>
 
-              <button onclick="toggleCommentsSection('${post.id}')" class="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-indigo-600 transition-colors">
-                <i data-lucide="message-square" class="w-3.5 h-3.5 text-indigo-500"></i>
-                <span>${comments.length}</span>
-              </button>
+              <div class="flex items-center gap-2">
+                <button onclick="copyTicket('${post.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors" title="Copy incident ticket ID">
+                  <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+                </button>
+                <button onclick="toggleCommentsSection('${post.id}')" class="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-indigo-600 transition-colors">
+                  <i data-lucide="message-square" class="w-3.5 h-3.5 text-indigo-500"></i>
+                  <span>${comments.length}</span>
+                </button>
+              </div>
             </div>
 
             <!-- Expandable Comments Drawer -->
@@ -379,7 +574,13 @@ function toggleCommentsSection(postId) {
   }
 }
 
-async function handleUpvote(postId) {
+async function handleUpvote(postId, btnEl) {
+  if (btnEl) {
+    btnEl.classList.remove('btn-scale-pop');
+    void btnEl.offsetWidth; // trigger reflow
+    btnEl.classList.add('btn-scale-pop');
+    setTimeout(() => btnEl.classList.remove('btn-scale-pop'), 400);
+  }
   try {
     const res = await fetch(`/api/civic/${postId}/upvote`, { method: 'POST' });
     if (res.ok) {
@@ -393,7 +594,13 @@ async function handleUpvote(postId) {
   }
 }
 
-async function handleFlagUrgent(postId) {
+async function handleFlagUrgent(postId, btnEl) {
+  if (btnEl) {
+    btnEl.classList.remove('btn-scale-pop');
+    void btnEl.offsetWidth; // trigger reflow
+    btnEl.classList.add('btn-scale-pop');
+    setTimeout(() => btnEl.classList.remove('btn-scale-pop'), 400);
+  }
   try {
     const res = await fetch(`/api/civic/${postId}/urgent`, { method: 'POST' });
     if (res.ok) {
@@ -437,7 +644,7 @@ async function loadServicesFeed() {
   try {
     const res = await fetch('/api/services/jobs');
     state.serviceJobs = await res.json();
-    renderServiceCards(state.serviceJobs);
+    applyServiceFilters();
   } catch (err) {
     grid.innerHTML = `
       <div class="col-span-full p-8 text-center bg-white rounded-2xl border border-slate-200/80 shadow-xs">
@@ -463,8 +670,11 @@ function renderServiceCards(jobs) {
         <div class="w-12 h-12 mx-auto rounded-full bg-violet-50 flex items-center justify-center text-violet-600 mb-3">
           <i data-lucide="wrench" class="w-6 h-6"></i>
         </div>
-        <h3 class="text-sm font-bold text-slate-800">No active household requests</h3>
-        <p class="text-xs text-slate-500 mt-1">Post a repair defect to receive competitive local bids.</p>
+        <h3 class="text-sm font-bold text-slate-800">No matching household repair requests</h3>
+        <p class="text-xs text-slate-500 mt-1">Try clearing filters or search query.</p>
+        <button onclick="setServiceCategory('ALL'); if(document.getElementById('service-search-input')) document.getElementById('service-search-input').value=''; handleServiceFilter();" class="mt-3 px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-xl transition-all">
+          Clear All Filters
+        </button>
       </div>
     `;
     if (window.lucide) lucide.createIcons();
@@ -472,7 +682,7 @@ function renderServiceCards(jobs) {
   }
 
   grid.innerHTML = jobs
-    .map((job) => {
+    .map((job, index) => {
       const bids = job.bids || [];
       const isConfirmed = job.status === 'Confirmed' || job.status === 'Assigned';
 
@@ -534,7 +744,7 @@ function renderServiceCards(jobs) {
         .join('');
 
       return `
-        <article class="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_32px_-6px_rgba(79,70,229,0.12)] transition-all p-6 flex flex-col justify-between">
+        <article id="job-card-${job.id}" class="animate-fade-up card-hover-lift bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_32px_-6px_rgba(79,70,229,0.12)] p-6 flex flex-col justify-between" style="animation-delay: ${index * 80}ms;">
           <div>
             <!-- Top Tags -->
             <div class="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
@@ -548,8 +758,12 @@ function renderServiceCards(jobs) {
             ${
               job.media_url
                 ? `
-              <div class="mt-4 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 max-h-44">
-                <img src="${job.media_url}" alt="${escapeHtml(job.title)}" class="w-full h-44 object-cover">
+              <div class="mt-4 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 h-44 relative cursor-pointer group/img" onclick="openImageModal('${job.media_url}', '${escapeHtml(job.title)}', '${escapeHtml(job.category)}')">
+                <img src="${job.media_url}" alt="${escapeHtml(job.title)}" onerror="handleImgError(this, '${escapeHtml(job.category)}')" class="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-500">
+                <div class="absolute top-2.5 right-2.5 px-2 py-1 rounded-lg bg-black/50 backdrop-blur-md text-white text-[10px] font-semibold opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center gap-1 shadow-sm">
+                  <i data-lucide="maximize-2" class="w-3 h-3"></i>
+                  <span>Inspect</span>
+                </div>
               </div>
             `
                 : ''
@@ -666,6 +880,13 @@ async function handleCounterSubmit(bidId) {
 async function handleAcceptDeal(jobId, bidId, price) {
   if (!confirm(`Finalize contract and lock rate at ${price}?`)) return;
 
+  const card = document.getElementById(`job-card-${jobId}`);
+  if (card) {
+    card.classList.remove('deal-confirmed-glow');
+    void card.offsetWidth; // Trigger DOM reflow
+    card.classList.add('deal-confirmed-glow');
+  }
+
   try {
     const res = await fetch(`/api/services/bids/${bidId}/accept`, {
       method: 'POST',
@@ -674,7 +895,7 @@ async function handleAcceptDeal(jobId, bidId, price) {
     });
     if (res.ok) {
       showToast(`Deal confirmed at ${price}! Contract locked.`);
-      loadServicesFeed();
+      setTimeout(() => loadServicesFeed(), 650);
     }
   } catch (err) {
     showToast('Failed to confirm deal.', 'error');
@@ -757,6 +978,11 @@ async function submitCivicForm(e) {
   const btn = document.getElementById('civic-submit-btn');
   const originalHtml = btn.innerHTML;
 
+  const scannerOverlay = document.getElementById('civic-scanner-overlay');
+  const statusStepper = document.getElementById('civic-status-stepper');
+  const stepText = document.getElementById('civic-step-text');
+  const progressBar = document.getElementById('civic-progress-bar');
+
   if (!fileInput.files[0]) {
     alert('Please attach an infrastructure photo for Gemma 4 inspection.');
     return;
@@ -772,12 +998,36 @@ async function submitCivicForm(e) {
   btn.disabled = true;
   btn.innerHTML = `<span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></span> Gemma 4 Auditing Hazard...`;
 
+  // Reveal laser scanner and status stepper
+  if (scannerOverlay) scannerOverlay.classList.remove('hidden');
+  if (statusStepper) statusStepper.classList.remove('hidden');
+
+  if (stepText && progressBar) {
+    stepText.textContent = 'Step 1: Ingesting image bytes...';
+    progressBar.style.width = '30%';
+  }
+
+  const t1 = setTimeout(() => {
+    if (stepText && progressBar) {
+      stepText.textContent = 'Step 2: Gemma 4 Multimodal evaluating infrastructure hazard...';
+      progressBar.style.width = '65%';
+    }
+  }, 700);
+
+  const t2 = setTimeout(() => {
+    if (stepText && progressBar) {
+      stepText.textContent = 'Step 3: Verifying municipal jurisdiction & severity...';
+      progressBar.style.width = '90%';
+    }
+  }, 1600);
+
   try {
     const res = await fetch('/api/civic/report', {
       method: 'POST',
       body: formData,
     });
     if (res.ok) {
+      if (progressBar) progressBar.style.width = '100%';
       closeModal('modal-civic');
       e.target.reset();
       document.getElementById('civic-preview-box').classList.add('hidden');
@@ -790,6 +1040,11 @@ async function submitCivicForm(e) {
   } catch (err) {
     showToast('Failed to connect to AI engine.', 'error');
   } finally {
+    clearTimeout(t1);
+    clearTimeout(t2);
+    if (scannerOverlay) scannerOverlay.classList.add('hidden');
+    if (statusStepper) statusStepper.classList.add('hidden');
+    if (progressBar) progressBar.style.width = '30%';
     btn.disabled = false;
     btn.innerHTML = originalHtml;
   }
@@ -804,6 +1059,11 @@ async function submitServiceForm(e) {
   const btn = document.getElementById('job-submit-btn');
   const originalHtml = btn.innerHTML;
 
+  const scannerOverlay = document.getElementById('job-scanner-overlay');
+  const statusStepper = document.getElementById('job-status-stepper');
+  const stepText = document.getElementById('job-step-text');
+  const progressBar = document.getElementById('job-progress-bar');
+
   if (!fileInput.files[0]) {
     alert('Please attach defect media for AI diagnosis.');
     return;
@@ -817,12 +1077,36 @@ async function submitServiceForm(e) {
   btn.disabled = true;
   btn.innerHTML = `<span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></span> Gemma AI Diagnosing Fault...`;
 
+  // Reveal laser scanner and status stepper
+  if (scannerOverlay) scannerOverlay.classList.remove('hidden');
+  if (statusStepper) statusStepper.classList.remove('hidden');
+
+  if (stepText && progressBar) {
+    stepText.textContent = 'Step 1: Ingesting defect media...';
+    progressBar.style.width = '30%';
+  }
+
+  const t1 = setTimeout(() => {
+    if (stepText && progressBar) {
+      stepText.textContent = 'Step 2: Gemma AI diagnosing household defect...';
+      progressBar.style.width = '65%';
+    }
+  }, 700);
+
+  const t2 = setTimeout(() => {
+    if (stepText && progressBar) {
+      stepText.textContent = 'Step 3: Calculating fair market repair brackets...';
+      progressBar.style.width = '90%';
+    }
+  }, 1600);
+
   try {
     const res = await fetch('/api/services/create', {
       method: 'POST',
       body: formData,
     });
     if (res.ok) {
+      if (progressBar) progressBar.style.width = '100%';
       closeModal('modal-service');
       e.target.reset();
       document.getElementById('job-preview-box').classList.add('hidden');
@@ -835,6 +1119,11 @@ async function submitServiceForm(e) {
   } catch (err) {
     showToast('Failed to connect to AI engine.', 'error');
   } finally {
+    clearTimeout(t1);
+    clearTimeout(t2);
+    if (scannerOverlay) scannerOverlay.classList.add('hidden');
+    if (statusStepper) statusStepper.classList.add('hidden');
+    if (progressBar) progressBar.style.width = '30%';
     btn.disabled = false;
     btn.innerHTML = originalHtml;
   }

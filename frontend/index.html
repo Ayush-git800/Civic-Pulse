@@ -8,12 +8,15 @@
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 
+  <!-- Custom CSS for GPU-accelerated micro-animations -->
+  <link rel="stylesheet" href="/static/css/style.css">
+
   <!-- Google Font: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-  <!-- Lucide Icons -->
+  <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <script>
@@ -57,20 +60,17 @@
       border-radius: 4px;
     }
     .frosted-glass {
-      background: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.88);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
     }
-    @keyframes pulse-slow {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.8; transform: scale(1.04); }
-    }
-    .animate-pulse-slow {
-      animation: pulse-slow 3s infinite ease-in-out;
-    }
   </style>
 </head>
-<body class="bg-gradient-to-br from-indigo-50/40 via-white to-purple-50/30 text-slate-800 antialiased min-h-screen flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+<body class="bg-gradient-to-br from-indigo-50/40 via-white to-purple-50/30 text-slate-800 antialiased min-h-screen flex flex-col font-sans selection:bg-indigo-500 selection:text-white relative overflow-x-hidden">
+
+  <!-- Ambient Background Floating Blurred Gradient Orbs -->
+  <div class="fixed top-12 left-10 w-96 h-96 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none ambient-orb-1 -z-10"></div>
+  <div class="fixed top-1/3 right-10 w-96 h-96 bg-purple-500/15 rounded-full blur-3xl pointer-events-none ambient-orb-2 -z-10"></div>
 
   <!-- Floating Toast Notifications Anchor -->
   <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full"></div>
@@ -93,13 +93,13 @@
           </div>
         </a>
 
-        <!-- Glowing Gemma 4 Live Badge -->
-        <div class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50/90 border border-indigo-200/80 text-indigo-700 text-xs font-semibold shadow-xs">
-          <span class="relative flex h-2 w-2">
+        <!-- Glowing Gemma 4 Live Radar Badge -->
+        <div class="hidden sm:inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50/90 border border-indigo-200/80 text-indigo-700 text-xs font-semibold shadow-xs">
+          <span class="relative flex h-2.5 w-2.5">
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-600"></span>
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-600"></span>
           </span>
-          <span>Gemma 4 Multimodal</span>
+          <span>Gemma 4 Multimodal Engine Live</span>
         </div>
       </div>
 
@@ -117,8 +117,11 @@
 
       <!-- Dynamic GPS Location Pill -->
       <div class="flex items-center gap-2.5">
-        <div class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/90 border border-slate-200/90 text-xs font-semibold text-slate-800 shadow-xs backdrop-blur-md">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 border border-slate-200/90 text-xs font-semibold text-slate-800 shadow-xs backdrop-blur-md">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
           <span id="location-pill-text">📍 Sector 62, Noida</span>
         </div>
       </div>
@@ -127,10 +130,10 @@
 
   <!-- Mobile Sub-Navigation -->
   <div class="md:hidden frosted-glass border-b border-slate-200 px-4 py-2 flex gap-2">
-    <button onclick="switchTab('civic')" class="flex-1 py-2 text-center text-xs font-bold rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200">
+    <button id="mobile-tab-btn-civic" onclick="switchTab('civic')" class="flex-1 py-2 text-center text-xs font-bold rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200">
       🌐 Civic Feed
     </button>
-    <button onclick="switchTab('services')" class="flex-1 py-2 text-center text-xs font-bold rounded-xl bg-white text-slate-600 border border-slate-200">
+    <button id="mobile-tab-btn-services" onclick="switchTab('services')" class="flex-1 py-2 text-center text-xs font-bold rounded-xl bg-white text-slate-600 border border-slate-200">
       ⚡ Home Repairs
     </button>
   </div>
@@ -141,27 +144,62 @@
     <!-- ==================== TAB 1: CIVIC INFRASTRUCTURE FEED ==================== -->
     <section id="view-civic" class="space-y-6">
       
-      <!-- Hero Action Bar -->
-      <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 text-white relative overflow-hidden shadow-xl border border-indigo-900/40">
-        <div class="absolute -right-10 -top-10 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+      <!-- Hero Action Bar with Shimmer Headline & Floating Glow -->
+      <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-900 text-white relative overflow-hidden shadow-xl border border-indigo-800/40">
+        <!-- Floating orbs inside hero container -->
+        <div class="absolute -right-8 -top-8 w-64 h-64 bg-indigo-500/25 rounded-full blur-3xl pointer-events-none ambient-orb-1"></div>
+        <div class="absolute -left-10 -bottom-10 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl pointer-events-none ambient-orb-2"></div>
+
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
-          <div class="max-w-xl">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-semibold mb-3">
-              <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Autonomous Municipal Audit Pipeline
+          <div class="max-w-2xl">
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-semibold mb-3">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+              <span>Autonomous Municipal Audit Pipeline</span>
             </span>
-            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
-              Community Infrastructure Hazards
+            <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+              <span class="shimmer-headline">CivicPulse: AI-Powered Community Action & Hyperlocal Repairs</span>
             </h1>
-            <p class="text-slate-300 text-xs sm:text-sm mt-2 leading-relaxed">
-              Every citizen photo is forensically audited via <strong>Gemma 4 Multimodal AI</strong> to classify statutory department, compute hazard severity, and auto-route to CPGRAMS, NHAI, or RailMadad if outside municipal bounds.
+            <p class="text-slate-300 text-xs sm:text-sm mt-3 leading-relaxed max-w-xl">
+              Citizen photos are forensically inspected by <strong>Gemma 4 Multimodal AI</strong> to assess physical hazard severity, determine departmental jurisdiction, and automatically attach central escalation portals (CPGRAMS, NHAI, RailMadad).
             </p>
           </div>
           <div>
-            <button onclick="openModal('modal-civic')" class="group relative px-6 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-600 text-white text-xs sm:text-sm font-bold shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-102 transition-all flex items-center gap-2 whitespace-nowrap">
+            <button onclick="openModal('modal-civic')" class="group relative px-6 py-4 rounded-2xl bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-600 text-white text-xs sm:text-sm font-bold shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-102 transition-all flex items-center gap-2 whitespace-nowrap">
               <i data-lucide="plus-circle" class="w-4 h-4 group-hover:rotate-90 transition-transform"></i>
-              <span>Report Infrastructure Issue</span>
+              <span>+ Report Infrastructure Issue</span>
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- Civic Search & Category Filter Controls -->
+      <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+        <!-- Search Box -->
+        <div class="relative flex-1 max-w-md">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+          <input id="civic-search-input" oninput="handleCivicFilter()" type="text" placeholder="Search by title, location or department..." class="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
+        </div>
+
+        <!-- Filter Pills Scroll Area -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 custom-scroll text-xs">
+          <button onclick="setCivicCategory('ALL', this)" class="civic-filter-pill active px-3 py-1.5 rounded-xl font-bold bg-indigo-600 text-white shadow-xs transition-all whitespace-nowrap">
+            All Incidents
+          </button>
+          <button onclick="setCivicCategory('Road', this)" class="civic-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
+            🛣️ Roads & Potholes
+          </button>
+          <button onclick="setCivicCategory('Waste', this)" class="civic-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
+            🗑️ Sanitation & Waste
+          </button>
+          <button onclick="setCivicCategory('Water', this)" class="civic-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
+            💧 Water & Sewage
+          </button>
+          <button onclick="setCivicCategory('Electric', this)" class="civic-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
+            ⚡ Electrical
+          </button>
+          <button onclick="setCivicCategory('CENTRAL', this)" class="civic-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition-all whitespace-nowrap">
+            🚨 Central Jurisdiction
+          </button>
         </div>
       </div>
 
@@ -177,27 +215,57 @@
     <!-- ==================== TAB 2: HOME UTILITY REPAIRS ==================== -->
     <section id="view-services" class="hidden space-y-6">
       
-      <!-- Hero Action Bar -->
+      <!-- Hero Action Bar with Shimmer Headline -->
       <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 text-white relative overflow-hidden shadow-xl border border-indigo-900/40">
-        <div class="absolute -right-10 -top-10 w-72 h-72 bg-violet-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -right-8 -top-8 w-64 h-64 bg-violet-500/25 rounded-full blur-3xl pointer-events-none ambient-orb-2"></div>
+
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
-          <div class="max-w-xl">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-500/20 border border-violet-400/30 text-violet-300 text-xs font-semibold mb-3">
-              <i data-lucide="shield" class="w-3.5 h-3.5"></i> Anti-Overcharging Negotiation Shield
+          <div class="max-w-2xl">
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/20 border border-violet-400/30 text-violet-300 text-xs font-semibold mb-3">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+              <span>Anti-Overcharging Negotiation Shield</span>
             </span>
-            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
-              Home Utility Repair Marketplace
+            <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+              <span class="shimmer-headline">Home Utility Repair Marketplace</span>
             </h1>
-            <p class="text-slate-300 text-xs sm:text-sm mt-2 leading-relaxed">
-              Upload photos of leaks or short circuits. <strong>Gemma AI</strong> diagnoses the mechanical failure, computes local Indian labor benchmarks, and hosts real-time micro-bidding with verified neighborhood technicians.
+            <p class="text-slate-300 text-xs sm:text-sm mt-3 leading-relaxed max-w-xl">
+              Upload defect media for instant AI failure diagnosis, local Indian labor price estimation, and transparent two-way bidding with verified neighborhood technicians.
             </p>
           </div>
           <div>
-            <button onclick="openModal('modal-service')" class="group px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs sm:text-sm font-bold shadow-lg shadow-emerald-600/30 hover:shadow-emerald-600/50 hover:scale-102 transition-all flex items-center gap-2 whitespace-nowrap">
+            <button onclick="openModal('modal-service')" class="group px-6 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs sm:text-sm font-bold shadow-lg shadow-emerald-600/30 hover:shadow-emerald-600/50 hover:scale-102 transition-all flex items-center gap-2 whitespace-nowrap">
               <i data-lucide="wrench" class="w-4 h-4 group-hover:rotate-45 transition-transform"></i>
-              <span>Request Home Repair</span>
+              <span>+ Request Home Repair</span>
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- Service Search & Trade Category Filter Controls -->
+      <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+        <!-- Search Box -->
+        <div class="relative flex-1 max-w-md">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+          <input id="service-search-input" oninput="handleServiceFilter()" type="text" placeholder="Search household repairs, plumbers, electricians..." class="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all">
+        </div>
+
+        <!-- Trade Filter Pills -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 custom-scroll text-xs">
+          <button onclick="setServiceCategory('ALL', this)" class="service-filter-pill active px-3 py-1.5 rounded-xl font-bold bg-emerald-600 text-white shadow-xs transition-all whitespace-nowrap">
+            All Repairs
+          </button>
+          <button onclick="setServiceCategory('Plumb', this)" class="service-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all whitespace-nowrap">
+            🔧 Plumber
+          </button>
+          <button onclick="setServiceCategory('Electr', this)" class="service-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all whitespace-nowrap">
+            ⚡ Electrician
+          </button>
+          <button onclick="setServiceCategory('Carpent', this)" class="service-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all whitespace-nowrap">
+            🪚 Carpenter
+          </button>
+          <button onclick="setServiceCategory('Appliance', this)" class="service-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all whitespace-nowrap">
+            ❄️ Appliance Repair
+          </button>
         </div>
       </div>
 
@@ -227,7 +295,7 @@
 
       <form onsubmit="submitCivicForm(event)" class="space-y-4 text-xs">
         
-        <!-- Drag & Drop Upload Zone -->
+        <!-- Drag & Drop Upload Zone with Laser Scanner -->
         <div>
           <label class="block font-bold text-slate-700 mb-1.5">Photographic Evidence</label>
           <div id="civic-dropzone" class="border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center hover:border-indigo-500 hover:bg-indigo-50/30 transition-all cursor-pointer relative bg-slate-50/60">
@@ -240,9 +308,14 @@
               <span class="text-[11px] text-slate-400 mt-0.5">Supports high-res JPG, PNG, WEBP</span>
             </div>
           </div>
-          <!-- Preview Box -->
-          <div id="civic-preview-box" class="hidden mt-3 rounded-2xl overflow-hidden border border-slate-200 relative max-h-44 bg-slate-100">
-            <img id="civic-preview-img" src="" alt="Preview" class="w-full h-44 object-cover">
+
+          <!-- Preview Box with Animated Laser Scanner Line -->
+          <div id="civic-preview-box" class="hidden mt-3 rounded-2xl overflow-hidden border border-slate-200 relative max-h-48 bg-slate-100">
+            <img id="civic-preview-img" src="" alt="Preview" class="w-full h-48 object-cover">
+            <!-- Animated Glowing Laser Scanner Overlay -->
+            <div id="civic-scanner-overlay" class="hidden scanner-overlay">
+              <div class="scanner-laser"></div>
+            </div>
           </div>
         </div>
 
@@ -254,6 +327,17 @@
         <div>
           <label class="block font-bold text-slate-700 mb-1.5">Hazard Description</label>
           <textarea required id="civic-desc-input" rows="3" placeholder="Describe the physical hazard, surrounding landmarks, duration of issue, or highway/railway context..." class="w-full border border-slate-300 rounded-xl p-3 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white leading-relaxed"></textarea>
+        </div>
+
+        <!-- Dynamic Status Stepper Box -->
+        <div id="civic-status-stepper" class="hidden p-3.5 rounded-2xl bg-indigo-50/80 border border-indigo-200/90 text-xs space-y-1.5">
+          <div class="flex items-center gap-2 text-indigo-900 font-bold">
+            <span class="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-indigo-700 border-t-transparent"></span>
+            <span id="civic-step-text">Step 1: Ingesting image bytes...</span>
+          </div>
+          <div class="w-full bg-indigo-200/70 h-1.5 rounded-full overflow-hidden">
+            <div id="civic-progress-bar" class="bg-indigo-600 h-1.5 rounded-full transition-all duration-500 w-1/3"></div>
+          </div>
         </div>
 
         <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
@@ -284,7 +368,7 @@
 
       <form onsubmit="submitServiceForm(event)" class="space-y-4 text-xs">
         
-        <!-- Drag & Drop Upload Zone -->
+        <!-- Drag & Drop Upload Zone with Laser Scanner -->
         <div>
           <label class="block font-bold text-slate-700 mb-1.5">Defect Photo / Media</label>
           <div id="job-dropzone" class="border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center hover:border-emerald-500 hover:bg-emerald-50/30 transition-all cursor-pointer relative bg-slate-50/60">
@@ -297,9 +381,14 @@
               <span class="text-[11px] text-slate-400 mt-0.5">Pipes, wiring, carpentry, or appliances</span>
             </div>
           </div>
-          <!-- Preview Box -->
-          <div id="job-preview-box" class="hidden mt-3 rounded-2xl overflow-hidden border border-slate-200 relative max-h-44 bg-slate-100">
-            <img id="job-preview-img" src="" alt="Preview" class="w-full h-44 object-cover">
+
+          <!-- Preview Box with Animated Laser Scanner Line -->
+          <div id="job-preview-box" class="hidden mt-3 rounded-2xl overflow-hidden border border-slate-200 relative max-h-48 bg-slate-100">
+            <img id="job-preview-img" src="" alt="Preview" class="w-full h-48 object-cover">
+            <!-- Animated Glowing Laser Scanner Overlay -->
+            <div id="job-scanner-overlay" class="hidden scanner-overlay">
+              <div class="scanner-laser"></div>
+            </div>
           </div>
         </div>
 
@@ -311,6 +400,17 @@
         <div>
           <label class="block font-bold text-slate-700 mb-1.5">Explain the Fault</label>
           <textarea required id="job-desc-input" rows="3" placeholder="Explain the defect (e.g. sink PVC trap cracked leaking dirty water, MCB breaker tripping with burnt odor)..." class="w-full border border-slate-300 rounded-xl p-3 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white leading-relaxed"></textarea>
+        </div>
+
+        <!-- Dynamic Status Stepper Box -->
+        <div id="job-status-stepper" class="hidden p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/90 text-xs space-y-1.5">
+          <div class="flex items-center gap-2 text-emerald-900 font-bold">
+            <span class="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-emerald-700 border-t-transparent"></span>
+            <span id="job-step-text">Step 1: Ingesting defect media...</span>
+          </div>
+          <div class="w-full bg-emerald-200/70 h-1.5 rounded-full overflow-hidden">
+            <div id="job-progress-bar" class="bg-emerald-600 h-1.5 rounded-full transition-all duration-500 w-1/3"></div>
+          </div>
         </div>
 
         <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
@@ -328,8 +428,8 @@
 
   <!-- ==================== FLOATING PULSEBOT AI DRAWER ==================== -->
   <div class="fixed bottom-6 right-6 z-40">
-    <!-- Popover Drawer -->
-    <div id="pulsebot-drawer" class="hidden mb-4 w-92 sm:w-96 bg-white/95 backdrop-blur-xl border border-indigo-200/80 rounded-3xl shadow-2xl flex flex-col overflow-hidden max-h-[34rem]">
+    <!-- Popover Drawer with smooth scale/fade motion -->
+    <div id="pulsebot-drawer" class="hidden pulsebot-drawer-motion mb-4 w-92 sm:w-96 bg-white/95 backdrop-blur-xl border border-indigo-200/80 rounded-3xl shadow-2xl flex flex-col overflow-hidden max-h-[34rem]">
       
       <!-- Drawer Header -->
       <div class="p-4 bg-gradient-to-r from-indigo-900 via-indigo-800 to-violet-900 text-white flex items-center justify-between">
@@ -379,14 +479,37 @@
       </form>
     </div>
 
-    <!-- Floating Action Button with Glowing Violet Pulse Ring -->
-    <button onclick="togglePulseBot()" class="group relative px-5 py-3 rounded-full bg-gradient-to-r from-indigo-600 via-indigo-700 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-xs font-extrabold shadow-xl shadow-indigo-600/30 flex items-center gap-2.5 transition-all hover:scale-105">
-      <span class="absolute -inset-1 rounded-full bg-violet-600 opacity-40 blur-sm group-hover:opacity-75 animate-pulse-slow"></span>
+    <!-- Floating Action Button with Glowing Breathing Ring -->
+    <button onclick="togglePulseBot()" class="pulsebot-floating-btn group relative px-5 py-3.5 rounded-full bg-gradient-to-r from-indigo-600 via-indigo-700 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-xs font-extrabold shadow-xl shadow-indigo-600/30 flex items-center gap-2.5 transition-all">
       <span class="relative flex items-center gap-2">
         <i data-lucide="message-square" class="w-4 h-4 text-indigo-200"></i>
         <span>💬 PulseBot</span>
       </span>
     </button>
+  </div>
+
+  <!-- ==================== MODAL: FULL-SCREEN IMAGE INSPECTOR ==================== -->
+  <div id="modal-image-lightbox" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4" onclick="closeImageModal()">
+    <div class="relative max-w-4xl w-full max-h-[90vh] bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-700/80 flex flex-col" onclick="event.stopPropagation()">
+      <!-- Lightbox Header -->
+      <div class="px-5 py-3.5 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between text-white">
+        <div class="flex items-center gap-2.5">
+          <span class="p-1.5 rounded-xl bg-indigo-500/20 text-indigo-300"><i data-lucide="scan" class="w-4 h-4"></i></span>
+          <div>
+            <h4 id="lightbox-title" class="text-xs sm:text-sm font-bold truncate max-w-md">Forensic Evidence Inspection</h4>
+            <span id="lightbox-subtitle" class="text-[10px] text-slate-400">High-Resolution Physical Artifact</span>
+          </div>
+        </div>
+        <button onclick="closeImageModal()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Lightbox Image Display -->
+      <div class="flex-1 overflow-auto p-4 flex items-center justify-center bg-slate-950/50">
+        <img id="lightbox-img" src="" alt="Evidence View" class="max-w-full max-h-[75vh] object-contain rounded-2xl shadow-xl">
+      </div>
+    </div>
   </div>
 
   <!-- Minimal Footer -->

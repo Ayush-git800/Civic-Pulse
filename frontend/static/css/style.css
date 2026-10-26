@@ -1,0 +1,261 @@
+/* ==========================================================================
+   CivicPulse - Modern High-Performance Micro-Animations & Polished Aesthetics
+   Strictly GPU-accelerated: transforms, opacity & CSS keyframes.
+   ========================================================================== */
+
+/* 1. Ambient Background Floating Blurred Gradient Orbs */
+@keyframes floatOrb1 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(40px, -30px, 0) scale(1.12);
+  }
+}
+
+@keyframes floatOrb2 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-35px, 25px, 0) scale(1.1);
+  }
+}
+
+.ambient-orb-1 {
+  animation: floatOrb1 14s infinite ease-in-out;
+  will-change: transform;
+}
+
+.ambient-orb-2 {
+  animation: floatOrb2 16s infinite ease-in-out;
+  will-change: transform;
+}
+
+/* 2. Shimmer & Sweep Dynamic Gradient Headline */
+@keyframes textShimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.shimmer-headline {
+  background: linear-gradient(
+    110deg,
+    #ffffff 0%,
+    #e0e7ff 25%,
+    #ffffff 45%,
+    #c7d2fe 70%,
+    #ffffff 100%
+  );
+  background-size: 240% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: textShimmer 7s linear infinite;
+  display: inline-block;
+}
+
+/* 3. Card Entrance & Staggered Motion */
+@keyframes fadeUp {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 24px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-fade-up {
+  opacity: 0;
+  animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+/* Hover elevation effect */
+.card-hover-lift {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.3s ease;
+  will-change: transform, box-shadow;
+}
+
+.card-hover-lift:hover {
+  transform: translate3d(0, -6px, 0);
+  box-shadow: 0 16px 36px -8px rgba(79, 70, 229, 0.16),
+              0 4px 12px -2px rgba(0, 0, 0, 0.04);
+}
+
+/* 4. Multimodal Inspection Laser Scanner Effect */
+@keyframes laserScan {
+  0% {
+    top: 0%;
+    opacity: 0.85;
+  }
+  50% {
+    top: 96%;
+    opacity: 1;
+  }
+  100% {
+    top: 0%;
+    opacity: 0.85;
+  }
+}
+
+.scanner-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: inherit;
+  background: linear-gradient(
+    180deg,
+    rgba(99, 102, 241, 0.08) 0%,
+    transparent 20%,
+    transparent 80%,
+    rgba(168, 85, 247, 0.08) 100%
+  );
+  z-index: 15;
+}
+
+.scanner-laser {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(99, 102, 241, 0.7) 15%,
+    #818cf8 50%,
+    #c084fc 85%,
+    transparent 100%
+  );
+  box-shadow: 0 0 12px 3px rgba(129, 140, 248, 0.8),
+              0 0 24px 6px rgba(192, 132, 252, 0.5);
+  animation: laserScan 2.4s ease-in-out infinite;
+  z-index: 20;
+  will-change: top;
+}
+
+/* 5. Tactile Bouncy Scale Pop for Upvote / Urgent */
+@keyframes buttonPop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.26);
+  }
+  75% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.btn-scale-pop {
+  animation: buttonPop 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 6. Success Emerald Glow Flash when Deal Accepted */
+@keyframes emeraldPulseFlash {
+  0% {
+    border-color: #10b981;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.8);
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.02);
+    box-shadow: 0 0 32px 6px rgba(16, 185, 129, 0.45);
+  }
+  100% {
+    border-color: #a7f3d0;
+    box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.05);
+    transform: scale(1);
+  }
+}
+
+.deal-confirmed-glow {
+  animation: emeraldPulseFlash 1.4s ease-out forwards;
+}
+
+/* 7. PulseBot Floating Launcher Breathing Ring */
+@keyframes pulsebotBreathing {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.55),
+                0 12px 28px -4px rgba(79, 70, 229, 0.4);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(124, 58, 237, 0),
+                0 18px 36px -4px rgba(124, 58, 237, 0.55);
+    transform: translate3d(0, -3px, 0) scale(1.04);
+  }
+}
+
+.pulsebot-floating-btn {
+  animation: pulsebotBreathing 3.2s infinite ease-in-out;
+  will-change: transform, box-shadow;
+}
+
+/* PulseBot Drawer Smooth Transition */
+.pulsebot-drawer-motion {
+  transform-origin: bottom right;
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.28s ease;
+}
+
+.pulsebot-drawer-motion.hidden {
+  display: none;
+  opacity: 0;
+  transform: scale(0.92) translate3d(16px, 16px, 0);
+}
+
+/* 8. Lightbox & Modal Polish */
+#modal-image-lightbox {
+  transition: opacity 0.25s ease-out;
+}
+
+#modal-image-lightbox.hidden {
+  display: none;
+  opacity: 0;
+}
+
+#modal-image-lightbox:not(.hidden) {
+  display: flex;
+  opacity: 1;
+}
+
+/* Custom Horizontal Scrollbar for Category Pills */
+.custom-scroll::-webkit-scrollbar {
+  height: 4px;
+  width: 4px;
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Group image hover inspect effect */
+.group\/img:hover img {
+  transform: scale(1.04);
+}
+
