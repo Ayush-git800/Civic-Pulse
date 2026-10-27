@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CivicPulse Pitch Deck — Team Version Controllers</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b0f19; color: #f8fafc; }
+    .slide { display: none; min-height: 100vh; }
+    .slide.active { display: flex; flex-direction: column; }
+    @media print {
+      body { background-color: #0f172a !important; color: #f8fafc !important; }
+      .slide { display: flex !important; min-height: 100vh !important; page-break-after: always; padding: 2rem !important; }
+      .no-print { display: none !important; }
+    }
+    .glass-card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(71, 85, 105, 0.5);
+    }
+  </style>
+</head>
+<body class="selection:bg-indigo-500 selection:text-white overflow-x-hidden">
+
+  <!-- Fixed Top Navigation & Controls (Hidden in Print) -->
+  <header class="no-print fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-3 bg-slate-900/80 backdrop-blur-md border-b border-slate-800">
+    <div class="flex items-center space-x-3">
+      <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+      <span class="font-bold text-lg bg-gradient-to-r from-indigo-400 via-purple-300 to-emerald-400 bg-clip-text text-transparent">CivicPulse</span>
+      <span class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Gemma Hackathon Deck</span>
+    </div>
+    
+    <div class="flex items-center space-x-4">
+      <span id="slideIndicator" class="text-sm font-semibold text-slate-400">Slide 1 / 5</span>
+      <div class="flex items-center space-x-1">
+        <button onclick="prevSlide()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition" title="Previous Slide (←)">
+          <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </button>
+        <button onclick="nextSlide()" class="p-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition shadow-lg shadow-indigo-600/30" title="Next Slide (→)">
+          <i data-lucide="chevron-right" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <button onclick="window.print()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 flex items-center gap-1.5 transition">
+        <i data-lucide="printer" class="w-3.5 h-3.5"></i> Export / Print PDF
+      </button>
+    </div>
+  </header>
+
+  <!-- SLIDE 1: Title & Team -->
+  <section class="slide active justify-center items-center p-8 pt-20 relative overflow-hidden" id="slide-1">
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="max-w-6xl w-full mx-auto z-10">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-500/40 text-indigo-300 text-xs font-bold tracking-wide uppercase mb-6 shadow-inner">
+        <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400"></i> Google Gemma Hackathon 2026 Submission
+      </div>
+
+      <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight text-white mb-4">
+        CivicPulse
+      </h1>
+      <p class="text-xl md:text-2xl font-medium bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent mb-4">
+        AI-Powered Civic Hazard Triage & Hyperlocal Home Utility Marketplace
+      </p>
+      <p class="text-slate-400 max-w-3xl text-base mb-10 leading-relaxed">
+        Eliminating public municipal infrastructure neglect and unfair home repair pricing through zero-shot visual auditing powered by Google's Gemma 4.
+      </p>
+
+      <!-- Team Section -->
+      <div class="border-t border-slate-800/80 pt-8">
+        <div class="flex items-center gap-2 mb-6">
+          <i data-lucide="users" class="w-5 h-5 text-emerald-400"></i>
+          <span class="text-xs uppercase tracking-widest font-bold text-emerald-400">Team: Version Controllers</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Member 1 -->
+          <div class="glass-card p-5 rounded-2xl border-t-2 border-t-indigo-500 hover:border-slate-600 transition">
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400 mb-3">AC</div>
+            <h4 class="font-bold text-white text-base">Ayush Chauhan</h4>
+            <div class="text-xs font-semibold text-indigo-400 mb-2">Full-Stack & AI Lead</div>
+            <p class="text-xs text-slate-400">Gemma 4 integration, FastAPI architecture, system orchestration.</p>
+          </div>
+
+          <!-- Member 2 -->
+          <div class="glass-card p-5 rounded-2xl border-t-2 border-t-violet-500 hover:border-slate-600 transition">
+            <div class="w-10 h-10 rounded-xl bg-violet-500/20 border border-violet-500/30 flex items-center justify-center font-bold text-violet-400 mb-3">RR</div>
+            <h4 class="font-bold text-white text-base">Rishav Ranjan</h4>
+            <div class="text-xs font-semibold text-violet-400 mb-2">Backend Systems</div>
+            <p class="text-xs text-slate-400">SQLite concurrency, fallback cascade engine, REST API contracts.</p>
+          </div>
+
+          <!-- Member 3 -->
+          <div class="glass-card p-5 rounded-2xl border-t-2 border-t-rose-500 hover:border-slate-600 transition">
+            <div class="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center font-bold text-rose-400 mb-3">RS</div>
+            <h4 class="font-bold text-white text-base">Radhika Sahay</h4>
+            <div class="text-xs font-semibold text-rose-400 mb-2">Frontend & UI/UX</div>
+            <p class="text-xs text-slate-400">Responsive design, laser inspection animations, accessible user flows.</p>
+          </div>
+
+          <!-- Member 4 -->
+          <div class="glass-card p-5 rounded-2xl border-t-2 border-t-amber-500 hover:border-slate-600 transition">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center font-bold text-amber-400 mb-3">HK</div>
+            <h4 class="font-bold text-white text-base">Hardik Kumar</h4>
+            <div class="text-xs font-semibold text-amber-400 mb-2">AI Data & Testing</div>
+            <p class="text-xs text-slate-400">Multimodal prompt tuning, edge testing, verification across Indian cities.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 2: The Dual Crisis & The Solution -->
+  <section class="slide justify-center items-center p-8 pt-20 relative overflow-hidden" id="slide-2">
+    <div class="max-w-6xl w-full mx-auto z-10">
+      <div class="mb-8">
+        <h2 class="text-3xl md:text-4xl font-extrabold text-white mb-2">The Dual Crisis & The CivicPulse Solution</h2>
+        <p class="text-slate-400 text-base">Solving municipal administrative bottlenecks and predatory home repair pricing with multimodal vision.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Problem -->
+        <div class="glass-card p-6 md:p-8 rounded-3xl border border-rose-500/20 relative">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="p-2.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-400">
+              <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-xl font-bold text-rose-400">The Problem</h3>
+          </div>
+
+          <ul class="space-y-4 text-sm text-slate-300">
+            <li class="flex items-start gap-3">
+              <span class="text-rose-500 font-bold">•</span>
+              <div>
+                <strong class="text-white">Bureaucratic Black Hole:</strong> Citizens see open electrical pits, broken roads, or sewage, but do not know which department is responsible (PWD, Municipal Corp, or Power Board).
+              </div>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-rose-500 font-bold">•</span>
+              <div>
+                <strong class="text-white">Jurisdictional Mismatch:</strong> Complaints filed in the wrong forum (e.g. National Highways or Railways filed with city council) get silently dropped after weeks.
+              </div>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-rose-500 font-bold">•</span>
+              <div>
+                <strong class="text-white">Repair Pricing Asymmetry:</strong> Homeowners have no objective way to estimate labor or replacement parts, leading to rampant price-gouging.
+              </div>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-rose-500 font-bold">•</span>
+              <div>
+                <strong class="text-white">Predatory Aggregator Fees:</strong> Existing gig apps charge up to 25% commissions from daily-wage technicians, inflating consumer repair bills.
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Solution -->
+        <div class="glass-card p-6 md:p-8 rounded-3xl border border-emerald-500/20 relative">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400">
+              <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-xl font-bold text-emerald-400">The CivicPulse Solution</h3>
+          </div>
+
+          <ul class="space-y-4 text-sm text-slate-300">
+            <li class="flex items-start gap-3">
+              <span class="text-emerald-400 font-bold">✔</span>
+              <div>
+                <strong class="text-white">Gemma 4 Multimodal Audit:</strong> Upload a single photo; Gemma 4 instantly determines severity, municipal department, and actionable remediation steps.
+              </div>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-emerald-400 font-bold">✔</span>
+              <div>
+                <strong class="text-white">Autonomous Escalation Router:</strong> Automatically identifies central vs local jurisdictions and generates 1-click links to CPGRAMS, NHAI, or RailMadad.
+              </div>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-emerald-400 font-bold">✔</span>
+              <div>
+                <strong class="text-white">AI Fair Market Price Brackets:</strong> Diagnoses broken appliances or leaks and computes realistic Indian market pricing for both parts and labor.
+              </div>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-emerald-400 font-bold">✔</span>
+              <div>
+                <strong class="text-white">Transparent Worker Bargaining:</strong> Technicians bid directly, residents counter-offer, and both lock fair deals with 0% platform commission.
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 3: How Gemma 4 Powers CivicPulse -->
+  <section class="slide justify-center items-center p-8 pt-20 relative overflow-hidden" id="slide-3">
+    <div class="max-w-6xl w-full mx-auto z-10">
+      <div class="mb-8">
+        <h2 class="text-3xl md:text-4xl font-extrabold text-white mb-2">How Gemma 4 Powers CivicPulse</h2>
+        <p class="text-slate-400 text-base">Harnessing Google's open multimodal foundation model for real-world impact across India.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Feature 1 -->
+        <div class="glass-card p-6 rounded-2xl border-t-2 border-t-indigo-500">
+          <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center mb-4">
+            <i data-lucide="eye" class="w-5 h-5"></i>
+          </div>
+          <h4 class="font-bold text-white text-base mb-2">Zero-Shot Visual Forensics</h4>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Ingests raw JPEG/PNG byte streams to quantify hazard depth, vehicular hazard level, and concrete degradation with forensic engineer precision.
+          </p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="glass-card p-6 rounded-2xl border-t-2 border-t-violet-500">
+          <div class="w-10 h-10 rounded-xl bg-violet-500/20 text-violet-400 flex items-center justify-center mb-4">
+            <i data-lucide="compass" class="w-5 h-5"></i>
+          </div>
+          <h4 class="font-bold text-white text-base mb-2">Jurisdiction Classifier</h4>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Differentiates municipal corporation duties from central statutory bodies (NHAI, Railway Board, CPGRAMS), preventing lost grievance tickets.
+          </p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="glass-card p-6 rounded-2xl border-t-2 border-t-emerald-500">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-4">
+            <i data-lucide="indian-rupee" class="w-5 h-5"></i>
+          </div>
+          <h4 class="font-bold text-white text-base mb-2">Fair Price Engine</h4>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Diagnoses broken hardware and calculates localized Indian market rates for plumber/electrician labor and replacement parts.
+          </p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="glass-card p-6 rounded-2xl border-t-2 border-t-amber-500">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-4">
+            <i data-lucide="scale" class="w-5 h-5"></i>
+          </div>
+          <h4 class="font-bold text-white text-base mb-2">Worker-Customer Bidding</h4>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Interactive bargaining engine where local technicians submit bids, homeowners counter-offer, and both lock rates without middleman fees.
+          </p>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="glass-card p-6 rounded-2xl border-t-2 border-t-pink-500">
+          <div class="w-10 h-10 rounded-xl bg-pink-500/20 text-pink-400 flex items-center justify-center mb-4">
+            <i data-lucide="bot" class="w-5 h-5"></i>
+          </div>
+          <h4 class="font-bold text-white text-base mb-2">PulseBot Public Copilot</h4>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Conversational assistant answering municipal RTI filing steps, helpline directories, legal rights, and project background in real-time.
+          </p>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="glass-card p-6 rounded-2xl border-t-2 border-t-sky-500">
+          <div class="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center mb-4">
+            <i data-lucide="shield-check" class="w-5 h-5"></i>
+          </div>
+          <h4 class="font-bold text-white text-base mb-2">Resilient Fallback Cascade</h4>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            High-availability engine: cascades automatically to Gemini 3.5/3.8 Flash upon quota or network spikes, delivering 99.9% uptime.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 4: Architecture & Engineering Rigor -->
+  <section class="slide justify-center items-center p-8 pt-20 relative overflow-hidden" id="slide-4">
+    <div class="max-w-6xl w-full mx-auto z-10">
+      <div class="mb-8">
+        <h2 class="text-3xl md:text-4xl font-extrabold text-white mb-2">System Architecture & Engineering Rigor</h2>
+        <p class="text-slate-400 text-base">Production-ready, zero-bloat stack engineered for resilience, speed, and mobile responsiveness.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Col 1 -->
+        <div class="glass-card p-6 rounded-2xl border-t-2 border-t-indigo-500">
+          <div class="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-1">Frontend Layer</div>
+          <div class="text-base font-bold text-white mb-3">Vanilla JS + Tailwind</div>
+          <ul class="text-xs text-slate-400 space-y-2.5">
+            <li>• Zero framework bloat (no bloated node_modules bundles)</li>
+            <li>• Instant DOM rendering & dynamic masonry cards</li>
+            <li>• Glowing laser scanner multimodal effect</li>
+            <li>• High-resolution evidence lightbox with inspect zoom</li>
+          </ul>
+        </div>
+
+        <!-- Col 2 -->
+        <div class="glass-card p-6 rounded-2xl border-t-2 border-t-violet-500">
+          <div class="text-xs font-bold uppercase tracking-wider text-violet-400 mb-1">Backend & APIs</div>
+          <div class="text-base font-bold text-white mb-3">FastAPI (Python 3.9+)</div>
+          <ul class="text-xs text-slate-400 space-y-2.5">
+            <li>• Asynchronous, high-throughput Uvicorn ASGI server</li>
+            <li>• Strict Pydantic v2 data validation contracts</li>
+            <li>• Multi-part streaming for image file uploads</li>
+            <li>• Automated healthchecks & JSON response sanitization</li>
+          </ul>
+        </div>
+
+        <!-- Col 3 -->
+        <div class="glass-card p-6 rounded-2xl border-t-2 border-t-emerald-500">
+          <div class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1">AI Orchestration</div>
+          <div class="text-base font-bold text-white mb-3">Gemma 4 (26B-A4B-IT)</div>
+          <ul class="text-xs text-slate-400 space-y-2.5">
+            <li>• Official Google GenAI SDK integration</li>
+            <li>• Direct image byte inspection via types.Part</li>
+            <li>• Fallback cascade to Gemini 3.5 & 3.8 Flash</li>
+            <li>• Fail-safe JSON extraction with regex repairs</li>
+          </ul>
+        </div>
+
+        <!-- Col 4 -->
+        <div class="glass-card p-6 rounded-2xl border-t-2 border-t-amber-500">
+          <div class="text-xs font-bold uppercase tracking-wider text-amber-400 mb-1">Data Persistence</div>
+          <div class="text-base font-bold text-white mb-3">SQLite 3 (WAL Mode)</div>
+          <ul class="text-xs text-slate-400 space-y-2.5">
+            <li>• Thread-safe connection pool with write mutexes</li>
+            <li>• Write-Ahead Logging (WAL) for concurrent read/write</li>
+            <li>• Full relational integrity (posts, comments, jobs, bids)</li>
+            <li>• Auto-seeding fixtures for instant zero-config demos</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 5: Roadmap & Future Development -->
+  <section class="slide justify-center items-center p-8 pt-20 relative overflow-hidden" id="slide-5">
+    <div class="max-w-6xl w-full mx-auto z-10">
+      <div class="mb-8">
+        <h2 class="text-3xl md:text-4xl font-extrabold text-white mb-2">Roadmap: Scaling CivicPulse Beyond Hackathons</h2>
+        <p class="text-slate-400 text-base">Key upcoming features planned for smart city deployments across India.</p>
+      </div>
+
+      <div class="space-y-3.5">
+        <!-- Item 1 -->
+        <div class="glass-card p-4 rounded-xl border-l-4 border-l-indigo-500 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400">PHASE 1</span>
+              <h4 class="text-base font-bold text-white">Direct Municipal ULB & Smart Cities Integration</h4>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Direct API pipes into Urban Local Bodies (ULBs) for automated municipal ticketing without manual clerk intervention.</p>
+          </div>
+          <span class="text-xs text-indigo-400 font-semibold whitespace-nowrap">Q2 2026</span>
+        </div>
+
+        <!-- Item 2 -->
+        <div class="glass-card p-4 rounded-xl border-l-4 border-l-violet-500 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold px-2 py-0.5 rounded bg-violet-500/20 text-violet-400">PHASE 2</span>
+              <h4 class="text-base font-bold text-white">Offline On-Device Edge Gemma via MediaPipe</h4>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Run quantized 2B Gemma models directly on citizen smartphones for offline visual hazard classification in low-connectivity rural zones.</p>
+          </div>
+          <span class="text-xs text-violet-400 font-semibold whitespace-nowrap">Q3 2026</span>
+        </div>
+
+        <!-- Item 3 -->
+        <div class="glass-card p-4 rounded-xl border-l-4 border-l-emerald-500 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400">PHASE 3</span>
+              <h4 class="text-base font-bold text-white">Voice-First Indian Vernacular Grievance Filing</h4>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Integrate Bhashini open-source speech models to let daily-wage workers and non-literate citizens report hazards in 12+ Indian languages.</p>
+          </div>
+          <span class="text-xs text-emerald-400 font-semibold whitespace-nowrap">Q4 2026</span>
+        </div>
+
+        <!-- Item 4 -->
+        <div class="glass-card p-4 rounded-xl border-l-4 border-l-amber-500 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-400">PHASE 4</span>
+              <h4 class="text-base font-bold text-white">Milestone-Based UPI Escrow Payments</h4>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Homeowners lock funds in UPI escrow; funds automatically unlock only when Gemma 4 verifies the post-repair completion photo.</p>
+          </div>
+          <span class="text-xs text-amber-400 font-semibold whitespace-nowrap">Q1 2027</span>
+        </div>
+
+        <!-- Item 5 -->
+        <div class="glass-card p-4 rounded-xl border-l-4 border-l-rose-500 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-400">PHASE 5</span>
+              <h4 class="text-base font-bold text-white">Predictive Civic Deterioration Forecasting</h4>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Time-series satellite and drone photography to forecast pothole proliferation and pipeline bursts before road collapses occur.</p>
+          </div>
+          <span class="text-xs text-rose-400 font-semibold whitespace-nowrap">Q2 2027</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- JS Slide Logic -->
+  <script>
+    let currentSlide = 1;
+    const totalSlides = 5;
+
+    function showSlide(index) {
+      if (index < 1) index = 1;
+      if (index > totalSlides) index = totalSlides;
+      currentSlide = index;
+
+      for (let i = 1; i <= totalSlides; i++) {
+        const slide = document.getElementById(`slide-${i}`);
+        if (slide) {
+          if (i === currentSlide) {
+            slide.classList.add('active');
+          } else {
+            slide.classList.remove('active');
+          }
+        }
+      }
+
+      document.getElementById('slideIndicator').innerText = `Slide ${currentSlide} / ${totalSlides}`;
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides) {
+        showSlide(currentSlide + 1);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 1) {
+        showSlide(currentSlide - 1);
+      }
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        prevSlide();
+      }
+    });
+
+    // Initialize icons
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
