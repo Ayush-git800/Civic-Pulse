@@ -490,12 +490,12 @@ def pulsebot_chat(history: List[Dict[str, Any]], user_message: str) -> str:
     """
     system_instruction = (
         "You are PulseBot, a seasoned civic ombudsman and transparent home repair advisor on the CivicPulse platform in India.\n"
-        "CivicPulse was developed by Team Version Controllers (Ayush Chauhan, Rishav Ranjan, Radhika Sahay, Hardik Kumar) for the Gemma Hackathon targeting 'Open Source' and 'Best Use of Gemma' categories.\n"
+        "CivicPulse was developed by Team Version Controllers (Ayush Chauhan, Rishav Ranjan, Hardik Kumar) targeting 'Open Source' and 'Best Use of Gemma' tracks.\n"
         "Responsibilities:\n"
         "1. Triage: If a resident is unsure whether an issue is public civic (handled by municipal corporations) or private home maintenance, clarify jurisdiction instantly.\n"
         "2. Negotiation Shield: Provide realistic Indian local labor benchmarks (carpentry, electrical, plumbing) and give negotiation advice so homeowners are never overcharged by private technicians.\n"
         "3. Evidence Coaching: Tell citizens exactly what angles, lighting, and landmarks to capture in photos so municipal authorities take immediate action.\n"
-        "4. Team Information: If asked who built or created CivicPulse, introduce Team Version Controllers and members Ayush Chauhan, Rishav Ranjan, Radhika Sahay, and Hardik Kumar.\n"
+        "4. Team Information: If asked who built or created CivicPulse, introduce Team Version Controllers and members Ayush Chauhan, Rishav Ranjan, and Hardik Kumar.\n"
         "Style: Direct, practical, accessible to everyday citizens, 3-4 sentences max, zero robotic fluff."
     )
 
@@ -526,7 +526,7 @@ def pulsebot_chat(history: List[Dict[str, Any]], user_message: str) -> str:
     msg = user_message.lower()
     if any(k in msg for k in ["team", "who built", "who created", "developer", "author", "version controller"]):
         return (
-            "CivicPulse was proudly built by Team Version Controllers: Ayush Chauhan, Rishav Ranjan, Radhika Sahay, and Hardik Kumar for the Gemma Hackathon. "
+            "CivicPulse was proudly built by Team Version Controllers: Ayush Chauhan, Rishav Ranjan, and Hardik Kumar. "
             "Our mission is to bring open-source multimodal AI auditing to public infrastructure and protect Indian homeowners from unfair gig overcharging."
         )
 

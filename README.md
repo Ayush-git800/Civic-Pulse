@@ -28,16 +28,15 @@
 
 ## 👥 Built by Team **Version Controllers**
 
-Submitted for the **Gemma Hackathon** targeting:
+Submitted for **Hacktoberfest Hackathon 2026**:
 - 🏆 **Open Source Category**
 - 🌟 **Best Use of Gemma Category**
 
-| Member | Core Role | Contributions |
-| :--- | :--- | :--- |
-| **Ayush Chauhan** | **Full-Stack & AI Lead** | System architecture, Gemma 4 multimodal pipeline, negotiation engine |
-| **Rishav Ranjan** | **Backend Systems** | SQLite WAL concurrency, FastAPI endpoints, Pydantic v2 schemas |
-| **Radhika Sahay** | **Frontend & UI/UX** | Design system, GPU micro-animations, laser scanner, responsive UI |
-| **Hardik Kumar** | **AI Data & Testing** | Jurisdiction routing heuristics, realistic demo data, test validation |
+| Team Member |
+| :--- |
+| **Ayush Chauhan** |
+| **Rishav Ranjan** |
+| **Hardik Kumar** |
 
 ---
 

@@ -50,14 +50,14 @@ def create_deck():
     set_slide_background(s1)
 
     # Hackathon Badge Pill
-    badge = s1.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(1.0), Inches(0.8), Inches(4.8), Inches(0.5))
+    badge = s1.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(1.0), Inches(0.8), Inches(5.2), Inches(0.5))
     badge.fill.solid()
     badge.fill.fore_color.rgb = RGBColor(49, 46, 129)
     badge.line.color.rgb = INDIGO
     tf = badge.text_frame
     tf.word_wrap = True
     p = tf.paragraphs[0]
-    p.text = "⚡ GOOGLE GEMMA HACKATHON 2026"
+    p.text = "⚡ Hacktoberfect Hackathon 2026"
     p.font.size = Pt(13)
     p.font.bold = True
     p.font.color.rgb = RGBColor(199, 210, 254)
@@ -93,46 +93,39 @@ def create_deck():
     p.font.bold = True
     p.font.color.rgb = EMERALD
 
-    # Team Member Cards (4 columns)
+    # Team Member Cards (3 columns, no individual roles)
     members = [
-        ("Ayush Chauhan", "Full-Stack & AI Lead", "Gemma 4 pipeline, FastAPI backend, system orchestration", INDIGO),
-        ("Rishav Ranjan", "Backend & Database", "SQLite schema design, fallback cascades, REST APIs", VIOLET),
-        ("Radhika Sahay", "Frontend & UI/UX", "Responsive design, micro-animations, citizen UX", ROSE),
-        ("Hardik Kumar", "AI Data & QA", "Multimodal prompt engineering, edge testing, validation", AMBER),
+        ("Ayush Chauhan", INDIGO),
+        ("Rishav Ranjan", VIOLET),
+        ("Hardik Kumar", EMERALD),
     ]
 
-    card_w = 2.6
-    gap = 0.31
-    for i, (name, role, desc, accent) in enumerate(members):
+    card_w = 3.5
+    gap = 0.4
+    for i, (name, accent) in enumerate(members):
         c_left = 1.0 + i * (card_w + gap)
-        add_card(s1, c_left, 4.1, card_w, 2.5)
+        add_card(s1, c_left, 4.2, card_w, 2.2)
 
         # Accent top bar
-        bar = s1.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(c_left), Inches(4.1), Inches(card_w), Inches(0.1))
+        bar = s1.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(c_left), Inches(4.2), Inches(card_w), Inches(0.12))
         bar.fill.solid()
         bar.fill.fore_color.rgb = accent
         bar.line.color.rgb = accent
 
-        tb = s1.shapes.add_textbox(Inches(c_left + 0.15), Inches(4.3), Inches(card_w - 0.3), Inches(2.2))
+        tb = s1.shapes.add_textbox(Inches(c_left + 0.2), Inches(4.7), Inches(card_w - 0.4), Inches(1.4))
         tf = tb.text_frame
         tf.word_wrap = True
 
         p = tf.paragraphs[0]
         p.text = name
-        p.font.size = Pt(17)
+        p.font.size = Pt(22)
         p.font.bold = True
         p.font.color.rgb = TEXT_LIGHT
 
-        p_r = tf.add_paragraph()
-        p_r.text = role
-        p_r.font.size = Pt(12)
-        p_r.font.bold = True
-        p_r.font.color.rgb = accent
-
-        p_d = tf.add_paragraph()
-        p_d.text = desc
-        p_d.font.size = Pt(11)
-        p_d.font.color.rgb = TEXT_MUTED
+        p_t = tf.add_paragraph()
+        p_t.text = "Team Version Controllers"
+        p_t.font.size = Pt(13)
+        p_t.font.color.rgb = accent
 
     # ==========================================
     # SLIDE 2: Problem & Dual Solution
