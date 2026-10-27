@@ -8,7 +8,19 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 # Path to database file
-DB_PATH = Path(__file__).resolve().parent.parent / "civicpulse.db"
+import os
+import shutil
+
+if os.getenv("VERCEL"):
+    DB_PATH = Path("/tmp/civicpulse.db")
+    SRC_DB = Path(__file__).resolve().parent.parent / "civicpulse.db"
+    if SRC_DB.exists() and not DB_PATH.exists():
+        try:
+            shutil.copy2(SRC_DB, DB_PATH)
+        except Exception:
+            pass
+else:
+    DB_PATH = Path(__file__).resolve().parent.parent / "civicpulse.db"
 
 # Thread-safe database lock for SQLite writes
 db_lock = threading.Lock()

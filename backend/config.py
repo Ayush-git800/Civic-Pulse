@@ -16,5 +16,8 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 # Upload directory configuration
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
-upload_path = BASE_DIR / UPLOAD_DIR
+if os.getenv("VERCEL"):
+    upload_path = Path("/tmp") / UPLOAD_DIR
+else:
+    upload_path = BASE_DIR / UPLOAD_DIR
 upload_path.mkdir(parents=True, exist_ok=True)
