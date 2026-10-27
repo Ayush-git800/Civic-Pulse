@@ -34,9 +34,9 @@ Submitted for **Hacktoberfest Hackathon 2026**:
 
 | Team Member |
 | :--- |
-| **Ayush Chauhan** |
-| **Rishav Ranjan** |
-| **Hardik Kumar** |
+| **Ayush Chauhan** | Team Leader |
+| **Rishav Ranjan** | Member 1 |
+| **Hardik Kumar** | Member 2 |
 
 ---
 
