@@ -93,16 +93,16 @@ def create_deck():
     p.font.bold = True
     p.font.color.rgb = EMERALD
 
-    # Team Member Cards (3 columns, no individual roles)
+    # Team Member Cards (3 columns, with roles matching README)
     members = [
-        ("Ayush Chauhan", INDIGO),
-        ("Rishav Ranjan", VIOLET),
-        ("Hardik Kumar", EMERALD),
+        ("Ayush Chauhan", "Team Leader", INDIGO),
+        ("Rishav Ranjan", "Member 1", VIOLET),
+        ("Hardik Kumar", "Member 2", EMERALD),
     ]
 
     card_w = 3.5
     gap = 0.4
-    for i, (name, accent) in enumerate(members):
+    for i, (name, role, accent) in enumerate(members):
         c_left = 1.0 + i * (card_w + gap)
         add_card(s1, c_left, 4.2, card_w, 2.2)
 
@@ -112,7 +112,7 @@ def create_deck():
         bar.fill.fore_color.rgb = accent
         bar.line.color.rgb = accent
 
-        tb = s1.shapes.add_textbox(Inches(c_left + 0.2), Inches(4.7), Inches(card_w - 0.4), Inches(1.4))
+        tb = s1.shapes.add_textbox(Inches(c_left + 0.2), Inches(4.5), Inches(card_w - 0.4), Inches(1.7))
         tf = tb.text_frame
         tf.word_wrap = True
 
@@ -122,10 +122,16 @@ def create_deck():
         p.font.bold = True
         p.font.color.rgb = TEXT_LIGHT
 
+        p_r = tf.add_paragraph()
+        p_r.text = role
+        p_r.font.size = Pt(14)
+        p_r.font.bold = True
+        p_r.font.color.rgb = accent
+
         p_t = tf.add_paragraph()
         p_t.text = "Team Version Controllers"
-        p_t.font.size = Pt(13)
-        p_t.font.color.rgb = accent
+        p_t.font.size = Pt(11)
+        p_t.font.color.rgb = TEXT_MUTED
 
     # ==========================================
     # SLIDE 2: Problem & Dual Solution
