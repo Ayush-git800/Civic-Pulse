@@ -32,7 +32,7 @@ Submitted for **Hacktoberfest Hackathon 2026**:
 - 🏆 **Open Source Category**
 - 🌟 **Best Use of Gemma Category**
 
-| Team Member |
+| Team Member | Roles |
 | :--- |
 | **Ayush Chauhan** | Team Leader |
 | **Rishav Ranjan** | Member 1 |
