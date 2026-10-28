@@ -1247,8 +1247,9 @@ async function openLetterModal(postId) {
   const modal = document.getElementById('modal-letter');
   const subtitleEl = document.getElementById('letter-modal-subtitle');
 
-  // Find post in memory
-  const post = allCivicPosts.find((p) => String(p.id) === String(postId));
+  // Find post safely in state.civicPosts
+  const posts = (typeof state !== 'undefined' && state.civicPosts) ? state.civicPosts : [];
+  const post = posts.find((p) => String(p.id) === String(postId));
   if (post && subtitleEl) {
     subtitleEl.textContent = `Hazard: "${post.title}" • Jurisdiction: ${post.department} (${post.location_city})`;
   } else if (subtitleEl) {
@@ -1392,3 +1393,12 @@ async function copyLetterText() {
 function printLetterDoc() {
   window.print();
 }
+
+// Global window exposure for inline HTML event handlers
+window.openLetterModal = openLetterModal;
+window.closeLetterModal = closeLetterModal;
+window.closeLetterModalOnBackdrop = closeLetterModalOnBackdrop;
+window.switchLetterType = switchLetterType;
+window.copyLetterText = copyLetterText;
+window.printLetterDoc = printLetterDoc;
+
