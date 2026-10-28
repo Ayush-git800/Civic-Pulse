@@ -333,6 +333,86 @@
 .audiowave-bar:nth-child(5) { animation-delay: 0.65s; }
 .audiowave-bar:nth-child(6) { animation-delay: 0.25s; }
 
+/* 13. Consumer-Grade Radiant Mesh & Card Architecture (Airbnb / Linear Aesthetic) */
+.radiant-mesh {
+  background-color: #fafbfc;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.07) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.06) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(244, 63, 94, 0.04) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(14, 165, 233, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.04) 0px, transparent 50%);
+}
+
+/* Glassmorphism Surface with Ultra-Subtle Ring */
+.glass-surface {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+}
+
+.glass-surface-dark {
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Consumer Card Architecture */
+.consumer-card {
+  border-radius: 1.5rem;
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.28s ease;
+}
+
+.consumer-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 32px -8px rgba(79, 70, 229, 0.09),
+              0 8px 16px -4px rgba(15, 23, 42, 0.04);
+  border-color: rgba(199, 210, 254, 0.9);
+}
+
+/* Tactile Pill Buttons */
+.btn-tactile {
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.18s ease;
+}
+.btn-tactile:hover {
+  transform: translateY(-1px);
+}
+.btn-tactile:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+/* Floating Action Dock Item */
+.action-dock-item {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.action-dock-item:hover {
+  transform: translateY(-3px) scale(1.015);
+  box-shadow: 0 16px 30px -6px rgba(79, 70, 229, 0.15);
+}
+
+/* Pulse Glow Keyframes */
+@keyframes ringBreathing {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(99, 102, 241, 0);
+  }
+}
+.pulse-glow-ring {
+  animation: ringBreathing 2.4s infinite ease-in-out;
+}
+
+
 
 
 
