@@ -174,13 +174,9 @@ function showToast(message, type = 'success') {
 
 // --- 1. Dynamic Geolocation Detection ---
 function initGeolocation() {
-  const locBadge = document.getElementById('userLocationPill');
-  const legacyBadge = document.getElementById('location-pill-text');
-  if (locBadge) locBadge.textContent = 'Detecting Location...';
-
+  const locBadge = document.getElementById('location-pill-text');
   if (!navigator.geolocation) {
-    if (locBadge) locBadge.textContent = state.location.replace('📍 ', '');
-    if (legacyBadge) legacyBadge.textContent = state.location;
+    if (locBadge) locBadge.textContent = state.location;
     return;
   }
 
@@ -208,16 +204,12 @@ function initGeolocation() {
       } catch (e) {
         state.location = '📍 Sector 62, Noida';
       }
-      const cleanLoc = state.location.replace('📍 ', '');
-      if (locBadge) locBadge.textContent = cleanLoc;
-      if (legacyBadge) legacyBadge.textContent = state.location;
+      if (locBadge) locBadge.textContent = state.location;
       syncLocationInputs();
     },
     () => {
       state.location = '📍 Sector 62, Noida';
-      const cleanLoc = state.location.replace('📍 ', '');
-      if (locBadge) locBadge.textContent = cleanLoc;
-      if (legacyBadge) legacyBadge.textContent = state.location;
+      if (locBadge) locBadge.textContent = state.location;
       syncLocationInputs();
     },
     { timeout: 7000 }
@@ -485,32 +477,29 @@ function renderCivicCards(posts) {
         .join('');
 
       return `
-        <article class="consumer-card animate-fade-up group flex flex-col justify-between overflow-hidden" style="animation-delay: ${index * 60}ms;">
+        <article class="animate-fade-up card-hover-lift group bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_32px_-6px_rgba(79,70,229,0.12)] flex flex-col justify-between overflow-hidden" style="animation-delay: ${index * 70}ms;">
           <div>
             <!-- Image with Zoom & Evidence Lightbox Trigger -->
             ${
               post.image_url
                 ? `
-              <div class="relative h-52 overflow-hidden bg-slate-100 cursor-pointer group/img" onclick="openImageModal('${post.image_url}', '${escapeHtml(post.title)}', '${escapeHtml(post.department)}')">
+              <div class="relative h-48 overflow-hidden bg-slate-100 cursor-pointer group/img" onclick="openImageModal('${post.image_url}', '${escapeHtml(post.title)}', '${escapeHtml(post.department)}')">
                 <img src="${post.image_url}" alt="${escapeHtml(post.title)}" onerror="handleImgError(this, '${escapeHtml(post.department)}')" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/20 to-transparent"></div>
-                <div class="absolute top-3 right-3 px-2.5 py-1 rounded-xl bg-black/60 backdrop-blur-md text-white text-[11px] font-semibold opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center gap-1.5 shadow-sm">
-                  <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/65 via-transparent to-transparent"></div>
+                <div class="absolute top-2.5 right-2.5 px-2 py-1 rounded-lg bg-black/50 backdrop-blur-md text-white text-[10px] font-semibold opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center gap-1 shadow-sm">
+                  <i data-lucide="maximize-2" class="w-3 h-3"></i>
                   <span>Inspect</span>
                 </div>
                 <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white text-[11px] font-semibold">
-                  <span class="flex items-center gap-1.5 drop-shadow-md bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-400"></i> ${escapeHtml(post.location_city)}</span>
-                  <span class="px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/20 flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full ${post.status === 'Resolved' ? 'bg-emerald-400' : 'bg-amber-400'}"></span>
-                    <span>${escapeHtml(post.status || 'Reported')}</span>
-                  </span>
+                  <span class="flex items-center gap-1 drop-shadow-sm"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-400"></i> ${escapeHtml(post.location_city)}</span>
+                  <span class="px-2 py-0.5 rounded-full bg-black/40 backdrop-blur-md border border-white/20">${escapeHtml(post.status || 'Reported')}</span>
                 </div>
               </div>
             `
                 : ''
             }
 
-            <div class="p-5 sm:p-6">
+            <div class="p-5">
               <!-- Department & Severity Row -->
               <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                 ${getDepartmentPill(post.department)}
@@ -518,10 +507,10 @@ function renderCivicCards(posts) {
               </div>
 
               <!-- Title & AI Summary -->
-              <h3 class="font-extrabold text-slate-900 text-base sm:text-lg leading-snug group-hover:text-indigo-600 transition-colors">
+              <h3 class="font-bold text-slate-900 text-base leading-snug group-hover:text-indigo-600 transition-colors">
                 ${escapeHtml(post.title)}
               </h3>
-              <p class="text-xs sm:text-sm text-slate-600 mt-2.5 leading-relaxed line-clamp-3">
+              <p class="text-xs text-slate-600 mt-2 leading-relaxed line-clamp-3">
                 ${escapeHtml(post.description)}
               </p>
 
@@ -531,30 +520,30 @@ function renderCivicCards(posts) {
           </div>
 
           <!-- Card Engagement Footer -->
-          <div class="px-5 sm:px-6 pb-5 pt-3.5 border-t border-slate-100/90 bg-slate-50/50">
+          <div class="px-5 pb-5 pt-3 border-t border-slate-100/90 bg-slate-50/40">
             <div class="flex items-center justify-between gap-2">
               <div class="flex flex-wrap items-center gap-2">
-                <button onclick="handleUpvote('${post.id}', this)" class="btn-tactile flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-rose-50 border border-slate-200/90 text-slate-700 hover:text-rose-600 hover:border-rose-300 text-xs font-bold transition-all shadow-xs">
+                <button onclick="handleUpvote('${post.id}', this)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-50 border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-300 text-xs font-bold transition-all shadow-xs">
                   <i data-lucide="heart" class="w-3.5 h-3.5 text-rose-500"></i>
                   <span>Upvote</span>
                   <span id="upvotes-count-${post.id}" class="text-slate-900 font-extrabold ml-0.5">${post.upvotes || 0}</span>
                 </button>
-                <button onclick="handleFlagUrgent('${post.id}', this)" class="btn-tactile flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white hover:bg-amber-50 border border-slate-200/90 text-slate-700 hover:text-amber-600 hover:border-amber-300 text-xs font-bold transition-all shadow-xs" title="Flag as critical civic emergency">
+                <button onclick="handleFlagUrgent('${post.id}', this)" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white hover:bg-rose-50 border border-slate-200 text-slate-700 hover:text-rose-600 hover:border-rose-300 text-xs font-bold transition-all shadow-xs" title="Flag as critical civic emergency">
                   <i data-lucide="flame" class="w-3.5 h-3.5 text-amber-500"></i>
                   <span id="urgent-count-${post.id}">${post.urgent_flags || 0}</span>
                 </button>
-                <button onclick="openLetterModal('${post.id}')" class="btn-tactile flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50/80 hover:bg-indigo-100/80 border border-indigo-200/80 text-indigo-700 text-xs font-bold transition-all shadow-xs" title="Generate formal Municipal Notice or RTI Application">
+                <button onclick="openLetterModal('${post.id}')" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white hover:bg-indigo-50 border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-300 text-xs font-bold transition-all shadow-xs" title="Generate formal Municipal Notice or RTI Application">
                   <i data-lucide="file-text" class="w-3.5 h-3.5 text-indigo-600"></i>
                   <span class="hidden sm:inline">Draft Official Letter</span>
                   <span class="sm:hidden">Letter</span>
                 </button>
               </div>
 
-              <div class="flex items-center gap-1.5">
-                <button onclick="copyTicket('${post.id}')" class="btn-tactile p-2 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors" title="Copy incident ticket ID">
+              <div class="flex items-center gap-2">
+                <button onclick="copyTicket('${post.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors" title="Copy incident ticket ID">
                   <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
                 </button>
-                <button onclick="toggleCommentsSection('${post.id}')" class="btn-tactile flex items-center gap-1.5 px-2 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
+                <button onclick="toggleCommentsSection('${post.id}')" class="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-indigo-600 transition-colors">
                   <i data-lucide="message-square" class="w-3.5 h-3.5 text-indigo-500"></i>
                   <span>${comments.length}</span>
                 </button>
@@ -569,7 +558,7 @@ function renderCivicCards(posts) {
               <form onsubmit="handleCommentPost(event, '${post.id}')" class="flex gap-2 pt-1.5">
                 <input id="comm-author-${post.id}" type="text" placeholder="Your name" class="w-1/3 text-xs border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
                 <input id="comm-text-${post.id}" type="text" placeholder="Update or ticket #..." class="flex-1 text-xs border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
-                <button type="submit" class="btn-tactile px-3.5 py-1.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-xs transition-colors">Post</button>
+                <button type="submit" class="px-3 py-1.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-xs transition-colors">Post</button>
               </form>
             </div>
           </div>
@@ -759,12 +748,12 @@ function renderServiceCards(jobs) {
         .join('');
 
       return `
-        <article id="job-card-${job.id}" class="consumer-card animate-fade-up p-6 flex flex-col justify-between" style="animation-delay: ${index * 60}ms;">
+        <article id="job-card-${job.id}" class="animate-fade-up card-hover-lift bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_32px_-6px_rgba(79,70,229,0.12)] p-6 flex flex-col justify-between" style="animation-delay: ${index * 80}ms;">
           <div>
             <!-- Top Tags -->
-            <div class="flex items-center justify-between gap-2 pb-3.5 border-b border-slate-100">
+            <div class="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
               ${getTradeTag(job.category)}
-              <span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold ${
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${
                 isConfirmed ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
               }">${escapeHtml(job.status || 'Open')}</span>
             </div>
@@ -773,10 +762,9 @@ function renderServiceCards(jobs) {
             ${
               job.media_url
                 ? `
-              <div class="mt-4 rounded-2xl overflow-hidden border border-slate-200/90 bg-slate-100 h-48 relative cursor-pointer group/img" onclick="openImageModal('${job.media_url}', '${escapeHtml(job.title)}', '${escapeHtml(job.category)}')">
-                <img src="${job.media_url}" alt="${escapeHtml(job.title)}" onerror="handleImgError(this, '${escapeHtml(job.category)}')" class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500">
-                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent"></div>
-                <div class="absolute top-2.5 right-2.5 px-2 py-1 rounded-xl bg-black/60 backdrop-blur-md text-white text-[10px] font-semibold opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center gap-1 shadow-sm">
+              <div class="mt-4 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 h-44 relative cursor-pointer group/img" onclick="openImageModal('${job.media_url}', '${escapeHtml(job.title)}', '${escapeHtml(job.category)}')">
+                <img src="${job.media_url}" alt="${escapeHtml(job.title)}" onerror="handleImgError(this, '${escapeHtml(job.category)}')" class="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-500">
+                <div class="absolute top-2.5 right-2.5 px-2 py-1 rounded-lg bg-black/50 backdrop-blur-md text-white text-[10px] font-semibold opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center gap-1 shadow-sm">
                   <i data-lucide="maximize-2" class="w-3 h-3"></i>
                   <span>Inspect</span>
                 </div>
@@ -785,26 +773,26 @@ function renderServiceCards(jobs) {
                 : ''
             }
 
-            <h3 class="font-extrabold text-slate-900 text-base sm:text-lg mt-3.5 leading-snug">${escapeHtml(job.title)}</h3>
-            <p class="text-xs text-slate-500 mt-1 flex items-center gap-1 font-medium">
-              <i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-400"></i> ${escapeHtml(job.location_city)}
+            <h3 class="font-bold text-slate-900 text-base mt-3 leading-snug">${escapeHtml(job.title)}</h3>
+            <p class="text-xs text-slate-500 mt-1 flex items-center gap-1">
+              <i data-lucide="map-pin" class="w-3 h-3 text-slate-400"></i> ${escapeHtml(job.location_city)}
             </p>
 
             <!-- Gemma Diagnostic & Price Recommendation Card -->
-            <div class="mt-4 p-4 rounded-2xl bg-gradient-to-br from-indigo-50/80 via-purple-50/40 to-slate-50 border border-indigo-100 text-xs space-y-2 shadow-xs">
+            <div class="mt-4 p-4 rounded-xl bg-gradient-to-br from-indigo-50/70 via-purple-50/40 to-slate-50 border border-indigo-100 text-xs space-y-1.5 shadow-xs">
               <div class="flex items-center justify-between font-bold text-indigo-950">
                 <span class="flex items-center gap-1.5">
                   <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-600"></i>
-                  <span>Fair Benchmark:</span>
+                  <span>Fair Price Range:</span>
                   <span class="text-emerald-700 font-extrabold text-sm ml-1">${escapeHtml(job.estimated_price || 'Calculating...')}</span>
                 </span>
-                ${job.final_price ? `<span class="px-2 py-0.5 rounded-lg bg-emerald-600 text-white font-extrabold text-[11px]">Final: ${escapeHtml(job.final_price)}</span>` : ''}
+                ${job.final_price ? `<span class="px-2 py-0.5 rounded bg-emerald-600 text-white font-extrabold">Final: ${escapeHtml(job.final_price)}</span>` : ''}
               </div>
               <p class="text-slate-600 text-xs leading-relaxed whitespace-pre-line">${escapeHtml(job.description)}</p>
             </div>
 
             <!-- Live Two-Way Negotiation Panel -->
-            <div class="mt-5 pt-3.5 border-t border-slate-100">
+            <div class="mt-5 pt-3 border-t border-slate-100">
               <div class="flex items-center justify-between mb-2.5">
                 <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
                   <i data-lucide="users" class="w-3.5 h-3.5 text-indigo-600"></i>
@@ -813,24 +801,24 @@ function renderServiceCards(jobs) {
               </div>
 
               <div class="space-y-2">
-                ${bidsHtml || '<p class="text-xs text-slate-400 italic bg-slate-50/80 p-3 rounded-2xl border border-slate-100 text-center">No bids submitted yet.</p>'}
+                ${bidsHtml || '<p class="text-xs text-slate-400 italic bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">No bids submitted yet.</p>'}
               </div>
 
               <!-- Quick Simulate Worker Bid Tool for Judges -->
               ${
                 !isConfirmed
                   ? `
-                <div class="mt-4 p-3.5 rounded-2xl bg-slate-50/90 border border-slate-200/90 shadow-xs">
+                <div class="mt-4 p-3.5 rounded-xl bg-slate-100/90 border border-slate-200">
                   <div class="flex items-center justify-between text-[11px] font-bold text-slate-700 mb-2">
-                    <span class="flex items-center gap-1.5 text-indigo-700"><i data-lucide="zap" class="w-3.5 h-3.5"></i> Quick Test: Simulate Technician Bid</span>
-                    <span class="text-[10px] text-slate-400 font-normal">Judge / Demo Tool</span>
+                    <span class="flex items-center gap-1 text-indigo-700"><i data-lucide="zap" class="w-3 h-3"></i> Quick Test: Simulate Technician Bid</span>
+                    <span class="text-[10px] text-slate-400 font-normal">Judge/Demo Tool</span>
                   </div>
                   <form onsubmit="handleQuickBid(event, '${job.id}')" class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <input id="qbid-name-${job.id}" type="text" placeholder="Worker Name" value="Ramesh Plumber" class="text-xs border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                    <input id="qbid-phone-${job.id}" type="text" placeholder="Phone" value="+91 98765 43210" class="text-xs border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                    <input id="qbid-name-${job.id}" type="text" placeholder="Worker Name" value="Ramesh Plumber" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none" required>
+                    <input id="qbid-phone-${job.id}" type="text" placeholder="Phone" value="+91 98765 43210" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none" required>
                     <div class="flex gap-1.5">
-                      <input id="qbid-amount-${job.id}" type="number" placeholder="₹ Bid" value="450" class="w-full text-xs border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                      <button type="submit" class="btn-tactile px-3.5 py-1.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-xl text-xs font-bold transition-colors shadow-xs">Bid</button>
+                      <input id="qbid-amount-${job.id}" type="number" placeholder="₹ Bid" value="450" class="w-full text-xs border border-slate-300 rounded-lg px-2 py-1.5 bg-white focus:outline-none" required>
+                      <button type="submit" class="px-3.5 py-1.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-lg text-xs font-bold transition-colors">Bid</button>
                     </div>
                   </form>
                 </div>
@@ -1426,14 +1414,14 @@ function switchPersona(persona) {
 
   // Reset desktop button styles
   const defaultDeskClass =
-    'btn-tactile flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-all';
+    'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all';
   if (btnCitizen) btnCitizen.className = defaultDeskClass;
   if (btnAdmin) btnAdmin.className = defaultDeskClass;
   if (btnTech) btnTech.className = defaultDeskClass;
 
   // Reset mobile button styles
   const defaultMobClass =
-    'flex-1 py-1.5 px-2.5 text-center text-xs font-semibold rounded-xl bg-white/5 text-slate-400 border border-white/10 whitespace-nowrap';
+    'flex-1 py-1.5 px-2 text-center text-xs font-semibold rounded-xl bg-white text-slate-600 border border-slate-200 whitespace-nowrap';
   if (mBtnCitizen) mBtnCitizen.className = defaultMobClass;
   if (mBtnAdmin) mBtnAdmin.className = defaultMobClass;
   if (mBtnTech) mBtnTech.className = defaultMobClass;
@@ -1447,43 +1435,31 @@ function switchPersona(persona) {
     if (viewCitizen) viewCitizen.classList.remove('hidden');
     if (btnCitizen)
       btnCitizen.className =
-        'btn-tactile flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/25 border border-indigo-400/30 transition-all';
+        'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/90 transition-all';
     if (mBtnCitizen)
       mBtnCitizen.className =
-        'flex-1 py-1.5 px-2.5 text-center text-xs font-bold rounded-xl bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 whitespace-nowrap';
+        'flex-1 py-1.5 px-2 text-center text-xs font-bold rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 whitespace-nowrap';
   } else if (persona === 'admin') {
     if (viewAdmin) viewAdmin.classList.remove('hidden');
     if (btnAdmin)
       btnAdmin.className =
-        'btn-tactile flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 text-white shadow-md shadow-rose-500/25 border border-rose-400/30 transition-all';
+        'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-rose-900 shadow-sm border border-rose-200/90 transition-all';
     if (mBtnAdmin)
       mBtnAdmin.className =
-        'flex-1 py-1.5 px-2.5 text-center text-xs font-bold rounded-xl bg-rose-600/30 text-rose-300 border border-rose-500/40 whitespace-nowrap';
+        'flex-1 py-1.5 px-2 text-center text-xs font-bold rounded-xl bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap';
     loadAdminDashboard();
   } else if (persona === 'technician') {
     if (viewTech) viewTech.classList.remove('hidden');
     if (btnTech)
       btnTech.className =
-        'btn-tactile flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white shadow-md shadow-emerald-500/25 border border-emerald-400/30 transition-all';
+        'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-emerald-900 shadow-sm border border-emerald-200/90 transition-all';
     if (mBtnTech)
       mBtnTech.className =
-        'flex-1 py-1.5 px-2.5 text-center text-xs font-bold rounded-xl bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 whitespace-nowrap';
+        'flex-1 py-1.5 px-2 text-center text-xs font-bold rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap';
     loadTechnicianWorkspace();
   }
 
   if (window.lucide) lucide.createIcons();
-}
-
-function showCitizenView() {
-  switchPersona('citizen');
-}
-
-function showAdminView() {
-  switchPersona('admin');
-}
-
-function showTechnicianView() {
-  switchPersona('technician');
 }
 
 // --- Municipal Officer Command Center ---
@@ -2279,188 +2255,6 @@ function resetCivicTalk() {
   if (resBox) resBox.classList.add('hidden');
 }
 
-// --- City / Neighborhood Selector ---
-function openCityModal() {
-  const m = document.getElementById('modal-city');
-  if (m) m.classList.remove('hidden');
-}
-
-function closeCityModal() {
-  const m = document.getElementById('modal-city');
-  if (m) m.classList.add('hidden');
-}
-
-function closeCityModalOnBackdrop(e) {
-  if (e.target.id === 'modal-city') closeCityModal();
-}
-
-function selectCity(city) {
-  state.location = city;
-  const clean = city.replace('📍 ', '');
-  const locBadge = document.getElementById('userLocationPill');
-  if (locBadge) locBadge.textContent = clean;
-  const legacyBadge = document.getElementById('location-pill-text');
-  if (legacyBadge) legacyBadge.textContent = city;
-  
-  const cInp = document.getElementById('civic-location-input');
-  const jInp = document.getElementById('job-location-input');
-  if (cInp) cInp.value = clean;
-  if (jInp) jInp.value = clean;
-
-  closeCityModal();
-  showToast(`📍 Location updated to ${clean}`, 'info');
-}
-
-function applyCustomCity() {
-  const inp = document.getElementById('custom-city-input');
-  if (inp && inp.value.trim()) {
-    const custom = inp.value.trim();
-    selectCity(`📍 ${custom}`);
-    inp.value = '';
-  }
-}
-
-// --- Dedicated Multi-Role Authentication & Registration Gateway ---
-function openAuthModal() {
-  const m = document.getElementById('authModal');
-  if (m) {
-    m.classList.remove('hidden');
-    // Pre-populate locality if available
-    const locInp = document.getElementById('auth-citizen-locality');
-    if (locInp && (!locInp.value || locInp.value === 'Sector 62, Noida')) {
-      const clean = state.location.replace('📍 ', '');
-      if (clean) locInp.value = clean;
-    }
-    if (window.lucide) lucide.createIcons();
-  }
-}
-
-function closeAuthModal() {
-  const m = document.getElementById('authModal');
-  if (m) m.classList.add('hidden');
-}
-
-function closeAuthModalOnBackdrop(e) {
-  if (e.target.id === 'authModal') closeAuthModal();
-}
-
-function switchAuthTab(tab) {
-  state.authTab = tab;
-  const btnLogin = document.getElementById('auth-tab-login');
-  const btnReg = document.getElementById('auth-tab-register');
-  const submitBtn = document.getElementById('auth-submit-btn');
-
-  if (tab === 'login') {
-    if (btnLogin) {
-      btnLogin.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/20';
-    }
-    if (btnReg) {
-      btnReg.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-all';
-    }
-    if (submitBtn) submitBtn.textContent = 'Sign In to Portal';
-  } else {
-    if (btnReg) {
-      btnReg.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/20';
-    }
-    if (btnLogin) {
-      btnLogin.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-all';
-    }
-    if (submitBtn) submitBtn.textContent = 'Create Account & Enter';
-  }
-}
-
-function setAuthRole(role) {
-  state.authRole = role;
-  const btnCit = document.getElementById('auth-role-citizen');
-  const btnAdm = document.getElementById('auth-role-admin');
-  const btnTech = document.getElementById('auth-role-technician');
-
-  const fieldsCit = document.getElementById('auth-fields-citizen');
-  const fieldsAdm = document.getElementById('auth-fields-admin');
-  const fieldsTech = document.getElementById('auth-fields-technician');
-
-  const defaultRoleClass = 'btn-tactile p-2.5 rounded-xl border border-white/10 bg-white/5 text-slate-400 hover:text-white text-xs font-semibold text-center flex flex-col items-center justify-center gap-1 transition-all';
-  if (btnCit) btnCit.className = defaultRoleClass;
-  if (btnAdm) btnAdm.className = defaultRoleClass;
-  if (btnTech) btnTech.className = defaultRoleClass;
-
-  if (fieldsCit) fieldsCit.classList.add('hidden');
-  if (fieldsAdm) fieldsAdm.classList.add('hidden');
-  if (fieldsTech) fieldsTech.classList.add('hidden');
-
-  if (role === 'citizen') {
-    if (btnCit) btnCit.className = 'btn-tactile p-2.5 rounded-xl border border-indigo-400/40 bg-indigo-500/20 text-indigo-300 text-xs font-bold text-center flex flex-col items-center justify-center gap-1 transition-all';
-    if (fieldsCit) fieldsCit.classList.remove('hidden');
-  } else if (role === 'admin') {
-    if (btnAdm) btnAdm.className = 'btn-tactile p-2.5 rounded-xl border border-rose-400/40 bg-rose-500/20 text-rose-300 text-xs font-bold text-center flex flex-col items-center justify-center gap-1 transition-all';
-    if (fieldsAdm) fieldsAdm.classList.remove('hidden');
-  } else if (role === 'technician') {
-    if (btnTech) btnTech.className = 'btn-tactile p-2.5 rounded-xl border border-emerald-400/40 bg-emerald-500/20 text-emerald-300 text-xs font-bold text-center flex flex-col items-center justify-center gap-1 transition-all';
-    if (fieldsTech) fieldsTech.classList.remove('hidden');
-  }
-}
-
-function handleAuthSubmit(e) {
-  e.preventDefault();
-  const role = state.authRole || 'citizen';
-  const labelEl = document.getElementById('authBtnLabel');
-
-  if (role === 'citizen') {
-    const name = document.getElementById('auth-citizen-name')?.value.trim() || 'Citizen User';
-    const contact = document.getElementById('auth-citizen-contact')?.value.trim() || '';
-    state.currentUser = { name, role: 'citizen', contact };
-    if (labelEl) labelEl.textContent = `👤 ${name.split(' ')[0]}`;
-    showCitizenView();
-    showToast(`✓ Welcome, ${name}! Citizen Portal active.`, 'success');
-  } else if (role === 'admin') {
-    const name = document.getElementById('auth-admin-name')?.value.trim() || 'Municipal Officer';
-    const dept = document.getElementById('auth-admin-dept')?.value || 'Roads & Transport';
-    state.currentUser = { name, role: 'admin', dept };
-    if (labelEl) labelEl.textContent = `🛡️ ${name.split(' ')[0]}`;
-    showAdminView();
-    showToast(`✓ Officer authorized: ${name} (${dept})`, 'success');
-  } else if (role === 'technician') {
-    const name = document.getElementById('auth-tech-name')?.value.trim() || 'Skilled Technician';
-    const phone = document.getElementById('auth-tech-phone')?.value.trim() || '+91 98765 43210';
-    state.currentUser = { name, role: 'technician', phone };
-    state.technicianPhone = phone;
-    const phoneInput = document.getElementById('tech-phone-input');
-    if (phoneInput) phoneInput.value = phone;
-    if (labelEl) labelEl.textContent = `🔧 ${name.split(' ')[0]}`;
-    showTechnicianView();
-    showToast(`✓ Technician active: ${name}`, 'success');
-  }
-
-  closeAuthModal();
-}
-
-// Hackathon Judge 1-Click Fast Passes
-function fastLogin(role) {
-  const labelEl = document.getElementById('authBtnLabel');
-  
-  if (role === 'citizen') {
-    state.currentUser = { name: 'Ayush Chauhan', role: 'citizen', locality: 'Sector 62, Noida' };
-    if (labelEl) labelEl.textContent = '👤 Ayush (Citizen)';
-    showCitizenView();
-    showToast('✓ Fast Demo Pass: Logged in as Citizen (Ayush Chauhan)', 'success');
-  } else if (role === 'admin') {
-    state.currentUser = { name: 'Insp. R. Sharma', role: 'admin', dept: 'Roads & Transport', empId: 'MCD-NW-4019' };
-    if (labelEl) labelEl.textContent = '🛡️ Insp. Sharma (Officer)';
-    showAdminView();
-    showToast('✓ Fast Demo Pass: Switched to Municipal Command Center', 'success');
-  } else if (role === 'technician') {
-    state.currentUser = { name: 'Ramesh Sharma', role: 'technician', phone: '+91 98765 43210', trade: 'Electrical' };
-    state.technicianPhone = '+91 98765 43210';
-    const phoneInput = document.getElementById('tech-phone-input');
-    if (phoneInput) phoneInput.value = '+91 98765 43210';
-    if (labelEl) labelEl.textContent = '🔧 Ramesh (Electrician)';
-    showTechnicianView();
-    showToast('✓ Fast Demo Pass: Switched to Technician Workspace', 'success');
-  }
-
-  closeAuthModal();
-}
-
 // Global window exposure for inline HTML event handlers
 window.openLetterModal = openLetterModal;
 window.closeLetterModal = closeLetterModal;
@@ -2469,11 +2263,8 @@ window.switchLetterType = switchLetterType;
 window.copyLetterText = copyLetterText;
 window.printLetterDoc = printLetterDoc;
 
-// Pillar 3 & Persona window exposures
+// Pillar 3 window exposures
 window.switchPersona = switchPersona;
-window.showCitizenView = showCitizenView;
-window.showAdminView = showAdminView;
-window.showTechnicianView = showTechnicianView;
 window.loadAdminDashboard = loadAdminDashboard;
 window.setAdminDepartment = setAdminDepartment;
 window.updatePostOfficerStatus = updatePostOfficerStatus;
@@ -2489,22 +2280,6 @@ window.toggleCivicTalkRecording = toggleCivicTalkRecording;
 window.startCivicTalkRecording = startCivicTalkRecording;
 window.stopCivicTalkRecording = stopCivicTalkRecording;
 window.resetCivicTalk = resetCivicTalk;
-
-// City Selector window exposures
-window.openCityModal = openCityModal;
-window.closeCityModal = closeCityModal;
-window.closeCityModalOnBackdrop = closeCityModalOnBackdrop;
-window.selectCity = selectCity;
-window.applyCustomCity = applyCustomCity;
-
-// Auth Gateway window exposures
-window.openAuthModal = openAuthModal;
-window.closeAuthModal = closeAuthModal;
-window.closeAuthModalOnBackdrop = closeAuthModalOnBackdrop;
-window.switchAuthTab = switchAuthTab;
-window.setAuthRole = setAuthRole;
-window.handleAuthSubmit = handleAuthSubmit;
-window.fastLogin = fastLogin;
 
 
 
