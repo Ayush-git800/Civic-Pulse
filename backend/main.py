@@ -33,6 +33,7 @@ from backend.database import (
 from backend.gemma_service import (
     analyze_civic_issue,
     diagnose_home_repair,
+    generate_formal_grievance,
     pulsebot_chat,
 )
 from backend.models import (
@@ -42,6 +43,7 @@ from backend.models import (
     CivicPostCreate,
     CommentCreate,
     CounterBidCreate,
+    LetterRequest,
     ServiceJobCreate,
 )
 
@@ -207,6 +209,33 @@ async def flag_civic_post_urgent(post_id: str) -> Dict[str, Any]:
         raise HTTPException(status_code=404, detail="Civic post not found")
     new_count = flag_urgent_post(post_id)
     return {"post_id": post_id, "id": post_id, "urgent_flags": new_count}
+
+
+@app.post("/api/civic/{post_id}/letter", tags=["Civic"])
+@app.post("/api/civic/posts/{post_id}/letter", tags=["Civic"])
+async def generate_civic_letter(
+    post_id: str,
+    payload: LetterRequest = LetterRequest(),
+) -> Dict[str, Any]:
+    """
+    Pillar 2: One-Click Formal Municipal Grievance and RTI Letter Generator.
+    - Accepts JSON payload with 'letter_type': 'municipal' | 'rti'.
+    - Fetches the post record from SQLite by post_id.
+    - Calls gemma_service.generate_formal_grievance(post, letter_type).
+    - Returns {"post_id": post_id, "letter_type": letter_type, "letter": letter_content}.
+    """
+    post = get_civic_post_by_id(post_id)
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Civic post with ID '{post_id}' not found.",
+        )
+    letter_content = generate_formal_grievance(post, payload.letter_type)
+    return {
+        "post_id": post_id,
+        "letter_type": payload.letter_type,
+        "letter": letter_content,
+    }
 
 
 @app.post("/api/civic/{post_id}/comment", status_code=status.HTTP_201_CREATED, tags=["Civic"])

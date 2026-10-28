@@ -66,3 +66,11 @@ class ChatRequest(BaseModel):
         None,
         description="Optional situational context (e.g. active post or job metadata)"
     )
+
+
+class LetterRequest(BaseModel):
+    """Schema for formal municipal or RTI letter generation request."""
+    letter_type: str = Field(
+        "municipal",
+        description="Type of letter to generate: 'municipal' (Formal Notice) or 'rti' (RTI Act Application)"
+    )

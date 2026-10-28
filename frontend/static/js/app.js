@@ -523,7 +523,7 @@ function renderCivicCards(posts) {
           <!-- Card Engagement Footer -->
           <div class="px-5 pb-5 pt-3 border-t border-slate-100/90 bg-slate-50/40">
             <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2">
+              <div class="flex flex-wrap items-center gap-2">
                 <button onclick="handleUpvote('${post.id}', this)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-50 border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-300 text-xs font-bold transition-all shadow-xs">
                   <i data-lucide="heart" class="w-3.5 h-3.5 text-rose-500"></i>
                   <span>Upvote</span>
@@ -532,6 +532,11 @@ function renderCivicCards(posts) {
                 <button onclick="handleFlagUrgent('${post.id}', this)" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white hover:bg-rose-50 border border-slate-200 text-slate-700 hover:text-rose-600 hover:border-rose-300 text-xs font-bold transition-all shadow-xs" title="Flag as critical civic emergency">
                   <i data-lucide="flame" class="w-3.5 h-3.5 text-amber-500"></i>
                   <span id="urgent-count-${post.id}">${post.urgent_flags || 0}</span>
+                </button>
+                <button onclick="openLetterModal('${post.id}')" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white hover:bg-indigo-50 border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-300 text-xs font-bold transition-all shadow-xs" title="Generate formal Municipal Notice or RTI Application">
+                  <i data-lucide="file-text" class="w-3.5 h-3.5 text-indigo-600"></i>
+                  <span class="hidden sm:inline">Draft Official Letter</span>
+                  <span class="sm:hidden">Letter</span>
                 </button>
               </div>
 
@@ -1226,4 +1231,164 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+// ==============================================================================
+// PILLAR 2: FORMAL MUNICIPAL GRIEVANCE & RTI LETTER GENERATOR
+// ==============================================================================
+let currentLetterPostId = null;
+let currentLetterType = 'municipal';
+const letterCache = {};
+
+async function openLetterModal(postId) {
+  currentLetterPostId = postId;
+  currentLetterType = 'municipal';
+
+  const modal = document.getElementById('modal-letter');
+  const subtitleEl = document.getElementById('letter-modal-subtitle');
+
+  // Find post in memory
+  const post = allCivicPosts.find((p) => String(p.id) === String(postId));
+  if (post && subtitleEl) {
+    subtitleEl.textContent = `Hazard: "${post.title}" • Jurisdiction: ${post.department} (${post.location_city})`;
+  } else if (subtitleEl) {
+    subtitleEl.textContent = `Incident #${postId} • Powered by Gemma 4 Multimodal Audit`;
+  }
+
+  // Update tab buttons appearance
+  updateLetterTabsUI('municipal');
+
+  if (modal) {
+    modal.classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+  }
+
+  if (window.lucide) lucide.createIcons();
+  await fetchAndDisplayLetter(postId, 'municipal');
+}
+
+function closeLetterModal() {
+  const modal = document.getElementById('modal-letter');
+  if (modal) {
+    modal.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+  }
+}
+
+function closeLetterModalOnBackdrop(e) {
+  if (e && e.target && e.target.id === 'modal-letter') {
+    closeLetterModal();
+  }
+}
+
+function updateLetterTabsUI(activeType) {
+  const tabMunicipal = document.getElementById('letter-tab-municipal');
+  const tabRti = document.getElementById('letter-tab-rti');
+
+  if (activeType === 'municipal') {
+    if (tabMunicipal) {
+      tabMunicipal.className =
+        'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-white text-indigo-600 shadow-sm border border-slate-200/70';
+    }
+    if (tabRti) {
+      tabRti.className =
+        'flex-1 py-2 px-3 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-2';
+    }
+  } else {
+    if (tabMunicipal) {
+      tabMunicipal.className =
+        'flex-1 py-2 px-3 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-2';
+    }
+    if (tabRti) {
+      tabRti.className =
+        'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-white text-indigo-600 shadow-sm border border-slate-200/70';
+    }
+  }
+}
+
+async function switchLetterType(newType) {
+  if (newType === currentLetterType) return;
+  currentLetterType = newType;
+  updateLetterTabsUI(newType);
+  if (currentLetterPostId) {
+    await fetchAndDisplayLetter(currentLetterPostId, newType);
+  }
+}
+
+async function fetchAndDisplayLetter(postId, letterType) {
+  const cacheKey = `${postId}_${letterType}`;
+  const paper = document.getElementById('letter-modal-paper');
+  const loader = document.getElementById('letter-loading-state');
+  const container = document.getElementById('letter-content-container');
+
+  if (letterCache[cacheKey]) {
+    if (loader) loader.classList.add('hidden');
+    if (container) container.classList.remove('hidden');
+    if (paper) paper.textContent = letterCache[cacheKey];
+    return;
+  }
+
+  // Show loading spinner
+  if (loader) loader.classList.remove('hidden');
+  if (container) container.classList.add('hidden');
+
+  try {
+    const res = await fetch(`/api/civic/${postId}/letter`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ letter_type: letterType }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP error ${res.status}`);
+    }
+
+    const data = await res.json();
+    const content = data.letter || 'Unable to generate official document draft.';
+    letterCache[cacheKey] = content;
+
+    if (paper) paper.textContent = content;
+    if (loader) loader.classList.add('hidden');
+    if (container) container.classList.remove('hidden');
+  } catch (err) {
+    console.error('Error generating official letter:', err);
+    if (loader) loader.classList.add('hidden');
+    if (container) container.classList.remove('hidden');
+    if (paper) {
+      paper.textContent = `NOTICE GENERATION ERROR\n\nUnable to retrieve statutory letter for incident #${postId}. Please verify that the backend server is operational and try again.`;
+    }
+    showToast('Failed to generate letter. Please try again.');
+  }
+}
+
+async function copyLetterText() {
+  const paper = document.getElementById('letter-modal-paper');
+  const btnText = document.getElementById('btn-copy-letter-text');
+  if (!paper || !paper.textContent) return;
+
+  try {
+    await navigator.clipboard.writeText(paper.textContent);
+    if (btnText) btnText.textContent = '✓ Copied!';
+    showToast('Official letter copied to clipboard!');
+    setTimeout(() => {
+      if (btnText) btnText.textContent = 'Copy Text';
+    }, 2500);
+  } catch (e) {
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = paper.textContent;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    if (btnText) btnText.textContent = '✓ Copied!';
+    showToast('Official letter copied to clipboard!');
+    setTimeout(() => {
+      if (btnText) btnText.textContent = 'Copy Text';
+    }, 2500);
+  }
+}
+
+function printLetterDoc() {
+  window.print();
 }

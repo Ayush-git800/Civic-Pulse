@@ -556,3 +556,171 @@ def pulsebot_chat(history: List[Dict[str, Any]], user_message: str) -> str:
         "If you are reporting a public hazard, post it to our Infrastructure Feed for automated municipal escalation. "
         "For private household repairs, use the Services section to get fair AI estimates and negotiate with verified neighborhood technicians."
     )
+
+
+# ==============================================================================
+# 4. PILLAR 2: FORMAL MUNICIPAL GRIEVANCE & RTI LETTER GENERATOR
+# ==============================================================================
+
+def generate_formal_grievance(post_data: Dict[str, Any], letter_type: str = "municipal") -> str:
+    """
+    Pillar 2: Generates a formal, legally structured complaint or RTI inquiry letter
+    addressed to the Municipal Commissioner, District Magistrate, or Public Information Officer.
+    
+    Target: PRIMARY_MODEL ('gemma-4-26b-a4b-it') with resilient fallback cascade.
+    
+    Parameters inside post_data:
+        - title: str
+        - description: str
+        - department: str
+        - severity: str
+        - location_city: str
+        - lat: float
+        - lng: float
+        - created_at: str
+    
+    letter_type:
+        - 'municipal': Formal Administrative Notice under Municipal Corp Act & Public Nuisance laws.
+        - 'rti': Application under Section 6(1) of the Right to Information Act, 2005.
+    
+    Returns clean, plain text with proper legal formatting (no markdown asterisks or code fences).
+    """
+    normalized_type = (letter_type or "municipal").strip().lower()
+    is_rti = "rti" in normalized_type
+
+    title = str(post_data.get("title") or "Public Infrastructure Hazard").strip()
+    description = str(post_data.get("description") or "Infrastructure damage causing public hazard.").strip()
+    department = str(post_data.get("department") or "Roads & Transport").strip()
+    severity = str(post_data.get("severity") or "High").strip()
+    location_city = str(post_data.get("location_city") or "Noida").strip()
+    lat = post_data.get("lat") or 28.6289
+    lng = post_data.get("lng") or 77.3670
+    created_at = str(post_data.get("created_at") or "Current Date").strip()
+
+    sla_hours = 24 if severity.lower() == "critical" else (48 if severity.lower() == "high" else 72)
+
+    system_instruction = (
+        "You are an expert Indian administrative lawyer, municipal ombudsman, and Right to Information (RTI) specialist.\n"
+        "Draft a rigorous, legally sound, and formal official letter based on the provided citizen infrastructure evidence.\n"
+        "Formatting Constraints:\n"
+        "1. Return strictly PLAIN TEXT with professional legal spacing and paragraph breaks.\n"
+        "2. Do NOT use markdown asterisks (no **bold**), no hash tags (no # headers), and no backticks or code blocks.\n"
+        "3. Use standard Indian administrative salutations, reference lines, statutory citations, and signature blocks.\n"
+        "4. Be precise, authoritative, and fact-driven."
+    )
+
+    if not is_rti:
+        prompt = (
+            f"Draft a Formal Municipal Grievance and Administrative Notice for the following incident:\n\n"
+            f"Title: {title}\n"
+            f"Description: {description}\n"
+            f"Department: {department}\n"
+            f"Hazard Severity: {severity}\n"
+            f"Location / Locality: {location_city}\n"
+            f"GPS Coordinates: Latitude {lat}, Longitude {lng}\n"
+            f"Incident Timestamp: {created_at}\n\n"
+            f"Required Structure:\n"
+            f"1. Addressed to: The Municipal Commissioner / Executive Officer, Municipal Corporation of {location_city}\n"
+            f"2. Subject: URGENT PUBLIC SAFETY NOTICE: Severe hazard regarding {title} in {location_city}\n"
+            f"3. Incident Citation: Explicitly cite coordinates ({lat}, {lng}) and date/time of report.\n"
+            f"4. Factual Synopsis: Assess the physical danger, pedestrian/vehicular risk, and potential harm.\n"
+            f"5. Statutory Legal References: Cite the mandatory duty to maintain public infrastructure under the State Municipal Corporation Act, Section 133 of the Code of Criminal Procedure (CrPC) / Section 152 of Bharatiya Nagarik Suraksha Sanhita (BNSS) regarding urgent removal of public nuisances.\n"
+            f"6. Time-Bound Demand: Demand an on-site physical inspection and time-bound remediation within {sla_hours} hours (statutory public safety SLA for {severity} hazard).\n"
+            f"7. Sign-off: Concerned Citizens of {location_city} (via CivicPulse Citizen Grievance Portal)."
+        )
+    else:
+        prompt = (
+            f"Draft a formal RTI Application under Section 6(1) of the Right to Information Act, 2005 for this issue:\n\n"
+            f"Title: {title}\n"
+            f"Description: {description}\n"
+            f"Responsible Department: {department}\n"
+            f"Hazard Severity: {severity}\n"
+            f"Location / Locality: {location_city}\n"
+            f"GPS Coordinates: Latitude {lat}, Longitude {lng}\n"
+            f"Date of Grievance Logging: {created_at}\n\n"
+            f"Required Structure:\n"
+            f"1. Addressed to: The Public Information Officer (PIO), Office of the Municipal Commissioner, Municipal Corporation of {location_city}\n"
+            f"2. Subject: Application under Section 6(1) of the Right to Information Act, 2005 concerning {title} in {location_city}\n"
+            f"3. 4 Precise Numbered Questions:\n"
+            f"   a. Date of last formal inspection conducted for {department} assets at GPS ({lat}, {lng}) and name/designation of the designated Junior Engineer (JE) and Assistant Engineer (AE) responsible for this ward/sector.\n"
+            f"   b. Total budget allocated, work order number, name of the maintenance contractor, and defect liability period for infrastructure upkeep in this ward for the current and previous financial years.\n"
+            f"   c. Daily inspection log, official action taken report (ATR), and committed completion date for rectifying the hazard described as '{title}'.\n"
+            f"   d. Records and diary numbers of all prior citizen complaints received regarding this specific site over the last 12 months, along with resolution statuses.\n"
+            f"4. Statutory Declarations: Confirm Indian citizenship, payment of standard statutory RTI fee, and reference Section 7(1) compliance within 30 days (or 48-hour life/liberty proviso).\n"
+            f"5. Sign-off: Applicant / Resident of {location_city} (Prepared via CivicPulse RTI Generator)."
+        )
+
+    # Execute with resilient fallback engine
+    raw_letter = _execute_with_resilient_fallback(
+        contents=[prompt],
+        system_instruction=system_instruction,
+        temperature=0.2,
+    )
+
+    if raw_letter and len(raw_letter.strip()) > 80:
+        cleaned = raw_letter.strip()
+        # Clean any accidental markdown styling
+        cleaned = re.sub(r"\*\*(.*?)\*\*", r"\1", cleaned)
+        cleaned = re.sub(r"\*(.*?)\*", r"\1", cleaned)
+        cleaned = re.sub(r"`{1,3}.*?`{1,3}", "", cleaned)
+        cleaned = re.sub(r"^#+\s*", "", cleaned, flags=re.MULTILINE)
+        return cleaned.strip()
+
+    # Deterministic Legal Fallbacks (Offline Resilient)
+    if is_rti:
+        return (
+            f"APPLICATION UNDER SECTION 6(1) OF THE RIGHT TO INFORMATION ACT, 2005\n\n"
+            f"To,\n"
+            f"The Public Information Officer (PIO),\n"
+            f"Office of the Municipal Commissioner,\n"
+            f"Municipal Corporation of {location_city},\n"
+            f"State Administration.\n\n"
+            f"Subject: Information sought under Section 6(1) of the RTI Act, 2005 regarding public infrastructure hazard '{title}' in {location_city}.\n\n"
+            f"Respected Sir / Madam,\n\n"
+            f"I am a citizen of India residing in {location_city}. Under the provisions of Section 6(1) of the Right to Information Act, 2005, I hereby request you to furnish certified information and official records pertaining to the following public infrastructure breakdown:\n\n"
+            f"Location Coordinates: Latitude {lat}, Longitude {lng} ({location_city})\n"
+            f"Responsible Department: {department}\n"
+            f"Assessed Severity: {severity}\n"
+            f"Reported Timestamp: {created_at}\n"
+            f"Description of Hazard: {description}\n\n"
+            f"PARTICULARS OF INFORMATION SOUGHT:\n\n"
+            f"1. Please provide the dates of all formal field inspections conducted for {department} assets at the above coordinates over the last 12 months, along with the names, designations, and official contact numbers of the Junior Engineer (JE) and Assistant Engineer (AE) assigned to this jurisdiction.\n\n"
+            f"2. Please provide certified copies of the work order, budget sanctioned, contractor agreement, and Defect Liability Period (DLP) for repair or installation works executed at this site during the current and preceding financial years.\n\n"
+            f"3. Please provide the daily inspection logs and certified Action Taken Report (ATR) recorded in response to the hazard '{title}' logged on {created_at}.\n\n"
+            f"4. Please provide the official target date by which this municipal hazard will be comprehensively rectified to ensure citizen safety.\n\n"
+            f"I state that the information sought does not fall within the exemptions specified under Section 8 or 9 of the RTI Act, 2005. The requisite application fee is being tendered as prescribed under the State RTI Rules. As per Section 7(1) of the Act, please provide the requested information within 30 days of receipt of this application.\n\n"
+            f"Yours faithfully,\n\n"
+            f"Applicant / Concerned Resident of {location_city}\n"
+            f"(Drafted via CivicPulse Citizen Governance & RTI Engine)"
+        )
+
+    # Municipal Administrative Notice Fallback
+    return (
+        f"FORMAL PUBLIC SAFETY NOTICE & STATUTORY REPAIR DEMAND\n\n"
+        f"To,\n"
+        f"The Municipal Commissioner / Executive Officer,\n"
+        f"Municipal Corporation of {location_city},\n"
+        f"Department of {department}.\n\n"
+        f"Subject: URGENT PUBLIC SAFETY NOTICE: Severe hazard regarding {title} in {location_city}.\n\n"
+        f"Sir / Madam,\n\n"
+        f"We, the residents and daily commuters of {location_city}, formally place on official record an urgent public safety hazard that requires immediate municipal intervention under your statutory duties.\n\n"
+        f"1. INCIDENT DETAILS & GEOGRAPHICAL FIX:\n"
+        f"   - Incident Headline: {title}\n"
+        f"   - Precise GPS Coordinates: Latitude {lat}, Longitude {lng}\n"
+        f"   - Locality: {location_city}\n"
+        f"   - Responsible Municipal Department: {department}\n"
+        f"   - Assessed Hazard Severity: {severity}\n"
+        f"   - Initial Report Timestamp: {created_at}\n\n"
+        f"2. FACTUAL SYNOPSIS OF PHYSICAL HAZARD:\n"
+        f"   {description}\n"
+        f"   The continued presence of this unaddressed condition poses an imminent risk of severe bodily injury, vehicular accidents, and disruption to public order and sanitation.\n\n"
+        f"3. STATUTORY PROVISIONS & LEGAL OBLIGATIONS:\n"
+        f"   Under the relevant provisions of the State Municipal Corporation Act, the municipal administration has a non-derogable obligation to maintain civic infrastructure and public thoroughfares in a safe and motorable condition. Furthermore, persistent neglect of this hazard constitutes a public nuisance within the meaning of Section 133 of the Code of Criminal Procedure (CrPC) / Section 152 of the Bharatiya Nagarik Suraksha Sanhita (BNSS), rendering responsible officers liable for dereliction of duty.\n\n"
+        f"4. TIME-BOUND DEMAND FOR REMEDIATION:\n"
+        f"   In view of the {severity} severity ranking, you are urgently requested to dispatch a designated field inspection team and initiate remediation measures within {sla_hours} hours of receipt of this notice.\n\n"
+        f"Anticipating prompt and effective public service.\n\n"
+        f"Respectfully submitted,\n"
+        f"Concerned Citizens of {location_city}\n"
+        f"(Generated via CivicPulse Citizen Grievance Portal)"
+    )
+
