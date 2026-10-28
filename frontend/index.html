@@ -701,28 +701,35 @@
           </div>
 
           <!-- Active Recording State -->
-          <div id="civictalk-recording-box" class="hidden mt-2 p-3 bg-white rounded-xl border border-rose-300 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
-              <div class="flex items-center gap-1 h-6">
-                <span class="audiowave-bar w-1 h-5 bg-rose-500 rounded-full"></span>
-                <span class="audiowave-bar w-1 h-7 bg-pink-500 rounded-full"></span>
-                <span class="audiowave-bar w-1 h-4 bg-rose-600 rounded-full"></span>
-                <span class="audiowave-bar w-1 h-8 bg-rose-500 rounded-full"></span>
-                <span class="audiowave-bar w-1 h-5 bg-pink-600 rounded-full"></span>
-                <span class="audiowave-bar w-1 h-6 bg-rose-400 rounded-full"></span>
-              </div>
-              <div>
-                <div class="text-xs font-black text-rose-600 flex items-center gap-1.5">
-                  <span class="w-2 h-2 rounded-full bg-rose-600 animate-ping"></span>
-                  <span>Recording: <span id="civictalk-timer">00:00</span></span>
+          <div id="civictalk-recording-box" class="hidden mt-2 p-3.5 bg-white rounded-xl border border-rose-300 shadow-sm flex flex-col gap-3">
+            <div class="flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="flex items-center gap-1 h-6">
+                  <span class="audiowave-bar w-1 h-5 bg-rose-500 rounded-full"></span>
+                  <span class="audiowave-bar w-1 h-7 bg-pink-500 rounded-full"></span>
+                  <span class="audiowave-bar w-1 h-4 bg-rose-600 rounded-full"></span>
+                  <span class="audiowave-bar w-1 h-8 bg-rose-500 rounded-full"></span>
+                  <span class="audiowave-bar w-1 h-5 bg-pink-600 rounded-full"></span>
+                  <span class="audiowave-bar w-1 h-6 bg-rose-400 rounded-full"></span>
                 </div>
-                <span class="text-[10px] text-slate-500">Speaking Hindi, Hinglish or English...</span>
+                <div>
+                  <div class="text-xs font-black text-rose-600 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-rose-600 animate-ping"></span>
+                    <span>Recording: <span id="civictalk-timer">00:00</span></span>
+                  </div>
+                  <span class="text-[10px] text-slate-500">Speaking Hindi, Hinglish or English...</span>
+                </div>
               </div>
+              <button type="button" onclick="stopCivicTalkRecording()" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all whitespace-nowrap">
+                <span class="w-2 h-2 rounded-sm bg-rose-500"></span>
+                <span>Stop & Analyze</span>
+              </button>
             </div>
-            <button type="button" onclick="stopCivicTalkRecording()" class="w-full sm:w-auto px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all">
-              <span class="w-2 h-2 rounded-sm bg-rose-500"></span>
-              <span>Stop & Analyze</span>
-            </button>
+            <!-- Live Recognized Speech Indicator -->
+            <div class="p-2.5 rounded-lg bg-rose-50/70 border border-rose-200/80 text-[11px] text-slate-700 flex items-start gap-2">
+              <span class="text-rose-600 font-bold shrink-0">🎙️ Heard:</span>
+              <span id="civictalk-live-speech" class="italic text-slate-600">Listening to your voice... Speak now</span>
+            </div>
           </div>
 
           <!-- Processing State with Spinner -->

@@ -2015,6 +2015,8 @@ let civicTalkAudioChunks = [];
 let civicTalkTimerInterval = null;
 let civicTalkStartTime = 0;
 let isCivicTalkRecording = false;
+let civicTalkSpeechRecognizer = null;
+let civicTalkLiveTranscript = '';
 
 function startCivicTalkFromBanner() {
   openModal('modal-civic');
@@ -2042,6 +2044,10 @@ async function startCivicTalkRecording() {
   const procBox = document.getElementById('civictalk-processing-box');
   const resBox = document.getElementById('civictalk-result-box');
   const timerEl = document.getElementById('civictalk-timer');
+  const liveSpeechEl = document.getElementById('civictalk-live-speech');
+
+  civicTalkLiveTranscript = '';
+  if (liveSpeechEl) liveSpeechEl.textContent = 'Listening to your voice... Speak now';
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -2069,7 +2075,7 @@ async function startCivicTalkRecording() {
       // Stop all tracks to release mic
       stream.getTracks().forEach((track) => track.stop());
 
-      if (civicTalkAudioChunks.length === 0) {
+      if (civicTalkAudioChunks.length === 0 && !civicTalkLiveTranscript) {
         showToast('No audio recorded. Please try again.', 'info');
         resetCivicTalk();
         return;
@@ -2078,6 +2084,44 @@ async function startCivicTalkRecording() {
       const audioBlob = new Blob(civicTalkAudioChunks, { type: mimeType });
       await sendAudioToCivicTalk(audioBlob);
     };
+
+    // Live speech recognition in browser
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      try {
+        civicTalkSpeechRecognizer = new SpeechRecognition();
+        civicTalkSpeechRecognizer.continuous = true;
+        civicTalkSpeechRecognizer.interimResults = true;
+        civicTalkSpeechRecognizer.lang = 'hi-IN';
+
+        civicTalkSpeechRecognizer.onresult = (event) => {
+          let finalStr = '';
+          let interimStr = '';
+          for (let i = 0; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              finalStr += event.results[i][0].transcript + ' ';
+            } else {
+              interimStr += event.results[i][0].transcript;
+            }
+          }
+          const combined = (finalStr + interimStr).trim();
+          if (combined) {
+            civicTalkLiveTranscript = combined;
+            if (liveSpeechEl) {
+              liveSpeechEl.textContent = `"${combined}"`;
+            }
+          }
+        };
+
+        civicTalkSpeechRecognizer.onerror = (e) => {
+          console.warn('Speech recognition warning:', e.error);
+        };
+
+        civicTalkSpeechRecognizer.start();
+      } catch (err) {
+        console.warn('Browser SpeechRecognition init:', err);
+      }
+    }
 
     civicTalkMediaRecorder.start(250); // Slice data every 250ms
     isCivicTalkRecording = true;
@@ -2110,6 +2154,12 @@ async function startCivicTalkRecording() {
 function stopCivicTalkRecording() {
   clearInterval(civicTalkTimerInterval);
 
+  if (civicTalkSpeechRecognizer) {
+    try {
+      civicTalkSpeechRecognizer.stop();
+    } catch (e) {}
+  }
+
   const recBox = document.getElementById('civictalk-recording-box');
   const procBox = document.getElementById('civictalk-processing-box');
 
@@ -2137,6 +2187,9 @@ async function sendAudioToCivicTalk(audioBlob) {
   try {
     const formData = new FormData();
     formData.append('audio', audioBlob, 'recording.webm');
+    if (civicTalkLiveTranscript && civicTalkLiveTranscript.trim()) {
+      formData.append('transcript', civicTalkLiveTranscript.trim());
+    }
 
     const res = await fetch('/api/civic/talk', {
       method: 'POST',
@@ -2159,7 +2212,7 @@ async function sendAudioToCivicTalk(audioBlob) {
     }
 
     // Populate preview card
-    if (origEl) origEl.textContent = `"${data.original_transcript || 'Audio analyzed.'}"`;
+    if (origEl) origEl.textContent = `"${data.original_transcript || civicTalkLiveTranscript || 'Voice analyzed.'}"`;
     if (landmarkEl) landmarkEl.textContent = data.extracted_landmark || 'Locality detected';
     if (deptChip) deptChip.textContent = `🏛️ ${data.department || 'Roads & Transport'}`;
     if (sevChip) sevChip.textContent = `⚠️ ${data.severity || 'Moderate'} Severity`;
@@ -2167,7 +2220,7 @@ async function sendAudioToCivicTalk(audioBlob) {
     if (procBox) procBox.classList.add('hidden');
     if (resBox) resBox.classList.remove('hidden');
 
-    showToast(`✓ Voice report triaged by Gemma 4 into ${data.department}!`, 'success');
+    showToast(`✓ Voice report triaged by Gemma into ${data.department}!`, 'success');
   } catch (err) {
     console.error('Error in sendAudioToCivicTalk:', err);
     showToast('Voice processing error. You can still type details manually.', 'error');
@@ -2182,11 +2235,20 @@ function resetCivicTalk() {
   clearInterval(civicTalkTimerInterval);
   isCivicTalkRecording = false;
 
+  if (civicTalkSpeechRecognizer) {
+    try {
+      civicTalkSpeechRecognizer.stop();
+    } catch (e) {}
+  }
+  civicTalkLiveTranscript = '';
+
   const idleBox = document.getElementById('civictalk-idle-box');
   const recBox = document.getElementById('civictalk-recording-box');
   const procBox = document.getElementById('civictalk-processing-box');
   const resBox = document.getElementById('civictalk-result-box');
+  const liveSpeechEl = document.getElementById('civictalk-live-speech');
 
+  if (liveSpeechEl) liveSpeechEl.textContent = 'Listening to your voice... Speak now';
   if (idleBox) idleBox.classList.remove('hidden');
   if (recBox) recBox.classList.add('hidden');
   if (procBox) procBox.classList.add('hidden');

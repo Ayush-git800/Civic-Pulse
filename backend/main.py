@@ -246,23 +246,23 @@ async def generate_civic_letter(
 @app.post("/api/civic/talk", tags=["Civic"])
 async def civic_talk_voice_triage(
     audio: UploadFile = File(...),
+    transcript: Optional[str] = Form(None),
 ) -> Dict[str, Any]:
     """
     CivicTalk: Multilingual Voice-to-Triage endpoint.
     - Accepts voice audio file in colloquial Hindi, Hinglish, or English.
+    - Optionally accepts speech recognized live from user microphone.
     - Natively analyzed with Gemma 4 Audio Understanding / Gemini Multimodal.
     - Returns transcribed speech, formal English summary, extracted landmark,
       department categorization, and safety severity assessment.
     """
-    audio_bytes = await audio.read()
-    if not audio_bytes:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Empty audio recording submitted.",
-        )
-
-    mime_type = audio.content_type or "audio/webm"
-    result = process_civic_talk_audio(audio_bytes=audio_bytes, mime_type=mime_type)
+    audio_bytes = await audio.read() if audio else b""
+    mime_type = audio.content_type if audio else "audio/webm"
+    result = process_civic_talk_audio(
+        audio_bytes=audio_bytes,
+        mime_type=mime_type or "audio/webm",
+        live_transcript=transcript,
+    )
     return result
 
 
