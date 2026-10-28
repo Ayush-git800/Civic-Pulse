@@ -6,6 +6,7 @@
 
 // Application State
 const state = {
+  currentPersona: 'citizen', // 'citizen', 'admin', 'technician'
   activeTab: 'civic',
   location: '📍 Sector 62, Noida',
   coords: { lat: 28.6289, lng: 77.3670 },
@@ -16,6 +17,12 @@ const state = {
   civicSearch: '',
   serviceCategory: 'ALL',
   serviceSearch: '',
+  // Pillar 3: Multi-Sided Persona & Operations State
+  adminDeptFilter: 'ALL',
+  adminData: null,
+  technicianPhone: '+91 98765 43210',
+  technicianData: null,
+  techActiveTab: 'leads',
 };
 
 // Lifecycle initialization
@@ -224,31 +231,23 @@ function switchTab(tab) {
   const servicesView = document.getElementById('view-services');
   const btnCivic = document.getElementById('tab-btn-civic');
   const btnServices = document.getElementById('tab-btn-services');
-  const mobBtnCivic = document.getElementById('mobile-tab-btn-civic');
-  const mobBtnServices = document.getElementById('mobile-tab-btn-services');
 
   if (tab === 'civic') {
-    civicView.classList.remove('hidden');
-    servicesView.classList.add('hidden');
+    if (civicView) civicView.classList.remove('hidden');
+    if (servicesView) servicesView.classList.add('hidden');
 
     if (btnCivic) btnCivic.className =
-      'flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/90 transition-all';
+      'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/90 transition-all';
     if (btnServices) btnServices.className =
-      'flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all';
-
-    if (mobBtnCivic) mobBtnCivic.className = 'flex-1 py-2 text-center text-xs font-bold rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200';
-    if (mobBtnServices) mobBtnServices.className = 'flex-1 py-2 text-center text-xs font-bold rounded-xl bg-white text-slate-600 border border-slate-200';
+      'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all';
   } else {
-    civicView.classList.add('hidden');
-    servicesView.classList.remove('hidden');
+    if (civicView) civicView.classList.add('hidden');
+    if (servicesView) servicesView.classList.remove('hidden');
 
     if (btnServices) btnServices.className =
-      'flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/90 transition-all';
+      'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/90 transition-all';
     if (btnCivic) btnCivic.className =
-      'flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all';
-
-    if (mobBtnCivic) mobBtnCivic.className = 'flex-1 py-2 text-center text-xs font-bold rounded-xl bg-white text-slate-600 border border-slate-200';
-    if (mobBtnServices) mobBtnServices.className = 'flex-1 py-2 text-center text-xs font-bold rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200';
+      'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all';
   }
   if (window.lucide) lucide.createIcons();
 }
@@ -1394,6 +1393,619 @@ function printLetterDoc() {
   window.print();
 }
 
+// =========================================================================
+// PILLAR 3: 3-WAY PERSONA ECOSYSTEM LOGIC (Citizen, Officer, Technician)
+// =========================================================================
+
+function switchPersona(persona) {
+  state.currentPersona = persona;
+
+  const viewCitizen = document.getElementById('persona-view-citizen');
+  const viewAdmin = document.getElementById('persona-view-admin');
+  const viewTech = document.getElementById('persona-view-technician');
+
+  const btnCitizen = document.getElementById('persona-btn-citizen');
+  const btnAdmin = document.getElementById('persona-btn-admin');
+  const btnTech = document.getElementById('persona-btn-technician');
+
+  const mBtnCitizen = document.getElementById('mobile-persona-btn-citizen');
+  const mBtnAdmin = document.getElementById('mobile-persona-btn-admin');
+  const mBtnTech = document.getElementById('mobile-persona-btn-technician');
+
+  // Reset desktop button styles
+  const defaultDeskClass =
+    'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all';
+  if (btnCitizen) btnCitizen.className = defaultDeskClass;
+  if (btnAdmin) btnAdmin.className = defaultDeskClass;
+  if (btnTech) btnTech.className = defaultDeskClass;
+
+  // Reset mobile button styles
+  const defaultMobClass =
+    'flex-1 py-1.5 px-2 text-center text-xs font-semibold rounded-xl bg-white text-slate-600 border border-slate-200 whitespace-nowrap';
+  if (mBtnCitizen) mBtnCitizen.className = defaultMobClass;
+  if (mBtnAdmin) mBtnAdmin.className = defaultMobClass;
+  if (mBtnTech) mBtnTech.className = defaultMobClass;
+
+  // Hide all views first
+  if (viewCitizen) viewCitizen.classList.add('hidden');
+  if (viewAdmin) viewAdmin.classList.add('hidden');
+  if (viewTech) viewTech.classList.add('hidden');
+
+  if (persona === 'citizen') {
+    if (viewCitizen) viewCitizen.classList.remove('hidden');
+    if (btnCitizen)
+      btnCitizen.className =
+        'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/90 transition-all';
+    if (mBtnCitizen)
+      mBtnCitizen.className =
+        'flex-1 py-1.5 px-2 text-center text-xs font-bold rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 whitespace-nowrap';
+  } else if (persona === 'admin') {
+    if (viewAdmin) viewAdmin.classList.remove('hidden');
+    if (btnAdmin)
+      btnAdmin.className =
+        'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-rose-900 shadow-sm border border-rose-200/90 transition-all';
+    if (mBtnAdmin)
+      mBtnAdmin.className =
+        'flex-1 py-1.5 px-2 text-center text-xs font-bold rounded-xl bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap';
+    loadAdminDashboard();
+  } else if (persona === 'technician') {
+    if (viewTech) viewTech.classList.remove('hidden');
+    if (btnTech)
+      btnTech.className =
+        'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-emerald-900 shadow-sm border border-emerald-200/90 transition-all';
+    if (mBtnTech)
+      mBtnTech.className =
+        'flex-1 py-1.5 px-2 text-center text-xs font-bold rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap';
+    loadTechnicianWorkspace();
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+// --- Municipal Officer Command Center ---
+
+function formatSlaBadge(createdAt, slaHours = 48) {
+  const createdTime = new Date(createdAt).getTime();
+  const now = Date.now();
+  const elapsedHours = (now - createdTime) / (1000 * 60 * 60);
+  const remainingHours = slaHours - elapsedHours;
+
+  if (remainingHours <= 0) {
+    const overdue = Math.abs(remainingHours);
+    const h = Math.floor(overdue);
+    const m = Math.floor((overdue - h) * 60);
+    return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-black bg-rose-600 text-white sla-badge-critical">
+      <span>🚨 BREACHED by ${h}h ${m}m</span>
+    </span>`;
+  } else if (remainingHours < 12) {
+    const h = Math.floor(remainingHours);
+    const m = Math.floor((remainingHours - h) * 60);
+    return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+      <span>⚠️ ${h}h ${m}m left</span>
+    </span>`;
+  } else {
+    const h = Math.floor(remainingHours);
+    return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+      <span>⏳ ${h}h remaining</span>
+    </span>`;
+  }
+}
+
+async function loadAdminDashboard() {
+  const criticalEl = document.getElementById('admin-stat-critical');
+  const riskEl = document.getElementById('admin-stat-risk');
+  const unassignedEl = document.getElementById('admin-stat-unassigned');
+  const rateEl = document.getElementById('admin-stat-rate');
+  const tbody = document.getElementById('admin-triage-tbody');
+
+  try {
+    const res = await fetch('/api/admin/overview');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    state.adminData = data;
+
+    if (criticalEl) criticalEl.textContent = data.critical_count ?? data.critical_high_count ?? 0;
+    if (riskEl) riskEl.textContent = data.sla_at_risk_count ?? 0;
+    if (unassignedEl) unassignedEl.textContent = data.unassigned_count ?? 0;
+    if (rateEl) rateEl.textContent = `${data.resolution_rate ?? 0}%`;
+
+    renderAdminTriageTable();
+  } catch (err) {
+    console.error('Error loading admin overview:', err);
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-rose-500 font-semibold">Failed to load officer dashboard data.</td></tr>`;
+    }
+  }
+}
+
+function setAdminDepartment(dept, btnEl) {
+  state.adminDeptFilter = dept;
+  document.querySelectorAll('.admin-dept-pill').forEach((b) => {
+    b.className =
+      'admin-dept-pill px-3.5 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap';
+  });
+  if (btnEl) {
+    btnEl.className =
+      'admin-dept-pill active px-3.5 py-1.5 rounded-xl font-bold bg-indigo-600 text-white shadow-xs transition-all whitespace-nowrap';
+  }
+  renderAdminTriageTable();
+}
+
+function renderAdminTriageTable() {
+  const tbody = document.getElementById('admin-triage-tbody');
+  const countEl = document.getElementById('admin-table-count');
+  if (!tbody || !state.adminData) return;
+
+  let posts = state.adminData.prioritized_posts || [];
+  if (state.adminDeptFilter && state.adminDeptFilter !== 'ALL') {
+    const q = state.adminDeptFilter.toLowerCase();
+    posts = posts.filter((p) => (p.department || '').toLowerCase().includes(q));
+  }
+
+  if (countEl) {
+    countEl.textContent = `Showing ${posts.length} of ${state.adminData.prioritized_posts.length} incidents`;
+  }
+
+  if (posts.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="py-12 text-center text-slate-400">No active incidents matching this department filter.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = posts
+    .map((post) => {
+      const sev = (post.severity || 'Moderate').toLowerCase();
+      let sevBadge = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">Moderate</span>`;
+      if (sev === 'critical') {
+        sevBadge = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-200 flex items-center gap-1 max-w-fit"><span class="w-1.5 h-1.5 rounded-full bg-rose-600 animate-ping"></span>Critical</span>`;
+      } else if (sev === 'high') {
+        sevBadge = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">High</span>`;
+      } else if (sev === 'low') {
+        sevBadge = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">Low</span>`;
+      }
+
+      const slaBadge = formatSlaBadge(post.created_at, post.sla_hours || 48);
+
+      const isLocal = post.is_local === 1 || post.is_local === true;
+      const jurBadge = isLocal
+        ? `<span class="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200"><i data-lucide="building" class="w-3 h-3 text-indigo-500"></i>Local Ward</span>`
+        : `<span class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200"><i data-lucide="external-link" class="w-3 h-3 text-amber-600"></i>CPGRAMS/NHAI</span>`;
+
+      const imgUrl = post.image_url || getFallbackSvg(post.department);
+      const assignedOfficer = post.assigned_officer || 'Unassigned';
+      const postStatus = post.status || 'Reported';
+
+      return `
+      <tr class="hover:bg-slate-50/80 transition-colors">
+        <!-- Incident & Evidence -->
+        <td class="py-3.5 px-4">
+          <div class="flex items-center gap-3">
+            <img src="${escapeHtml(imgUrl)}" onerror="handleImgError(this, '${escapeHtml(post.department)}')" onclick="openImageModal('${escapeHtml(imgUrl)}', '${escapeHtml(post.title)}', '${escapeHtml(post.department)}')" class="w-12 h-12 rounded-xl object-cover border border-slate-200 cursor-pointer hover:scale-105 transition-transform shrink-0" alt="Evidence">
+            <div class="max-w-xs">
+              <div class="font-bold text-slate-900 leading-snug line-clamp-1" title="${escapeHtml(post.title)}">${escapeHtml(post.title)}</div>
+              <div class="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
+                <span>📍 ${escapeHtml(post.location_city || 'Sector 62, Noida')}</span>
+                <span>•</span>
+                <span>#${post.id}</span>
+              </div>
+            </div>
+          </div>
+        </td>
+
+        <!-- Dept & Jurisdiction -->
+        <td class="py-3.5 px-3">
+          <div class="font-bold text-slate-800 text-[11px]">${escapeHtml(post.department || 'Civic')}</div>
+          <div class="mt-1">${jurBadge}</div>
+        </td>
+
+        <!-- Severity -->
+        <td class="py-3.5 px-3">
+          ${sevBadge}
+        </td>
+
+        <!-- Statutory SLA -->
+        <td class="py-3.5 px-3">
+          ${slaBadge}
+        </td>
+
+        <!-- Assigned Field Inspector -->
+        <td class="py-3.5 px-3">
+          <select id="admin-officer-select-${post.id}" class="bg-white border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none w-44">
+            <option value="Unassigned" ${assignedOfficer === 'Unassigned' ? 'selected' : ''}>Unassigned</option>
+            <option value="Inspector V. Sharma - Zone 4" ${assignedOfficer === 'Inspector V. Sharma - Zone 4' ? 'selected' : ''}>Inspector V. Sharma - Zone 4</option>
+            <option value="Rapid Response Squad A" ${assignedOfficer === 'Rapid Response Squad A' ? 'selected' : ''}>Rapid Response Squad A</option>
+            <option value="Er. R. Mathur - Public Works" ${assignedOfficer === 'Er. R. Mathur - Public Works' ? 'selected' : ''}>Er. R. Mathur - Public Works</option>
+            <option value="Sanjeev Gupta - Electrical Grid" ${assignedOfficer === 'Sanjeev Gupta - Electrical Grid' ? 'selected' : ''}>Sanjeev Gupta - Electrical Grid</option>
+            <option value="Anita Rao - Sanitation Lead" ${assignedOfficer === 'Anita Rao - Sanitation Lead' ? 'selected' : ''}>Anita Rao - Sanitation Lead</option>
+          </select>
+        </td>
+
+        <!-- Lifecycle Status -->
+        <td class="py-3.5 px-3">
+          <select id="admin-status-select-${post.id}" class="bg-white border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            <option value="Reported" ${postStatus === 'Reported' ? 'selected' : ''}>Reported</option>
+            <option value="Assigned" ${postStatus === 'Assigned' ? 'selected' : ''}>Assigned</option>
+            <option value="In Progress" ${postStatus === 'In Progress' ? 'selected' : ''}>In Progress</option>
+            <option value="Resolved" ${postStatus === 'Resolved' ? 'selected' : ''}>Resolved</option>
+          </select>
+        </td>
+
+        <!-- Dispatch Action -->
+        <td class="py-3.5 px-4 text-right">
+          <button id="admin-dispatch-btn-${post.id}" onclick="updatePostOfficerStatus(${post.id})" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 ml-auto">
+            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+            <span>Dispatch</span>
+          </button>
+        </td>
+      </tr>
+    `;
+    })
+    .join('');
+
+  if (window.lucide) lucide.createIcons();
+}
+
+async function updatePostOfficerStatus(postId) {
+  const officerSelect = document.getElementById(`admin-officer-select-${postId}`);
+  const statusSelect = document.getElementById(`admin-status-select-${postId}`);
+  const dispatchBtn = document.getElementById(`admin-dispatch-btn-${postId}`);
+
+  if (!officerSelect || !statusSelect) return;
+
+  const assigned_officer = officerSelect.value;
+  const status = statusSelect.value;
+
+  if (dispatchBtn) {
+    dispatchBtn.disabled = true;
+    dispatchBtn.innerHTML = `<span class="inline-block animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></span>`;
+  }
+
+  try {
+    const res = await fetch(`/api/civic/${postId}/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, assigned_officer }),
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const updated = await res.json();
+
+    // Update in-memory state
+    if (state.adminData && state.adminData.prioritized_posts) {
+      const idx = state.adminData.prioritized_posts.findIndex((p) => p.id === postId);
+      if (idx !== -1) {
+        state.adminData.prioritized_posts[idx] = updated;
+      }
+    }
+
+    showToast(`✓ Incident #${postId} updated to "${status}" (${assigned_officer})`, 'success');
+    loadAdminDashboard(); // Refresh metrics
+  } catch (err) {
+    console.error('Error dispatching officer status:', err);
+    showToast('Failed to update incident status.', 'error');
+  } finally {
+    if (dispatchBtn) {
+      dispatchBtn.disabled = false;
+      dispatchBtn.innerHTML = `<i data-lucide="send" class="w-3.5 h-3.5"></i><span>Dispatch</span>`;
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+}
+
+// --- Technician & Worker Workspace ---
+
+function handleTechnicianProfileChange(phone) {
+  state.technicianPhone = phone;
+  showToast(`Switched active technician profile to ${phone}`, 'info');
+  loadTechnicianWorkspace();
+}
+
+function switchTechTab(tab) {
+  state.techActiveTab = tab;
+  const btnLeads = document.getElementById('tech-tab-leads');
+  const btnQuotes = document.getElementById('tech-tab-quotes');
+  const viewLeads = document.getElementById('tech-view-leads');
+  const viewQuotes = document.getElementById('tech-view-quotes');
+
+  if (tab === 'leads') {
+    if (btnLeads)
+      btnLeads.className =
+        'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-emerald-900 shadow-sm border border-slate-200/90 transition-all';
+    if (btnQuotes)
+      btnQuotes.className =
+        'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all';
+    if (viewLeads) viewLeads.classList.remove('hidden');
+    if (viewQuotes) viewQuotes.classList.add('hidden');
+  } else {
+    if (btnQuotes)
+      btnQuotes.className =
+        'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/90 transition-all';
+    if (btnLeads)
+      btnLeads.className =
+        'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all';
+    if (viewLeads) viewLeads.classList.add('hidden');
+    if (viewQuotes) viewQuotes.classList.remove('hidden');
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+async function loadTechnicianWorkspace() {
+  const earningsEl = document.getElementById('tech-stat-earnings');
+  const leadsCountEl = document.getElementById('tech-stat-leads');
+  const confirmedCountEl = document.getElementById('tech-stat-confirmed');
+  const badgeAlert = document.getElementById('tech-badge-counter-alert');
+
+  try {
+    const phone = encodeURIComponent(state.technicianPhone);
+    const res = await fetch(`/api/technician/${phone}/jobs`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    state.technicianData = data;
+
+    if (earningsEl) earningsEl.textContent = `₹${(data.total_earnings || 0).toLocaleString()}`;
+    if (leadsCountEl) leadsCountEl.textContent = (data.available_leads || []).length;
+    if (confirmedCountEl) confirmedCountEl.textContent = (data.confirmed_jobs || []).length;
+
+    // Check for pending counter-offers
+    const hasCountered = (data.active_bids || []).some((b) => b.status === 'Countered');
+    if (badgeAlert) {
+      if (hasCountered) {
+        badgeAlert.classList.remove('hidden');
+      } else {
+        badgeAlert.classList.add('hidden');
+      }
+    }
+
+    renderTechLeads(data.available_leads || []);
+    renderTechQuotesAndDeals(data.active_bids || [], data.confirmed_jobs || []);
+  } catch (err) {
+    console.error('Error loading technician workspace:', err);
+    showToast('Failed to load technician workspace.', 'error');
+  }
+}
+
+function renderTechLeads(leads) {
+  const container = document.getElementById('tech-leads-container');
+  if (!container) return;
+
+  if (leads.length === 0) {
+    container.innerHTML = `
+      <div class="col-span-full py-12 text-center text-slate-400 bg-white/60 rounded-3xl border border-slate-200">
+        <p class="text-sm font-semibold">No open repair leads currently available in your sector.</p>
+        <p class="text-xs text-slate-400 mt-1">Check back shortly as new household requests arrive.</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = leads
+    .map((job) => {
+      const imgUrl = job.media_url || getFallbackSvg(job.category || 'Repair');
+      return `
+      <div class="p-5 rounded-3xl bg-white/95 border border-slate-200/90 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+        <div>
+          <!-- Lead Header -->
+          <div class="flex items-start gap-3.5 mb-3.5">
+            <img src="${escapeHtml(imgUrl)}" onerror="handleImgError(this, '${escapeHtml(job.category || 'Repair')}')" class="w-16 h-16 rounded-2xl object-cover border border-slate-200 shrink-0 cursor-pointer" onclick="openImageModal('${escapeHtml(imgUrl)}', '${escapeHtml(job.title || 'Lead')}', '${escapeHtml(job.category || 'Lead')}')" alt="Lead">
+            <div class="flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 uppercase">${escapeHtml(job.category || 'General Repair')}</span>
+                <span class="text-[11px] font-semibold text-slate-400">#${job.id}</span>
+              </div>
+              <h4 class="font-extrabold text-slate-900 text-sm mt-1 leading-snug">${escapeHtml(job.title || 'Household Utility Issue')}</h4>
+              <p class="text-xs text-slate-500 mt-0.5">📍 ${escapeHtml(job.location_city || 'Sector 62, Noida')}</p>
+            </div>
+          </div>
+
+          <!-- Gemma AI Diagnosis & Fair Price Benchmark -->
+          <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 mb-4 text-xs space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">AI Failure Diagnosis:</span>
+              <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md">Fair Price: ₹${job.fair_price_low || 300} - ₹${job.fair_price_high || 600}</span>
+            </div>
+            <p class="text-slate-700 text-[11px] leading-relaxed">${escapeHtml(job.ai_diagnosis || job.description || 'Diagnosis pending')}</p>
+          </div>
+        </div>
+
+        <!-- Inline Bid Submission Form -->
+        <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <div class="relative w-full sm:w-36">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₹</span>
+            <input id="tech-bid-amount-${job.id}" type="number" placeholder="Your Quote" value="${job.ai_price_estimate || ''}" class="w-full pl-6 pr-2.5 py-2 text-xs font-bold rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+          <input id="tech-bid-notes-${job.id}" type="text" placeholder="Note (e.g. Can visit in 30 mins, parts extra)" class="flex-1 px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          <button onclick="submitTechBid('${job.id}')" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-xs transition-all whitespace-nowrap flex items-center justify-center gap-1.5">
+            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+            <span>Send Quote</span>
+          </button>
+        </div>
+      </div>
+    `;
+    })
+    .join('');
+
+  if (window.lucide) lucide.createIcons();
+}
+
+async function submitTechBid(jobId) {
+  const amountInput = document.getElementById(`tech-bid-amount-${jobId}`);
+  const notesInput = document.getElementById(`tech-bid-notes-${jobId}`);
+  const profileSelect = document.getElementById('tech-profile-select');
+
+  if (!amountInput || !amountInput.value) {
+    showToast('Please specify a valid quotation amount (₹).', 'error');
+    return;
+  }
+
+  const amount = parseFloat(amountInput.value);
+  const notes = notesInput ? notesInput.value : '';
+  const selectedText = profileSelect ? profileSelect.options[profileSelect.selectedIndex].text : 'Technician';
+  const worker_name = selectedText.split('(')[0].trim() || 'Verified Technician';
+  const worker_phone = state.technicianPhone;
+
+  try {
+    const res = await fetch(`/api/services/${jobId}/bid`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        worker_name,
+        worker_phone,
+        bid_amount: amount,
+        counter_amount: null,
+        notes,
+      }),
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    showToast(`✓ Quotation of ₹${amount} submitted for lead #${jobId}!`, 'success');
+    loadTechnicianWorkspace();
+    switchTechTab('quotes');
+  } catch (err) {
+    console.error('Error submitting bid:', err);
+    showToast('Failed to submit quote.', 'error');
+  }
+}
+
+function renderTechQuotesAndDeals(activeBids, confirmedJobs) {
+  const negSection = document.getElementById('tech-negotiations-section');
+  const confSection = document.getElementById('tech-confirmed-container');
+  const confCount = document.getElementById('tech-confirmed-count');
+
+  if (confCount) {
+    confCount.textContent = `${confirmedJobs.length} Confirmed Contracts`;
+  }
+
+  // Counter-offers & Active Quotes
+  if (negSection) {
+    const counteredBids = activeBids.filter((b) => b.status === 'Countered');
+    const pendingBids = activeBids.filter((b) => b.status === 'Pending');
+
+    if (counteredBids.length === 0 && pendingBids.length === 0) {
+      negSection.innerHTML = `
+        <div class="p-6 rounded-3xl bg-white/70 border border-slate-200 text-center text-slate-400 text-xs">
+          No pending quotes under review. Check "Available Household Leads" to submit bids.
+        </div>`;
+    } else {
+      let html = '';
+
+      // Prominent Counter-Offer Alerts
+      if (counteredBids.length > 0) {
+        html += counteredBids
+          .map(
+            (b) => `
+          <div class="p-5 rounded-3xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border-2 border-amber-400 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                <i data-lucide="handshake" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white uppercase tracking-wider mb-1">
+                  <span>⚡ Homeowner Counter-Offer Received</span>
+                </span>
+                <h4 class="font-extrabold text-slate-900 text-sm">Citizen offered ₹${b.counter_amount} (Your initial bid: ₹${b.bid_amount})</h4>
+                <p class="text-xs text-slate-600 mt-0.5">Job: #${b.job_id} • Notes: "${escapeHtml(b.notes || 'Ready for quick service')}"</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 self-end md:self-auto">
+              <button onclick="acceptCounterAsTechnician('${b.job_id}', ${b.id}, ${b.counter_amount})" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/25 transition-all flex items-center gap-1.5">
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                <span>Accept Deal at ₹${b.counter_amount} & Lock Payout</span>
+              </button>
+            </div>
+          </div>
+        `
+          )
+          .join('');
+      }
+
+      // Pending Quotes awaiting response
+      if (pendingBids.length > 0) {
+        html += `
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+            ${pendingBids
+              .map(
+                (b) => `
+              <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between">
+                <div>
+                  <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Under Homeowner Review</div>
+                  <div class="font-bold text-slate-800 text-xs mt-0.5">Job #${b.job_id} • Submitted: ₹${b.bid_amount}</div>
+                </div>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">Pending</span>
+              </div>
+            `
+              )
+              .join('')}
+          </div>
+        `;
+      }
+
+      negSection.innerHTML = html;
+    }
+  }
+
+  // Confirmed Contracts
+  if (confSection) {
+    if (confirmedJobs.length === 0) {
+      confSection.innerHTML = `
+        <div class="col-span-full py-8 text-center text-slate-400 text-xs">
+          No confirmed contracts yet for this technician account. Accept homeowner quotes to unlock work orders.
+        </div>`;
+      return;
+    }
+
+    confSection.innerHTML = confirmedJobs
+      .map((job) => {
+        const price = job.final_price || job.agreed_price || 'Agreed Rate';
+        return `
+        <div class="p-5 rounded-2xl bg-emerald-50/50 border border-emerald-200 shadow-xs flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-3 border-b border-emerald-100 mb-3">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                <i data-lucide="shield-check" class="w-3 h-3"></i>
+                <span>Confirmed & Locked in Escrow</span>
+              </span>
+              <span class="text-sm font-black text-emerald-800">₹${price}</span>
+            </div>
+
+            <h4 class="font-bold text-slate-900 text-sm leading-snug">${escapeHtml(job.title || 'Household Utility Repair')}</h4>
+            <div class="text-xs text-slate-600 mt-2 space-y-1">
+              <p>📍 <strong>Address:</strong> ${escapeHtml(job.location_city || 'Sector 62, Noida')}</p>
+              <p>🔧 <strong>Defect:</strong> ${escapeHtml(job.description || 'Ball valve replacement and water line repair')}</p>
+              <p>🤖 <strong>AI Diagnosis:</strong> ${escapeHtml(job.ai_diagnosis || 'Fault diagnosed by Gemma 4')}</p>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-emerald-100 mt-4 flex items-center justify-between">
+            <span class="text-[11px] text-emerald-700 font-semibold">Client Phone: <strong>${escapeHtml(job.user_phone || '+91 98100 23456')}</strong></span>
+            <a href="tel:${escapeHtml(job.user_phone || '+91 98100 23456')}" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5">
+              <i data-lucide="phone" class="w-3.5 h-3.5"></i>
+              <span>Call Client</span>
+            </a>
+          </div>
+        </div>
+      `;
+      })
+      .join('');
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+async function acceptCounterAsTechnician(jobId, bidId, counterAmount) {
+  try {
+    const res = await fetch(`/api/services/${jobId}/accept`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bid_id: bidId }),
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    showToast(`🎉 Deal confirmed at ₹${counterAmount}! Payout locked in escrow.`, 'success');
+    loadTechnicianWorkspace();
+  } catch (err) {
+    console.error('Error accepting counter offer:', err);
+    showToast('Failed to accept counter-offer.', 'error');
+  }
+}
+
 // Global window exposure for inline HTML event handlers
 window.openLetterModal = openLetterModal;
 window.closeLetterModal = closeLetterModal;
@@ -1401,4 +2013,16 @@ window.closeLetterModalOnBackdrop = closeLetterModalOnBackdrop;
 window.switchLetterType = switchLetterType;
 window.copyLetterText = copyLetterText;
 window.printLetterDoc = printLetterDoc;
+
+// Pillar 3 window exposures
+window.switchPersona = switchPersona;
+window.loadAdminDashboard = loadAdminDashboard;
+window.setAdminDepartment = setAdminDepartment;
+window.updatePostOfficerStatus = updatePostOfficerStatus;
+window.handleTechnicianProfileChange = handleTechnicianProfileChange;
+window.switchTechTab = switchTechTab;
+window.loadTechnicianWorkspace = loadTechnicianWorkspace;
+window.submitTechBid = submitTechBid;
+window.acceptCounterAsTechnician = acceptCounterAsTechnician;
+
 

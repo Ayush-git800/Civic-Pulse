@@ -56,6 +56,8 @@ def init_db() -> None:
                 upvotes INTEGER DEFAULT 0,
                 urgent_flags INTEGER DEFAULT 0,
                 status TEXT DEFAULT 'Reported',
+                assigned_officer TEXT DEFAULT 'Unassigned',
+                sla_hours INTEGER DEFAULT 48,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             """
@@ -88,6 +90,7 @@ def init_db() -> None:
                 estimated_price TEXT,
                 final_price TEXT,
                 status TEXT DEFAULT 'Open',
+                assigned_worker_phone TEXT DEFAULT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             """
@@ -109,6 +112,27 @@ def init_db() -> None:
             );
             """
         )
+
+        # Dynamic Schema Migrations for Existing Databases
+        cursor.execute("PRAGMA table_info(civic_posts);")
+        columns = [row[1] for row in cursor.fetchall()]
+        if "assigned_officer" not in columns:
+            cursor.execute("ALTER TABLE civic_posts ADD COLUMN assigned_officer TEXT DEFAULT 'Unassigned';")
+        if "sla_hours" not in columns:
+            cursor.execute("ALTER TABLE civic_posts ADD COLUMN sla_hours INTEGER DEFAULT 48;")
+
+        cursor.execute("PRAGMA table_info(service_jobs);")
+        job_cols = [row[1] for row in cursor.fetchall()]
+        if "assigned_worker_phone" not in job_cols:
+            cursor.execute("ALTER TABLE service_jobs ADD COLUMN assigned_worker_phone TEXT DEFAULT NULL;")
+
+        # Normalize existing posts with valid SLAs and officer assignments
+        cursor.execute("UPDATE civic_posts SET assigned_officer = 'Unassigned' WHERE assigned_officer IS NULL;")
+        cursor.execute("UPDATE civic_posts SET sla_hours = 24 WHERE (sla_hours IS NULL OR sla_hours = 48) AND LOWER(severity) = 'critical';")
+        cursor.execute("UPDATE civic_posts SET sla_hours = 48 WHERE (sla_hours IS NULL) AND LOWER(severity) = 'high';")
+        cursor.execute("UPDATE civic_posts SET sla_hours = 72 WHERE (sla_hours IS NULL) AND LOWER(severity) IN ('moderate', 'medium');")
+        cursor.execute("UPDATE civic_posts SET sla_hours = 120 WHERE (sla_hours IS NULL) AND LOWER(severity) = 'low';")
+
         conn.commit()
 
 
@@ -168,6 +192,11 @@ def create_civic_post(post_data: dict) -> dict:
     upvotes = int(post_data.get("upvotes", 0))
     urgent_flags = int(post_data.get("urgent_flags", 0))
     status = post_data.get("status", "Reported")
+    assigned_officer = post_data.get("assigned_officer") or "Unassigned"
+
+    # Calculate statutory SLA in hours based on severity
+    sla_map = {"critical": 24, "high": 48, "moderate": 72, "medium": 72, "low": 120}
+    sla_hours = int(post_data.get("sla_hours") or sla_map.get(str(severity).lower(), 48))
 
     with db_lock:
         cursor = conn.cursor()
@@ -176,8 +205,9 @@ def create_civic_post(post_data: dict) -> dict:
             INSERT INTO civic_posts (
                 id, title, description, image_url, location_city,
                 lat, lng, department, severity, is_local,
-                external_portals, upvotes, urgent_flags, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                external_portals, upvotes, urgent_flags, status,
+                assigned_officer, sla_hours
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """,
             (
                 post_id,
@@ -194,6 +224,8 @@ def create_civic_post(post_data: dict) -> dict:
                 upvotes,
                 urgent_flags,
                 status,
+                assigned_officer,
+                sla_hours,
             ),
         )
         conn.commit()
@@ -398,6 +430,8 @@ def accept_bid(bid_id: str, job_id: Optional[str] = None, final_price: str = "")
 
         resolved_job_id = job_id or bid["job_id"]
 
+        worker_phone = bid["worker_phone"]
+
         # Accept selected bid
         cursor.execute(
             "UPDATE service_bids SET status = 'Accepted' WHERE id = ?;",
@@ -408,14 +442,14 @@ def accept_bid(bid_id: str, job_id: Optional[str] = None, final_price: str = "")
             "UPDATE service_bids SET status = 'Rejected' WHERE job_id = ? AND id != ?;",
             (resolved_job_id, bid_id),
         )
-        # Update job status to Confirmed and final price
+        # Update job status to Confirmed, final price, and assigned worker phone
         cursor.execute(
             """
             UPDATE service_jobs
-            SET status = 'Confirmed', final_price = ?
+            SET status = 'Confirmed', final_price = ?, assigned_worker_phone = ?
             WHERE id = ?;
             """,
-            (final_price, resolved_job_id),
+            (final_price, worker_phone, resolved_job_id),
         )
         conn.commit()
 
@@ -562,3 +596,281 @@ def seed_initial_data() -> None:
 
         for job_id, worker_name, worker_phone, bid_amount in demo_bids:
             create_bid(job_id=job_id, worker_name=worker_name, worker_phone=worker_phone, bid_amount=bid_amount)
+
+    # Ensure realistic confirmed job and active counter-offer exist for technician demo
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) AS count FROM service_jobs WHERE status = 'Confirmed';")
+        if cursor.fetchone()["count"] == 0:
+            confirmed_job_id = "job-demo-003"
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO service_jobs (
+                    id, title, description, category, media_url, location_city,
+                    estimated_price, final_price, status, assigned_worker_phone
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Confirmed', ?);
+                """,
+                (
+                    confirmed_job_id,
+                    "Rooftop Water Tank Ball Valve Replacement",
+                    "Overhead Sintex 1000L tank valve jammed and continuously overflowing onto terrace. Brass ball valve replaced and float calibrated.",
+                    "Plumbing",
+                    "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=800&q=80",
+                    "Sector 62, Noida",
+                    "₹800 - ₹1200",
+                    "₹950",
+                    "+91 98765 43210",
+                ),
+            )
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO service_bids (
+                    id, job_id, worker_name, worker_phone, bid_amount, counter_amount, status
+                ) VALUES (?, ?, ?, ?, ?, ?, 'Accepted');
+                """,
+                (
+                    "bid-demo-accepted-001",
+                    confirmed_job_id,
+                    "Ramesh Kumar (Expert Plumber)",
+                    "+91 98765 43210",
+                    950,
+                    950,
+                ),
+            )
+            # Mark Ramesh Kumar's bid on job-demo-001 as Countered to demonstrate homeowner negotiation
+            cursor.execute(
+                """
+                UPDATE service_bids
+                SET status = 'Countered', counter_amount = 500
+                WHERE job_id = 'job-demo-001' AND worker_phone = '+91 98765 43210';
+                """
+            )
+            conn.commit()
+
+
+# ==============================================================================
+# PILLAR 3: MUNICIPAL COMMAND CENTER & TECHNICIAN WORKSPACE SERVICES
+# ==============================================================================
+
+def update_civic_status_and_officer(
+    post_id: str,
+    status: str,
+    assigned_officer: Optional[str] = None,
+) -> Optional[dict]:
+    """
+    Updates the operational lifecycle status and field inspector assignment
+    for a municipal civic complaint.
+    """
+    with db_lock:
+        cursor = conn.cursor()
+        if assigned_officer:
+            cursor.execute(
+                """
+                UPDATE civic_posts
+                SET status = ?, assigned_officer = ?
+                WHERE id = ?;
+                """,
+                (status, assigned_officer, post_id),
+            )
+        else:
+            cursor.execute(
+                """
+                UPDATE civic_posts
+                SET status = ?
+                WHERE id = ?;
+                """,
+                (status, post_id),
+            )
+        conn.commit()
+
+    return get_civic_post_by_id(post_id)
+
+
+def get_admin_overview_stats() -> dict:
+    """
+    Computes real-time municipal command center metrics:
+    - Active Critical & High hazard tallies
+    - Breach-risk SLA counts (< 12 hours remaining)
+    - Unassigned complaints counter
+    - Overall resolution rate (%)
+    - Departmental breakdown & priority-sorted complaints queue
+    """
+    from datetime import datetime, timedelta
+
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM civic_posts ORDER BY created_at DESC;")
+        rows = cursor.fetchall()
+        posts = [_format_post(r) for r in rows]
+
+    total_posts = len(posts)
+    active_posts = [p for p in posts if p.get("status") != "Resolved"]
+    resolved_posts = [p for p in posts if p.get("status") == "Resolved"]
+
+    critical_count = sum(
+        1 for p in posts
+        if str(p.get("severity", "")).lower() == "critical" and p.get("status") != "Resolved"
+    )
+    high_count = sum(
+        1 for p in posts
+        if str(p.get("severity", "")).lower() == "high" and p.get("status") != "Resolved"
+    )
+    unassigned_count = sum(
+        1 for p in posts
+        if (not p.get("assigned_officer") or p.get("assigned_officer") == "Unassigned")
+        and p.get("status") != "Resolved"
+    )
+
+    now = datetime.utcnow()
+    sla_at_risk_count = 0
+    severity_weights = {"critical": 4, "high": 3, "moderate": 2, "medium": 2, "low": 1}
+
+    for p in posts:
+        created_str = p.get("created_at") or ""
+        sla_h = int(p.get("sla_hours") or 48)
+        created_dt = None
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S.%f"):
+            try:
+                created_dt = datetime.strptime(created_str.split(".")[0], fmt)
+                break
+            except Exception:
+                pass
+
+        if not created_dt:
+            created_dt = now - timedelta(hours=14)
+
+        deadline = created_dt + timedelta(hours=sla_h)
+        remaining_seconds = (deadline - now).total_seconds()
+        remaining_hours = remaining_seconds / 3600.0
+
+        p["sla_remaining_seconds"] = int(remaining_seconds)
+        p["sla_remaining_hours"] = round(remaining_hours, 1)
+
+        # SLA status string
+        if p.get("status") == "Resolved":
+            p["sla_label"] = "Resolved"
+            p["sla_badge_class"] = "bg-emerald-100 text-emerald-800 border-emerald-200"
+        elif remaining_seconds <= 0:
+            p["sla_label"] = f"Breached ({abs(round(remaining_hours, 1))}h ago)"
+            p["sla_badge_class"] = "bg-red-100 text-red-800 border-red-300 animate-pulse font-bold"
+            sla_at_risk_count += 1
+        elif remaining_hours < 12:
+            p["sla_label"] = f"Urgent ({round(remaining_hours, 1)}h left)"
+            p["sla_badge_class"] = "bg-amber-100 text-amber-900 border-amber-300 font-bold"
+            sla_at_risk_count += 1
+        else:
+            p["sla_label"] = f"{int(remaining_hours)}h remaining"
+            p["sla_badge_class"] = "bg-slate-100 text-slate-700 border-slate-200"
+
+        p["severity_weight"] = severity_weights.get(str(p.get("severity", "")).lower(), 1)
+
+    # Sort prioritized list: Active issues first, then highest severity, then closest deadline
+    sorted_posts = sorted(
+        posts,
+        key=lambda x: (
+            0 if x.get("status") == "Resolved" else 1,
+            x.get("severity_weight", 1),
+            -x.get("sla_remaining_seconds", 0),
+        ),
+        reverse=True,
+    )
+
+    # Department breakdown
+    dept_counts: Dict[str, int] = {}
+    for p in posts:
+        dept = p.get("department") or "Other"
+        dept_counts[dept] = dept_counts.get(dept, 0) + 1
+
+    resolution_rate = (
+        round((len(resolved_posts) / total_posts * 100), 1) if total_posts > 0 else 0.0
+    )
+
+    return {
+        "total_posts": total_posts,
+        "total_active_issues": len(active_posts),
+        "resolved_count": len(resolved_posts),
+        "critical_count": critical_count,
+        "high_count": high_count,
+        "critical_high_count": critical_count + high_count,
+        "unassigned_count": unassigned_count,
+        "sla_at_risk_count": sla_at_risk_count,
+        "resolution_rate": resolution_rate,
+        "department_breakdown": dept_counts,
+        "prioritized_posts": sorted_posts,
+    }
+
+
+def get_technician_jobs_and_bids(worker_phone: str) -> dict:
+    """
+    Retrieves technician workspace data:
+    - Active bids (Pending or Countered)
+    - Confirmed contracts and total earnings
+    - Open household leads available for quoting
+    """
+    clean_phone = worker_phone.strip()
+
+    with db_lock:
+        cursor = conn.cursor()
+
+        # 1. Active Bids by this worker
+        cursor.execute(
+            """
+            SELECT b.id AS bid_id, b.job_id, b.worker_name, b.worker_phone,
+                   b.bid_amount, b.counter_amount, b.status AS bid_status,
+                   b.created_at AS bid_created_at,
+                   j.title AS job_title, j.description AS job_description,
+                   j.category AS job_category, j.media_url, j.location_city,
+                   j.estimated_price, j.status AS job_status, j.final_price
+            FROM service_bids b
+            JOIN service_jobs j ON b.job_id = j.id
+            WHERE b.worker_phone = ? AND b.status IN ('Pending', 'Countered')
+            ORDER BY b.created_at DESC;
+            """,
+            (clean_phone,),
+        )
+        active_bids = [dict(r) for r in cursor.fetchall()]
+
+        # 2. Confirmed Jobs for this worker
+        cursor.execute(
+            """
+            SELECT j.*, b.bid_amount, b.counter_amount, b.worker_name
+            FROM service_jobs j
+            LEFT JOIN service_bids b ON j.id = b.job_id AND b.worker_phone = ? AND b.status = 'Accepted'
+            WHERE j.status = 'Confirmed' AND (j.assigned_worker_phone = ? OR b.id IS NOT NULL)
+            ORDER BY j.created_at DESC;
+            """,
+            (clean_phone, clean_phone),
+        )
+        confirmed_jobs = [dict(r) for r in cursor.fetchall()]
+
+        # 3. Available Leads (Open or Negotiating jobs)
+        cursor.execute(
+            """
+            SELECT j.*, COUNT(b.id) AS total_bids
+            FROM service_jobs j
+            LEFT JOIN service_bids b ON j.id = b.job_id
+            WHERE j.status IN ('Open', 'Negotiating')
+            GROUP BY j.id
+            ORDER BY j.created_at DESC;
+            """
+        )
+        available_leads = [dict(r) for r in cursor.fetchall()]
+
+    # Calculate total earnings from confirmed contracts
+    total_earnings = 0
+    for job in confirmed_jobs:
+        fp = str(job.get("final_price") or "")
+        digits = "".join(ch for ch in fp if ch.isdigit())
+        if digits:
+            total_earnings += int(digits)
+        elif job.get("bid_amount"):
+            total_earnings += int(job["bid_amount"])
+
+    return {
+        "worker_phone": clean_phone,
+        "total_earnings": total_earnings,
+        "active_bids": active_bids,
+        "confirmed_jobs": confirmed_jobs,
+        "available_leads": available_leads,
+    }
+

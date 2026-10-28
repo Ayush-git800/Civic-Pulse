@@ -74,3 +74,15 @@ class LetterRequest(BaseModel):
         "municipal",
         description="Type of letter to generate: 'municipal' (Formal Notice) or 'rti' (RTI Act Application)"
     )
+
+
+class CivicStatusUpdate(BaseModel):
+    """Schema for municipal officer updating complaint lifecycle status and assigned inspector."""
+    status: str = Field(
+        ...,
+        description="Operational status: 'Reported', 'Assigned', 'In Progress', 'Resolved'"
+    )
+    assigned_officer: Optional[str] = Field(
+        "Unassigned",
+        description="Designated field inspector, junior engineer, or response squad"
+    )

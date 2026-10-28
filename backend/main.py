@@ -20,14 +20,17 @@ from backend.database import (
     create_civic_post,
     create_service_job,
     flag_urgent_post,
+    get_admin_overview_stats,
     get_all_civic_posts,
     get_all_service_jobs,
     get_bids_for_job,
     get_civic_post_by_id,
     get_comments,
     get_service_job_by_id,
+    get_technician_jobs_and_bids,
     init_db,
     seed_initial_data,
+    update_civic_status_and_officer,
     upvote_post,
 )
 from backend.gemma_service import (
@@ -41,6 +44,7 @@ from backend.models import (
     BidCreate,
     ChatRequest,
     CivicPostCreate,
+    CivicStatusUpdate,
     CommentCreate,
     CounterBidCreate,
     LetterRequest,
@@ -253,6 +257,55 @@ async def add_post_comment(post_id: str, payload: CommentCreate) -> Dict[str, An
         raise HTTPException(status_code=404, detail="Civic post not found")
     created_comment = add_comment(post_id=post_id, author=payload.author, comment=payload.comment)
     return created_comment
+
+
+# ==============================================================================
+# PILLAR 3: MUNICIPAL COMMAND CENTER & TECHNICIAN WORKSPACE ENDPOINTS
+# ==============================================================================
+
+@app.get("/api/admin/overview", tags=["Command Center"])
+async def get_admin_overview() -> Dict[str, Any]:
+    """
+    Municipal Officer Command Center:
+    Returns real-time SLA breach risks, active critical hazards,
+    unassigned complaints, departmental breakdowns, and prioritized queue.
+    """
+    return get_admin_overview_stats()
+
+
+@app.post("/api/civic/{post_id}/status", tags=["Command Center"])
+@app.post("/api/civic/posts/{post_id}/status", tags=["Command Center"])
+async def update_post_status(
+    post_id: str,
+    payload: CivicStatusUpdate,
+) -> Dict[str, Any]:
+    """
+    Municipal Officer Complaint Lifecycle & Field Inspector Assignment:
+    Updates status ('Reported', 'Assigned', 'In Progress', 'Resolved')
+    and assigns a field inspector / squad to the civic hazard.
+    """
+    post = get_civic_post_by_id(post_id)
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Civic post with ID '{post_id}' not found.",
+        )
+    updated = update_civic_status_and_officer(
+        post_id=post_id,
+        status=payload.status,
+        assigned_officer=payload.assigned_officer,
+    )
+    return updated or post
+
+
+@app.get("/api/technician/{phone}/jobs", tags=["Technician Workspace"])
+async def get_technician_jobs(phone: str) -> Dict[str, Any]:
+    """
+    Technician & Tradesperson Workspace:
+    Returns active submitted quotes, counter-offers, confirmed contracts with agreed payouts,
+    and open household repair leads matching their trade.
+    """
+    return get_technician_jobs_and_bids(phone)
 
 
 # --- AI Chat / PulseBot Endpoints (Phase 2) ---
