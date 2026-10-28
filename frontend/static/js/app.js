@@ -2006,6 +2006,193 @@ async function acceptCounterAsTechnician(jobId, bidId, counterAmount) {
   }
 }
 
+// =========================================================================
+// CIVICTALK: MULTILINGUAL VOICE-TO-TRIAGE (Gemma 4 Multimodal Audio)
+// =========================================================================
+
+let civicTalkMediaRecorder = null;
+let civicTalkAudioChunks = [];
+let civicTalkTimerInterval = null;
+let civicTalkStartTime = 0;
+let isCivicTalkRecording = false;
+
+function startCivicTalkFromBanner() {
+  openModal('modal-civic');
+  setTimeout(() => {
+    startCivicTalkRecording();
+  }, 400);
+}
+
+function toggleCivicTalkRecording() {
+  if (isCivicTalkRecording) {
+    stopCivicTalkRecording();
+  } else {
+    startCivicTalkRecording();
+  }
+}
+
+async function startCivicTalkRecording() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showToast('Voice recording is not supported in this browser.', 'error');
+    return;
+  }
+
+  const idleBox = document.getElementById('civictalk-idle-box');
+  const recBox = document.getElementById('civictalk-recording-box');
+  const procBox = document.getElementById('civictalk-processing-box');
+  const resBox = document.getElementById('civictalk-result-box');
+  const timerEl = document.getElementById('civictalk-timer');
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    civicTalkAudioChunks = [];
+
+    // Determine supported mime type
+    let mimeType = 'audio/webm';
+    if (window.MediaRecorder && !MediaRecorder.isTypeSupported('audio/webm')) {
+      if (MediaRecorder.isTypeSupported('audio/mp4')) {
+        mimeType = 'audio/mp4';
+      } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+        mimeType = 'audio/ogg';
+      }
+    }
+
+    civicTalkMediaRecorder = new MediaRecorder(stream, { mimeType });
+
+    civicTalkMediaRecorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) {
+        civicTalkAudioChunks.push(e.data);
+      }
+    };
+
+    civicTalkMediaRecorder.onstop = async () => {
+      // Stop all tracks to release mic
+      stream.getTracks().forEach((track) => track.stop());
+
+      if (civicTalkAudioChunks.length === 0) {
+        showToast('No audio recorded. Please try again.', 'info');
+        resetCivicTalk();
+        return;
+      }
+
+      const audioBlob = new Blob(civicTalkAudioChunks, { type: mimeType });
+      await sendAudioToCivicTalk(audioBlob);
+    };
+
+    civicTalkMediaRecorder.start(250); // Slice data every 250ms
+    isCivicTalkRecording = true;
+
+    // UI state
+    if (idleBox) idleBox.classList.add('hidden');
+    if (recBox) recBox.classList.remove('hidden');
+    if (procBox) procBox.classList.add('hidden');
+    if (resBox) resBox.classList.add('hidden');
+
+    // Start timer
+    civicTalkStartTime = Date.now();
+    if (timerEl) timerEl.textContent = '00:00';
+    clearInterval(civicTalkTimerInterval);
+    civicTalkTimerInterval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - civicTalkStartTime) / 1000);
+      const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+      const secs = String(elapsed % 60).padStart(2, '0');
+      if (timerEl) timerEl.textContent = `${mins}:${secs}`;
+    }, 500);
+
+    showToast('🎙️ CivicTalk listening... Speak in Hindi, Hinglish, or English.', 'info');
+  } catch (err) {
+    console.error('Error starting audio recording:', err);
+    showToast('Microphone access denied or unavailable.', 'error');
+    resetCivicTalk();
+  }
+}
+
+function stopCivicTalkRecording() {
+  clearInterval(civicTalkTimerInterval);
+
+  const recBox = document.getElementById('civictalk-recording-box');
+  const procBox = document.getElementById('civictalk-processing-box');
+
+  if (recBox) recBox.classList.add('hidden');
+  if (procBox) procBox.classList.remove('hidden');
+
+  if (civicTalkMediaRecorder && civicTalkMediaRecorder.state !== 'inactive') {
+    civicTalkMediaRecorder.stop();
+  }
+  isCivicTalkRecording = false;
+}
+
+async function sendAudioToCivicTalk(audioBlob) {
+  const procBox = document.getElementById('civictalk-processing-box');
+  const resBox = document.getElementById('civictalk-result-box');
+  const idleBox = document.getElementById('civictalk-idle-box');
+
+  const origEl = document.getElementById('civictalk-orig-transcript');
+  const landmarkEl = document.getElementById('civictalk-landmark');
+  const deptChip = document.getElementById('civictalk-dept-chip');
+  const sevChip = document.getElementById('civictalk-sev-chip');
+  const descInput = document.getElementById('civic-desc-input');
+  const locInput = document.getElementById('civic-location-input');
+
+  try {
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'recording.webm');
+
+    const res = await fetch('/api/civic/talk', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+
+    // Populate auto-filled form values
+    if (descInput && data.english_summary) {
+      descInput.value = data.english_summary;
+    }
+
+    if (locInput && data.extracted_landmark && data.extracted_landmark !== 'Not specified') {
+      locInput.value = data.extracted_landmark;
+    }
+
+    // Populate preview card
+    if (origEl) origEl.textContent = `"${data.original_transcript || 'Audio analyzed.'}"`;
+    if (landmarkEl) landmarkEl.textContent = data.extracted_landmark || 'Locality detected';
+    if (deptChip) deptChip.textContent = `🏛️ ${data.department || 'Roads & Transport'}`;
+    if (sevChip) sevChip.textContent = `⚠️ ${data.severity || 'Moderate'} Severity`;
+
+    if (procBox) procBox.classList.add('hidden');
+    if (resBox) resBox.classList.remove('hidden');
+
+    showToast(`✓ Voice report triaged by Gemma 4 into ${data.department}!`, 'success');
+  } catch (err) {
+    console.error('Error in sendAudioToCivicTalk:', err);
+    showToast('Voice processing error. You can still type details manually.', 'error');
+    if (procBox) procBox.classList.add('hidden');
+    if (idleBox) idleBox.classList.remove('hidden');
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function resetCivicTalk() {
+  clearInterval(civicTalkTimerInterval);
+  isCivicTalkRecording = false;
+
+  const idleBox = document.getElementById('civictalk-idle-box');
+  const recBox = document.getElementById('civictalk-recording-box');
+  const procBox = document.getElementById('civictalk-processing-box');
+  const resBox = document.getElementById('civictalk-result-box');
+
+  if (idleBox) idleBox.classList.remove('hidden');
+  if (recBox) recBox.classList.add('hidden');
+  if (procBox) procBox.classList.add('hidden');
+  if (resBox) resBox.classList.add('hidden');
+}
+
 // Global window exposure for inline HTML event handlers
 window.openLetterModal = openLetterModal;
 window.closeLetterModal = closeLetterModal;
@@ -2024,5 +2211,13 @@ window.switchTechTab = switchTechTab;
 window.loadTechnicianWorkspace = loadTechnicianWorkspace;
 window.submitTechBid = submitTechBid;
 window.acceptCounterAsTechnician = acceptCounterAsTechnician;
+
+// CivicTalk window exposures
+window.startCivicTalkFromBanner = startCivicTalkFromBanner;
+window.toggleCivicTalkRecording = toggleCivicTalkRecording;
+window.startCivicTalkRecording = startCivicTalkRecording;
+window.stopCivicTalkRecording = stopCivicTalkRecording;
+window.resetCivicTalk = resetCivicTalk;
+
 
 

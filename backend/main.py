@@ -37,6 +37,7 @@ from backend.gemma_service import (
     analyze_civic_issue,
     diagnose_home_repair,
     generate_formal_grievance,
+    process_civic_talk_audio,
     pulsebot_chat,
 )
 from backend.models import (
@@ -240,6 +241,29 @@ async def generate_civic_letter(
         "letter_type": payload.letter_type,
         "letter": letter_content,
     }
+
+
+@app.post("/api/civic/talk", tags=["Civic"])
+async def civic_talk_voice_triage(
+    audio: UploadFile = File(...),
+) -> Dict[str, Any]:
+    """
+    CivicTalk: Multilingual Voice-to-Triage endpoint.
+    - Accepts voice audio file in colloquial Hindi, Hinglish, or English.
+    - Natively analyzed with Gemma 4 Audio Understanding / Gemini Multimodal.
+    - Returns transcribed speech, formal English summary, extracted landmark,
+      department categorization, and safety severity assessment.
+    """
+    audio_bytes = await audio.read()
+    if not audio_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Empty audio recording submitted.",
+        )
+
+    mime_type = audio.content_type or "audio/webm"
+    result = process_civic_talk_audio(audio_bytes=audio_bytes, mime_type=mime_type)
+    return result
 
 
 @app.post("/api/civic/{post_id}/comment", status_code=status.HTTP_201_CREATED, tags=["Civic"])

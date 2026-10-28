@@ -312,5 +312,27 @@
   animation: fadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* 12. CivicTalk Voice Recording Soundwave & Pulse Animation */
+@keyframes audioWavePulse {
+  0%, 100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1.3);
+  }
+}
+
+.audiowave-bar {
+  animation: audioWavePulse 1s infinite ease-in-out;
+  transform-origin: center;
+}
+.audiowave-bar:nth-child(1) { animation-delay: 0.05s; }
+.audiowave-bar:nth-child(2) { animation-delay: 0.2s; }
+.audiowave-bar:nth-child(3) { animation-delay: 0.35s; }
+.audiowave-bar:nth-child(4) { animation-delay: 0.5s; }
+.audiowave-bar:nth-child(5) { animation-delay: 0.65s; }
+.audiowave-bar:nth-child(6) { animation-delay: 0.25s; }
+
+
 
 
