@@ -174,9 +174,13 @@ function showToast(message, type = 'success') {
 
 // --- 1. Dynamic Geolocation Detection ---
 function initGeolocation() {
-  const locBadge = document.getElementById('location-pill-text');
+  const locBadge = document.getElementById('userLocationPill');
+  const legacyBadge = document.getElementById('location-pill-text');
+  if (locBadge) locBadge.textContent = 'Detecting Location...';
+
   if (!navigator.geolocation) {
-    if (locBadge) locBadge.textContent = state.location;
+    if (locBadge) locBadge.textContent = state.location.replace('📍 ', '');
+    if (legacyBadge) legacyBadge.textContent = state.location;
     return;
   }
 
@@ -204,12 +208,16 @@ function initGeolocation() {
       } catch (e) {
         state.location = '📍 Sector 62, Noida';
       }
-      if (locBadge) locBadge.textContent = state.location;
+      const cleanLoc = state.location.replace('📍 ', '');
+      if (locBadge) locBadge.textContent = cleanLoc;
+      if (legacyBadge) legacyBadge.textContent = state.location;
       syncLocationInputs();
     },
     () => {
       state.location = '📍 Sector 62, Noida';
-      if (locBadge) locBadge.textContent = state.location;
+      const cleanLoc = state.location.replace('📍 ', '');
+      if (locBadge) locBadge.textContent = cleanLoc;
+      if (legacyBadge) legacyBadge.textContent = state.location;
       syncLocationInputs();
     },
     { timeout: 7000 }
@@ -1418,14 +1426,14 @@ function switchPersona(persona) {
 
   // Reset desktop button styles
   const defaultDeskClass =
-    'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all';
+    'btn-tactile flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-all';
   if (btnCitizen) btnCitizen.className = defaultDeskClass;
   if (btnAdmin) btnAdmin.className = defaultDeskClass;
   if (btnTech) btnTech.className = defaultDeskClass;
 
   // Reset mobile button styles
   const defaultMobClass =
-    'flex-1 py-1.5 px-2 text-center text-xs font-semibold rounded-xl bg-white text-slate-600 border border-slate-200 whitespace-nowrap';
+    'flex-1 py-1.5 px-2.5 text-center text-xs font-semibold rounded-xl bg-white/5 text-slate-400 border border-white/10 whitespace-nowrap';
   if (mBtnCitizen) mBtnCitizen.className = defaultMobClass;
   if (mBtnAdmin) mBtnAdmin.className = defaultMobClass;
   if (mBtnTech) mBtnTech.className = defaultMobClass;
@@ -1439,31 +1447,43 @@ function switchPersona(persona) {
     if (viewCitizen) viewCitizen.classList.remove('hidden');
     if (btnCitizen)
       btnCitizen.className =
-        'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/90 transition-all';
+        'btn-tactile flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/25 border border-indigo-400/30 transition-all';
     if (mBtnCitizen)
       mBtnCitizen.className =
-        'flex-1 py-1.5 px-2 text-center text-xs font-bold rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 whitespace-nowrap';
+        'flex-1 py-1.5 px-2.5 text-center text-xs font-bold rounded-xl bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 whitespace-nowrap';
   } else if (persona === 'admin') {
     if (viewAdmin) viewAdmin.classList.remove('hidden');
     if (btnAdmin)
       btnAdmin.className =
-        'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-rose-900 shadow-sm border border-rose-200/90 transition-all';
+        'btn-tactile flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 text-white shadow-md shadow-rose-500/25 border border-rose-400/30 transition-all';
     if (mBtnAdmin)
       mBtnAdmin.className =
-        'flex-1 py-1.5 px-2 text-center text-xs font-bold rounded-xl bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap';
+        'flex-1 py-1.5 px-2.5 text-center text-xs font-bold rounded-xl bg-rose-600/30 text-rose-300 border border-rose-500/40 whitespace-nowrap';
     loadAdminDashboard();
   } else if (persona === 'technician') {
     if (viewTech) viewTech.classList.remove('hidden');
     if (btnTech)
       btnTech.className =
-        'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-emerald-900 shadow-sm border border-emerald-200/90 transition-all';
+        'btn-tactile flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white shadow-md shadow-emerald-500/25 border border-emerald-400/30 transition-all';
     if (mBtnTech)
       mBtnTech.className =
-        'flex-1 py-1.5 px-2 text-center text-xs font-bold rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap';
+        'flex-1 py-1.5 px-2.5 text-center text-xs font-bold rounded-xl bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 whitespace-nowrap';
     loadTechnicianWorkspace();
   }
 
   if (window.lucide) lucide.createIcons();
+}
+
+function showCitizenView() {
+  switchPersona('citizen');
+}
+
+function showAdminView() {
+  switchPersona('admin');
+}
+
+function showTechnicianView() {
+  switchPersona('technician');
 }
 
 // --- Municipal Officer Command Center ---
@@ -2276,10 +2296,12 @@ function closeCityModalOnBackdrop(e) {
 
 function selectCity(city) {
   state.location = city;
-  const pill = document.getElementById('location-pill-text');
-  if (pill) pill.textContent = city;
-  
   const clean = city.replace('📍 ', '');
+  const locBadge = document.getElementById('userLocationPill');
+  if (locBadge) locBadge.textContent = clean;
+  const legacyBadge = document.getElementById('location-pill-text');
+  if (legacyBadge) legacyBadge.textContent = city;
+  
   const cInp = document.getElementById('civic-location-input');
   const jInp = document.getElementById('job-location-input');
   if (cInp) cInp.value = clean;
@@ -2298,6 +2320,147 @@ function applyCustomCity() {
   }
 }
 
+// --- Dedicated Multi-Role Authentication & Registration Gateway ---
+function openAuthModal() {
+  const m = document.getElementById('authModal');
+  if (m) {
+    m.classList.remove('hidden');
+    // Pre-populate locality if available
+    const locInp = document.getElementById('auth-citizen-locality');
+    if (locInp && (!locInp.value || locInp.value === 'Sector 62, Noida')) {
+      const clean = state.location.replace('📍 ', '');
+      if (clean) locInp.value = clean;
+    }
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+function closeAuthModal() {
+  const m = document.getElementById('authModal');
+  if (m) m.classList.add('hidden');
+}
+
+function closeAuthModalOnBackdrop(e) {
+  if (e.target.id === 'authModal') closeAuthModal();
+}
+
+function switchAuthTab(tab) {
+  state.authTab = tab;
+  const btnLogin = document.getElementById('auth-tab-login');
+  const btnReg = document.getElementById('auth-tab-register');
+  const submitBtn = document.getElementById('auth-submit-btn');
+
+  if (tab === 'login') {
+    if (btnLogin) {
+      btnLogin.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/20';
+    }
+    if (btnReg) {
+      btnReg.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-all';
+    }
+    if (submitBtn) submitBtn.textContent = 'Sign In to Portal';
+  } else {
+    if (btnReg) {
+      btnReg.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/20';
+    }
+    if (btnLogin) {
+      btnLogin.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-all';
+    }
+    if (submitBtn) submitBtn.textContent = 'Create Account & Enter';
+  }
+}
+
+function setAuthRole(role) {
+  state.authRole = role;
+  const btnCit = document.getElementById('auth-role-citizen');
+  const btnAdm = document.getElementById('auth-role-admin');
+  const btnTech = document.getElementById('auth-role-technician');
+
+  const fieldsCit = document.getElementById('auth-fields-citizen');
+  const fieldsAdm = document.getElementById('auth-fields-admin');
+  const fieldsTech = document.getElementById('auth-fields-technician');
+
+  const defaultRoleClass = 'btn-tactile p-2.5 rounded-xl border border-white/10 bg-white/5 text-slate-400 hover:text-white text-xs font-semibold text-center flex flex-col items-center justify-center gap-1 transition-all';
+  if (btnCit) btnCit.className = defaultRoleClass;
+  if (btnAdm) btnAdm.className = defaultRoleClass;
+  if (btnTech) btnTech.className = defaultRoleClass;
+
+  if (fieldsCit) fieldsCit.classList.add('hidden');
+  if (fieldsAdm) fieldsAdm.classList.add('hidden');
+  if (fieldsTech) fieldsTech.classList.add('hidden');
+
+  if (role === 'citizen') {
+    if (btnCit) btnCit.className = 'btn-tactile p-2.5 rounded-xl border border-indigo-400/40 bg-indigo-500/20 text-indigo-300 text-xs font-bold text-center flex flex-col items-center justify-center gap-1 transition-all';
+    if (fieldsCit) fieldsCit.classList.remove('hidden');
+  } else if (role === 'admin') {
+    if (btnAdm) btnAdm.className = 'btn-tactile p-2.5 rounded-xl border border-rose-400/40 bg-rose-500/20 text-rose-300 text-xs font-bold text-center flex flex-col items-center justify-center gap-1 transition-all';
+    if (fieldsAdm) fieldsAdm.classList.remove('hidden');
+  } else if (role === 'technician') {
+    if (btnTech) btnTech.className = 'btn-tactile p-2.5 rounded-xl border border-emerald-400/40 bg-emerald-500/20 text-emerald-300 text-xs font-bold text-center flex flex-col items-center justify-center gap-1 transition-all';
+    if (fieldsTech) fieldsTech.classList.remove('hidden');
+  }
+}
+
+function handleAuthSubmit(e) {
+  e.preventDefault();
+  const role = state.authRole || 'citizen';
+  const labelEl = document.getElementById('authBtnLabel');
+
+  if (role === 'citizen') {
+    const name = document.getElementById('auth-citizen-name')?.value.trim() || 'Citizen User';
+    const contact = document.getElementById('auth-citizen-contact')?.value.trim() || '';
+    state.currentUser = { name, role: 'citizen', contact };
+    if (labelEl) labelEl.textContent = `👤 ${name.split(' ')[0]}`;
+    showCitizenView();
+    showToast(`✓ Welcome, ${name}! Citizen Portal active.`, 'success');
+  } else if (role === 'admin') {
+    const name = document.getElementById('auth-admin-name')?.value.trim() || 'Municipal Officer';
+    const dept = document.getElementById('auth-admin-dept')?.value || 'Roads & Transport';
+    state.currentUser = { name, role: 'admin', dept };
+    if (labelEl) labelEl.textContent = `🛡️ ${name.split(' ')[0]}`;
+    showAdminView();
+    showToast(`✓ Officer authorized: ${name} (${dept})`, 'success');
+  } else if (role === 'technician') {
+    const name = document.getElementById('auth-tech-name')?.value.trim() || 'Skilled Technician';
+    const phone = document.getElementById('auth-tech-phone')?.value.trim() || '+91 98765 43210';
+    state.currentUser = { name, role: 'technician', phone };
+    state.technicianPhone = phone;
+    const phoneInput = document.getElementById('tech-phone-input');
+    if (phoneInput) phoneInput.value = phone;
+    if (labelEl) labelEl.textContent = `🔧 ${name.split(' ')[0]}`;
+    showTechnicianView();
+    showToast(`✓ Technician active: ${name}`, 'success');
+  }
+
+  closeAuthModal();
+}
+
+// Hackathon Judge 1-Click Fast Passes
+function fastLogin(role) {
+  const labelEl = document.getElementById('authBtnLabel');
+  
+  if (role === 'citizen') {
+    state.currentUser = { name: 'Ayush Chauhan', role: 'citizen', locality: 'Sector 62, Noida' };
+    if (labelEl) labelEl.textContent = '👤 Ayush (Citizen)';
+    showCitizenView();
+    showToast('✓ Fast Demo Pass: Logged in as Citizen (Ayush Chauhan)', 'success');
+  } else if (role === 'admin') {
+    state.currentUser = { name: 'Insp. R. Sharma', role: 'admin', dept: 'Roads & Transport', empId: 'MCD-NW-4019' };
+    if (labelEl) labelEl.textContent = '🛡️ Insp. Sharma (Officer)';
+    showAdminView();
+    showToast('✓ Fast Demo Pass: Switched to Municipal Command Center', 'success');
+  } else if (role === 'technician') {
+    state.currentUser = { name: 'Ramesh Sharma', role: 'technician', phone: '+91 98765 43210', trade: 'Electrical' };
+    state.technicianPhone = '+91 98765 43210';
+    const phoneInput = document.getElementById('tech-phone-input');
+    if (phoneInput) phoneInput.value = '+91 98765 43210';
+    if (labelEl) labelEl.textContent = '🔧 Ramesh (Electrician)';
+    showTechnicianView();
+    showToast('✓ Fast Demo Pass: Switched to Technician Workspace', 'success');
+  }
+
+  closeAuthModal();
+}
+
 // Global window exposure for inline HTML event handlers
 window.openLetterModal = openLetterModal;
 window.closeLetterModal = closeLetterModal;
@@ -2306,8 +2469,11 @@ window.switchLetterType = switchLetterType;
 window.copyLetterText = copyLetterText;
 window.printLetterDoc = printLetterDoc;
 
-// Pillar 3 window exposures
+// Pillar 3 & Persona window exposures
 window.switchPersona = switchPersona;
+window.showCitizenView = showCitizenView;
+window.showAdminView = showAdminView;
+window.showTechnicianView = showTechnicianView;
 window.loadAdminDashboard = loadAdminDashboard;
 window.setAdminDepartment = setAdminDepartment;
 window.updatePostOfficerStatus = updatePostOfficerStatus;
@@ -2330,6 +2496,15 @@ window.closeCityModal = closeCityModal;
 window.closeCityModalOnBackdrop = closeCityModalOnBackdrop;
 window.selectCity = selectCity;
 window.applyCustomCity = applyCustomCity;
+
+// Auth Gateway window exposures
+window.openAuthModal = openAuthModal;
+window.closeAuthModal = closeAuthModal;
+window.closeAuthModalOnBackdrop = closeAuthModalOnBackdrop;
+window.switchAuthTab = switchAuthTab;
+window.setAuthRole = setAuthRole;
+window.handleAuthSubmit = handleAuthSubmit;
+window.fastLogin = fastLogin;
 
 
 

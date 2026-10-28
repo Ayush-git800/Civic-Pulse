@@ -66,90 +66,89 @@
     }
   </style>
 </head>
-<body class="radiant-mesh text-slate-800 antialiased min-h-screen flex flex-col font-sans selection:bg-indigo-600 selection:text-white relative overflow-x-hidden">
+<body class="cosmic-mesh deep-midnight text-slate-100 antialiased min-h-screen flex flex-col font-sans selection:bg-indigo-600 selection:text-white relative overflow-x-hidden">
 
-  <!-- Ambient Background Floating Blurred Radiant Orbs -->
-  <div class="fixed top-8 left-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none ambient-orb-1 -z-10"></div>
-  <div class="fixed top-1/3 right-10 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl pointer-events-none ambient-orb-2 -z-10"></div>
-  <div class="fixed bottom-10 left-1/3 w-80 h-80 bg-rose-500/10 rounded-full blur-3xl pointer-events-none ambient-orb-1 -z-10"></div>
+  <!-- Ambient Background Floating Blurred Radiant Orbs with Smooth CSS Keyframes -->
+  <div class="fixed -top-24 left-10 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none ambient-orb-indigo -z-10"></div>
+  <div class="fixed top-1/4 -right-16 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none ambient-orb-emerald -z-10"></div>
+  <div class="fixed bottom-10 left-1/3 w-80 h-80 bg-purple-600/20 rounded-full blur-3xl pointer-events-none ambient-orb-purple -z-10"></div>
 
   <!-- Floating Toast Notifications Anchor -->
   <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full"></div>
 
-  <!-- Modern Floating Glass Header (Linear / Airbnb Inspired) -->
-  <header class="sticky top-0 z-50 glass-surface border-b border-slate-200/80 shadow-xs transition-all">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 py-3 flex items-center justify-between gap-4">
+  <!-- Modern Floating Glass Header (Option 4.8 Logo Asset & Dark Glassmorphism) -->
+  <header class="sticky top-0 z-50 dark-glass border-b border-white/10 shadow-2xl transition-all">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 py-3 flex items-center justify-between gap-3 sm:gap-4">
       
-      <!-- Brand & Gemma AI Live Badge -->
-      <div class="flex items-center gap-3">
-        <a href="/" class="flex items-center gap-3 group">
-          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-700 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-            <i data-lucide="activity" class="w-5 h-5 stroke-[2.5]"></i>
+      <!-- Brand Anchor -->
+      <a href="/" class="flex items-center gap-3 group shrink-0">
+        <img src="/static/images/logo.png" alt="CivicPulse" class="w-10 h-10 object-contain drop-shadow-[0_0_12px_rgba(79,70,229,0.4)] group-hover:scale-105 transition-transform">
+        <div>
+          <div class="text-lg sm:text-xl font-black tracking-tight leading-none bg-gradient-to-r from-indigo-400 via-purple-300 to-emerald-400 bg-clip-text text-transparent">
+            CivicPulse
           </div>
-          <div>
-            <div class="text-lg font-black tracking-tight text-slate-900 leading-none">
-              Civic<span class="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">Pulse</span>
-            </div>
-            <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mt-0.5">GovTech AI Mesh</span>
-          </div>
-        </a>
-
-        <!-- Glowing Gemma 4 Live Radar Badge -->
-        <div class="hidden lg:inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50/90 border border-indigo-200/80 text-indigo-700 text-xs font-semibold shadow-xs">
-          <span class="relative flex h-2 w-2">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-600"></span>
-          </span>
-          <span>Gemma 4 Multimodal Live</span>
+          <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mt-1">CITIZEN PORTAL & UTILITY MARKET</span>
         </div>
+      </a>
 
-        <!-- Team Version Controllers Badge -->
-        <div class="hidden xl:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100/90 border border-slate-200/90 text-slate-700 text-xs font-semibold shadow-xs">
-          <i data-lucide="users" class="w-3.5 h-3.5 text-indigo-600"></i>
-          <span>Team: <strong class="text-slate-900">Version Controllers</strong></span>
+      <!-- Pill Badges (Gemma 4 Live AI Engine Tag) -->
+      <div class="hidden xl:flex items-center gap-2">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/40 border border-cyan-400/40 text-cyan-300 text-xs font-semibold gemma-tag-glow backdrop-blur-xl">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-400"></span>
+          </span>
+          <span>⚡ Gemma 4 Multimodal</span>
         </div>
       </div>
 
       <!-- 3-Way Persona Switcher Navigation (Floating Segmented Pill) -->
-      <nav class="hidden md:flex items-center bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shadow-inner">
-        <button id="persona-btn-citizen" onclick="switchPersona('citizen')" class="btn-tactile flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/90 transition-all">
-          <i data-lucide="user" class="w-4 h-4 text-indigo-600"></i>
-          <span>👤 Citizen Feed</span>
+      <nav class="hidden lg:flex items-center bg-slate-900/90 p-1.5 rounded-2xl border border-white/10 shadow-inner">
+        <button id="persona-btn-citizen" onclick="showCitizenView()" class="btn-tactile flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/25 border border-indigo-400/30 transition-all">
+          <i data-lucide="user" class="w-4 h-4"></i>
+          <span>👤 Citizen Portal</span>
         </button>
-        <button id="persona-btn-admin" onclick="switchPersona('admin')" class="btn-tactile flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all">
-          <i data-lucide="shield-alert" class="w-4 h-4 text-rose-500"></i>
-          <span>🛡️ Officer Command</span>
+        <button id="persona-btn-admin" onclick="showAdminView()" class="btn-tactile flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-all">
+          <i data-lucide="shield-alert" class="w-4 h-4 text-rose-400"></i>
+          <span>🛡️ Municipal Command Center</span>
         </button>
-        <button id="persona-btn-technician" onclick="switchPersona('technician')" class="btn-tactile flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all">
-          <i data-lucide="wrench" class="w-4 h-4 text-emerald-600"></i>
-          <span>🔧 Technician Leads</span>
+        <button id="persona-btn-technician" onclick="showTechnicianView()" class="btn-tactile flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-all">
+          <i data-lucide="wrench" class="w-4 h-4 text-emerald-400"></i>
+          <span>🔧 Technician Workspace</span>
         </button>
       </nav>
 
-      <!-- Dynamic GPS Location Pill with One-Click Change City -->
-      <div class="flex items-center gap-2">
-        <button onclick="openCityModal()" class="btn-tactile flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 hover:bg-slate-50 border border-slate-200/90 text-xs font-semibold text-slate-800 shadow-xs backdrop-blur-md transition-all hover:border-indigo-300" title="Click to change city or locality">
+      <!-- Right Actions: Live Geolocation Pill & Auth Trigger Button -->
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+        <!-- Live Geolocation Pill -->
+        <button onclick="openCityModal()" class="btn-tactile flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] hover:bg-white/[0.09] border border-white/10 text-xs font-medium text-slate-200 shadow-xs backdrop-blur-xl transition-all hover:border-indigo-400/40" title="Click to change city or locality">
           <span class="relative flex h-2 w-2">
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
-          <span id="location-pill-text">📍 Sector 62, Noida</span>
-          <span class="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-1.5 py-0.5 rounded-md">Change ▾</span>
+          <span class="flex items-center gap-1">📍 <span id="userLocationPill" class="max-w-[120px] sm:max-w-[160px] truncate">Detecting Location...</span></span>
+          <span class="text-[10px] text-indigo-400 font-bold bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded-md">Change ▾</span>
+        </button>
+
+        <!-- Auth Trigger Button -->
+        <button id="authTriggerBtn" onclick="openAuthModal()" class="btn-tactile flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-800/90 hover:bg-slate-700/90 text-white shadow-md border border-white/10 hover:border-indigo-400/50 transition-all">
+          <i data-lucide="lock" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span id="authBtnLabel">🔐 Sign In / Register</span>
         </button>
       </div>
     </div>
   </header>
 
   <!-- Mobile 3-Way Persona Navigation -->
-  <div class="md:hidden glass-surface border-b border-slate-200 px-3 py-2 flex gap-1.5 overflow-x-auto custom-scroll">
-    <button id="mobile-persona-btn-citizen" onclick="switchPersona('citizen')" class="flex-1 py-1.5 px-2 text-center text-xs font-bold rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 whitespace-nowrap">
-      👤 Citizen Feed
+  <div class="lg:hidden dark-glass border-b border-white/10 px-3 py-2 flex gap-1.5 overflow-x-auto custom-scroll">
+    <button id="mobile-persona-btn-citizen" onclick="showCitizenView()" class="flex-1 py-1.5 px-2.5 text-center text-xs font-bold rounded-xl bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 whitespace-nowrap">
+      👤 Citizen Portal
     </button>
-    <button id="mobile-persona-btn-admin" onclick="switchPersona('admin')" class="flex-1 py-1.5 px-2 text-center text-xs font-semibold rounded-xl bg-white text-slate-600 border border-slate-200 whitespace-nowrap">
-      🛡️ Officer Command
+    <button id="mobile-persona-btn-admin" onclick="showAdminView()" class="flex-1 py-1.5 px-2.5 text-center text-xs font-semibold rounded-xl bg-white/5 text-slate-400 border border-white/10 whitespace-nowrap">
+      🛡️ Municipal Command Center
     </button>
-    <button id="mobile-persona-btn-technician" onclick="switchPersona('technician')" class="flex-1 py-1.5 px-2 text-center text-xs font-semibold rounded-xl bg-white text-slate-600 border border-slate-200 whitespace-nowrap">
-      🔧 Tech Leads
+    <button id="mobile-persona-btn-technician" onclick="showTechnicianView()" class="flex-1 py-1.5 px-2.5 text-center text-xs font-semibold rounded-xl bg-white/5 text-slate-400 border border-white/10 whitespace-nowrap">
+      🔧 Technician Workspace
     </button>
   </div>
 
@@ -162,21 +161,21 @@
     <div id="persona-view-citizen" class="space-y-8 persona-transition">
 
       <!-- Citizen Secondary Sub-Navigation Pill Bar -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80">
-        <div class="flex items-center gap-2 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 shadow-inner max-w-fit">
-          <button id="tab-btn-civic" onclick="switchTab('civic')" class="btn-tactile flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/90 transition-all">
-            <i data-lucide="globe" class="w-4 h-4 text-indigo-600"></i>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+        <div class="flex items-center gap-2 bg-slate-900/90 p-1.5 rounded-2xl border border-white/10 shadow-inner max-w-fit">
+          <button id="tab-btn-civic" onclick="switchTab('civic')" class="btn-tactile flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 text-white shadow-sm border border-indigo-400/30 transition-all">
+            <i data-lucide="globe" class="w-4 h-4"></i>
             <span>Civic Infrastructure Feed</span>
           </button>
-          <button id="tab-btn-services" onclick="switchTab('services')" class="btn-tactile flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all">
-            <i data-lucide="zap" class="w-4 h-4 text-amber-500"></i>
+          <button id="tab-btn-services" onclick="switchTab('services')" class="btn-tactile flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition-all">
+            <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
             <span>Home Utility Repairs</span>
           </button>
         </div>
-        <div class="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-500">
-          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-slate-200 shadow-xs">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Citizen Mode: Public Reporting & Hyperlocal Services</span>
+        <div class="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-400">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/10 shadow-xs">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Citizen Mode: Public Reporting &amp; Hyperlocal Services</span>
           </span>
         </div>
       </div>
@@ -184,105 +183,93 @@
       <!-- ==================== TAB 1: CIVIC INFRASTRUCTURE FEED ==================== -->
       <section id="view-civic" class="space-y-8">
       
-      <!-- Modern Hero Section (Airbnb / Linear Inspired) -->
-      <div class="relative rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white p-6 sm:p-10 shadow-2xl border border-indigo-900/40 overflow-hidden">
-        <!-- Floating orbs inside hero container -->
-        <div class="absolute -right-12 -top-12 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none ambient-orb-1"></div>
-        <div class="absolute -left-12 -bottom-12 w-80 h-80 bg-rose-500/15 rounded-full blur-3xl pointer-events-none ambient-orb-2"></div>
+      <!-- Modern Hero Section with Ambient Orbs (Option 4.8 / Cosmic Midnight) -->
+      <div class="relative rounded-3xl bg-slate-950/85 backdrop-blur-2xl text-white p-6 sm:p-10 lg:p-12 shadow-2xl border border-white/10 overflow-hidden">
+        <!-- 3 Blurred Radial Gradient Light Orbs with Smooth Floating CSS Keyframes -->
+        <div class="absolute -top-12 -left-12 w-80 h-80 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none ambient-orb-indigo"></div>
+        <div class="absolute top-1/4 -right-16 w-80 h-80 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none ambient-orb-emerald"></div>
+        <div class="absolute -bottom-16 left-1/3 w-80 h-80 bg-purple-600/20 rounded-full blur-3xl pointer-events-none ambient-orb-purple"></div>
 
-        <div class="relative z-10 max-w-4xl space-y-4">
+        <div class="relative z-10 max-w-4xl space-y-4 sm:space-y-6">
           <div class="flex flex-wrap items-center gap-2.5">
             <span class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-semibold backdrop-blur-md">
               <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               <span>Gemma 4 Multimodal Audit Mesh</span>
             </span>
-            <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-slate-300 text-xs font-medium border border-white/10">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-slate-300 text-xs font-medium border border-white/10 backdrop-blur-md">
               <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
-              <span>Statutory Compliance & Escalation Engine</span>
+              <span>Statutory Compliance &amp; Escalation Engine</span>
             </span>
           </div>
 
-          <h1 class="text-3xl sm:text-5xl font-black tracking-tight text-white leading-[1.15]">
-            Empowering Your <span class="shimmer-headline">Neighborhood</span>
+          <!-- Huge High-Contrast Typography -->
+          <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.12]">
+            Smarter Neighborhoods.<br>
+            <span class="bg-gradient-to-r from-indigo-400 via-purple-300 to-emerald-400 bg-clip-text text-transparent">Transparent Governance.</span><br>
+            Fair Local Work.
           </h1>
-          <p class="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-2xl font-normal">
-            Take photo evidence or speak in Hindi/English to audit civic hazards, enforce statutory SLA response deadlines, generate formal legal notices, and access verified fair-price home utility repairs.
+          <p class="text-slate-300 text-xs sm:text-base leading-relaxed max-w-2xl font-normal">
+            Report municipal hazards instantly with AI triage, verify civic resolutions, or negotiate home repairs transparently.
           </p>
-        </div>
 
-        <!-- Floating Quick Action Dock (3 Consumer-Grade Cards) -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mt-8 pt-8 border-t border-white/10 relative z-10">
-          <!-- Action 1: Snap a Hazard -->
-          <div onclick="openModal('modal-civic')" class="action-dock-item cursor-pointer p-4.5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/15 backdrop-blur-md flex items-center gap-3.5 group">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center text-white shrink-0 shadow-md group-hover:scale-110 transition-transform">
-              <i data-lucide="camera" class="w-5 h-5"></i>
-            </div>
-            <div>
-              <div class="text-xs sm:text-sm font-extrabold text-white flex items-center gap-1">
-                <span>📸 Snap a Hazard</span>
-                <span class="text-indigo-300 group-hover:translate-x-0.5 transition-transform text-xs">→</span>
-              </div>
-              <p class="text-[11px] text-slate-300 mt-0.5 leading-snug">Potholes, garbage, sewage & sparks</p>
-            </div>
-          </div>
+          <!-- Primary Action Cluster (Hero CTAs) -->
+          <div class="flex flex-wrap items-center gap-3 sm:gap-4 pt-2">
+            <!-- 1. Report Civic Hazard -->
+            <button onclick="openModal('modal-civic')" class="btn-tactile flex items-center justify-center gap-2 px-5 sm:px-6 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 hover:shadow-indigo-500/40 border border-indigo-400/30 transition-all">
+              <span>📸 Report Civic Hazard</span>
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
 
-          <!-- Action 2: CivicTalk Voice Note -->
-          <div onclick="startCivicTalkFromBanner()" class="action-dock-item cursor-pointer p-4.5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/15 backdrop-blur-md flex items-center gap-3.5 group">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 to-pink-600 flex items-center justify-center text-white shrink-0 shadow-md group-hover:scale-110 transition-transform pulse-glow-ring">
-              <i data-lucide="mic" class="w-5 h-5"></i>
-            </div>
-            <div>
-              <div class="text-xs sm:text-sm font-extrabold text-white flex items-center gap-1">
-                <span>🎙️ CivicTalk Voice Note</span>
-                <span class="text-pink-300 group-hover:translate-x-0.5 transition-transform text-xs">→</span>
+            <!-- 2. CivicTalk Voice Report -->
+            <button onclick="startCivicTalkFromBanner()" class="btn-tactile flex items-center justify-center gap-2 px-5 sm:px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40 border border-emerald-300/30 animate-pulse transition-all">
+              <span>🎙️ CivicTalk (Voice Report)</span>
+              <div class="flex items-center gap-0.5 h-3 ml-1">
+                <span class="w-0.5 h-full bg-white rounded-full audiowave-bar"></span>
+                <span class="w-0.5 h-full bg-white rounded-full audiowave-bar"></span>
+                <span class="w-0.5 h-full bg-white rounded-full audiowave-bar"></span>
               </div>
-              <p class="text-[11px] text-slate-300 mt-0.5 leading-snug">Speak in Hindi, Hinglish or English</p>
-            </div>
-          </div>
+            </button>
 
-          <!-- Action 3: Home Utility Fix -->
-          <div onclick="openModal('modal-service')" class="action-dock-item cursor-pointer p-4.5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/15 backdrop-blur-md flex items-center gap-3.5 group">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center text-white shrink-0 shadow-md group-hover:scale-110 transition-transform">
-              <i data-lucide="wrench" class="w-5 h-5"></i>
-            </div>
-            <div>
-              <div class="text-xs sm:text-sm font-extrabold text-white flex items-center gap-1">
-                <span>⚡ Home Repair Fix</span>
-                <span class="text-emerald-300 group-hover:translate-x-0.5 transition-transform text-xs">→</span>
-              </div>
-              <p class="text-[11px] text-slate-300 mt-0.5 leading-snug">AI diagnosis & fair labor price shield</p>
-            </div>
+            <!-- 3. Stakeholder Gateway -->
+            <button onclick="openAuthModal()" class="btn-tactile flex items-center justify-center gap-2 px-5 sm:px-6 py-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700/80 text-slate-100 font-extrabold text-xs sm:text-sm border border-slate-700 shadow-md transition-all">
+              <span>🔐 Stakeholder Gateway</span>
+              <i data-lucide="key" class="w-4 h-4 text-indigo-400"></i>
+            </button>
           </div>
         </div>
 
-        <!-- Quick Trust & Feature Ticker Strip -->
-        <div class="flex flex-wrap items-center justify-between gap-4 mt-6 pt-5 border-t border-white/10 text-[11px] text-slate-400">
-          <div class="flex items-center gap-2">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-            <span>⚡ Real-Time Triage in &lt; 2.5s</span>
+        <!-- Live Metrics Bar -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3.5 mt-8 pt-6 border-t border-white/10 relative z-10 text-xs">
+          <div class="p-3.5 rounded-2xl bg-white/[0.04] border border-white/5 backdrop-blur-md">
+            <div class="text-xl sm:text-2xl font-black text-indigo-400">98.4%</div>
+            <div class="text-[11px] font-semibold text-slate-300 mt-0.5">AI Triage Accuracy</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">Gemma 4 Multimodal Ingestion</div>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
-            <span>🏛️ 100% Statutory SLA Countdown</span>
+          <div class="p-3.5 rounded-2xl bg-white/[0.04] border border-white/5 backdrop-blur-md">
+            <div class="text-xl sm:text-2xl font-black text-emerald-400">24–48h</div>
+            <div class="text-[11px] font-semibold text-slate-300 mt-0.5">SLA Escalation Target</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">Statutory Response Compliance</div>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-            <span>💰 Zero Overcharging Price Shield</span>
+          <div class="p-3.5 rounded-2xl bg-white/[0.04] border border-white/5 backdrop-blur-md">
+            <div class="text-xl sm:text-2xl font-black text-purple-400">3 Portals</div>
+            <div class="text-[11px] font-semibold text-slate-300 mt-0.5">Official Portals Linked</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">CPGRAMS • NHAI • RailMadad</div>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
-            <span>📄 1-Click RTI & Municipal Notice</span>
+          <div class="p-3.5 rounded-2xl bg-white/[0.04] border border-white/5 backdrop-blur-md">
+            <div class="text-xl sm:text-2xl font-black text-amber-400">₹0 Overcharging</div>
+            <div class="text-[11px] font-semibold text-slate-300 mt-0.5">Price Gouging Shield</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">Gemma Fair Labor Benchmark</div>
           </div>
         </div>
       </div>
 
-      <!-- Airbnb-Style Search & Category Filter Controls -->
-      <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200/90 shadow-sm">
+      <!-- Dark Glass Search & Category Filter Controls -->
+      <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 dark-glass p-3.5 rounded-2xl border border-white/10 shadow-sm">
         <!-- Search Box -->
         <div class="relative flex-1 max-w-md">
           <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-          <input id="civic-search-input" oninput="handleCivicFilter()" type="text" placeholder="Search by title, location or department..." class="w-full pl-9 pr-8 py-2.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
-          <button type="button" onclick="document.getElementById('civic-search-input').value=''; handleCivicFilter();" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5">
+          <input id="civic-search-input" oninput="handleCivicFilter()" type="text" placeholder="Search by title, location or department..." class="w-full pl-9 pr-8 py-2.5 text-xs rounded-xl bg-slate-900/80 border border-white/10 text-white placeholder-slate-400 focus:bg-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
+          <button type="button" onclick="document.getElementById('civic-search-input').value=''; handleCivicFilter();" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-0.5">
             <i data-lucide="x" class="w-3.5 h-3.5"></i>
           </button>
         </div>
@@ -292,10 +279,10 @@
           <button onclick="setCivicCategory('ALL', this)" class="civic-filter-pill active px-3.5 py-2 rounded-xl font-bold bg-indigo-600 text-white shadow-xs transition-all whitespace-nowrap">
             All Incidents
           </button>
-          <button onclick="setCivicCategory('Road', this)" class="civic-filter-pill px-3.5 py-2 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
+          <button onclick="setCivicCategory('Road', this)" class="civic-filter-pill px-3.5 py-2 rounded-xl font-semibold bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 transition-all whitespace-nowrap">
             🛣️ Roads & Potholes
           </button>
-          <button onclick="setCivicCategory('Waste', this)" class="civic-filter-pill px-3.5 py-2 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
+          <button onclick="setCivicCategory('Waste', this)" class="civic-filter-pill px-3.5 py-2 rounded-xl font-semibold bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 transition-all whitespace-nowrap">
             🗑️ Sanitation & Waste
           </button>
           <button onclick="setCivicCategory('Water', this)" class="civic-filter-pill px-3.5 py-2 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
@@ -479,95 +466,95 @@
       <!-- Officer Analytics Bar: 4 KPI Cards -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Card 1: Critical Hazards -->
-        <div class="p-5 rounded-2xl bg-white/95 border border-rose-200/90 shadow-xs flex items-center gap-4">
-          <div class="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+        <div class="p-5 rounded-2xl dark-glass border border-rose-500/30 shadow-xs flex items-center gap-4">
+          <div class="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-400/30 flex items-center justify-center text-rose-400 shrink-0">
             <i data-lucide="alert-triangle" class="w-6 h-6 stroke-[2.5]"></i>
           </div>
           <div>
-            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Critical Hazards</div>
-            <div id="admin-stat-critical" class="text-2xl font-black text-rose-600 leading-tight">--</div>
-            <span class="text-[10px] text-rose-500 font-semibold">Immediate safety risks</span>
+            <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Critical Hazards</div>
+            <div id="admin-stat-critical" class="text-2xl font-black text-rose-400 leading-tight">--</div>
+            <span class="text-[10px] text-rose-400/90 font-semibold">Immediate safety risks</span>
           </div>
         </div>
 
         <!-- Card 2: SLA at Risk (<12h) -->
-        <div class="p-5 rounded-2xl bg-white/95 border border-amber-200/90 shadow-xs flex items-center gap-4">
-          <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+        <div class="p-5 rounded-2xl dark-glass border border-amber-500/30 shadow-xs flex items-center gap-4">
+          <div class="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-400/30 flex items-center justify-center text-amber-400 shrink-0">
             <i data-lucide="clock" class="w-6 h-6 stroke-[2.5]"></i>
           </div>
           <div>
-            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">SLA at Risk (&lt;12h)</div>
-            <div id="admin-stat-risk" class="text-2xl font-black text-amber-600 leading-tight">--</div>
-            <span class="text-[10px] text-amber-600 font-semibold">Near statutory breach</span>
+            <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">SLA at Risk (&lt;12h)</div>
+            <div id="admin-stat-risk" class="text-2xl font-black text-amber-400 leading-tight">--</div>
+            <span class="text-[10px] text-amber-400/90 font-semibold">Near statutory breach</span>
           </div>
         </div>
 
         <!-- Card 3: Unassigned Complaints -->
-        <div class="p-5 rounded-2xl bg-white/95 border border-purple-200/90 shadow-xs flex items-center gap-4">
-          <div class="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+        <div class="p-5 rounded-2xl dark-glass border border-purple-500/30 shadow-xs flex items-center gap-4">
+          <div class="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-400/30 flex items-center justify-center text-purple-400 shrink-0">
             <i data-lucide="user-plus" class="w-6 h-6 stroke-[2.5]"></i>
           </div>
           <div>
-            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Unassigned Complaints</div>
-            <div id="admin-stat-unassigned" class="text-2xl font-black text-purple-600 leading-tight">--</div>
-            <span class="text-[10px] text-purple-500 font-semibold">Awaiting inspector</span>
+            <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Unassigned Complaints</div>
+            <div id="admin-stat-unassigned" class="text-2xl font-black text-purple-400 leading-tight">--</div>
+            <span class="text-[10px] text-purple-400/90 font-semibold">Awaiting inspector</span>
           </div>
         </div>
 
         <!-- Card 4: Resolution Rate -->
-        <div class="p-5 rounded-2xl bg-white/95 border border-emerald-200/90 shadow-xs flex items-center gap-4">
-          <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+        <div class="p-5 rounded-2xl dark-glass border border-emerald-500/30 shadow-xs flex items-center gap-4">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-400/30 flex items-center justify-center text-emerald-400 shrink-0">
             <i data-lucide="check-circle" class="w-6 h-6 stroke-[2.5]"></i>
           </div>
           <div>
-            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Resolution Rate</div>
-            <div id="admin-stat-rate" class="text-2xl font-black text-emerald-600 leading-tight">--%</div>
-            <span class="text-[10px] text-emerald-600 font-semibold">Civic remediation score</span>
+            <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Resolution Rate</div>
+            <div id="admin-stat-rate" class="text-2xl font-black text-emerald-400 leading-tight">--%</div>
+            <span class="text-[10px] text-emerald-400/90 font-semibold">Civic remediation score</span>
           </div>
         </div>
       </div>
 
       <!-- Department Filter Pills & Search -->
-      <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+      <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 dark-glass p-3.5 rounded-2xl border border-white/10 shadow-xs">
         <div class="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 custom-scroll text-xs">
           <button onclick="setAdminDepartment('ALL', this)" class="admin-dept-pill active px-3.5 py-1.5 rounded-xl font-bold bg-indigo-600 text-white shadow-xs transition-all whitespace-nowrap">
             All Departments
           </button>
-          <button onclick="setAdminDepartment('Road', this)" class="admin-dept-pill px-3.5 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
+          <button onclick="setAdminDepartment('Road', this)" class="admin-dept-pill px-3.5 py-1.5 rounded-xl font-semibold bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 transition-all whitespace-nowrap">
             🛣️ Roads & Highways
           </button>
-          <button onclick="setAdminDepartment('Electricity', this)" class="admin-dept-pill px-3.5 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
+          <button onclick="setAdminDepartment('Electricity', this)" class="admin-dept-pill px-3.5 py-1.5 rounded-xl font-semibold bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 transition-all whitespace-nowrap">
             ⚡ Electrical & Grid
           </button>
-          <button onclick="setAdminDepartment('Sanitation', this)" class="admin-dept-pill px-3.5 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
+          <button onclick="setAdminDepartment('Sanitation', this)" class="admin-dept-pill px-3.5 py-1.5 rounded-xl font-semibold bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 transition-all whitespace-nowrap">
             🗑️ Sanitation & Waste
           </button>
-          <button onclick="setAdminDepartment('Water', this)" class="admin-dept-pill px-3.5 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
+          <button onclick="setAdminDepartment('Water', this)" class="admin-dept-pill px-3.5 py-1.5 rounded-xl font-semibold bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 transition-all whitespace-nowrap">
             💧 Water & Drainage
           </button>
         </div>
-        <div class="text-xs text-slate-500 font-semibold flex items-center gap-1.5 self-end lg:self-auto">
+        <div class="text-xs text-slate-400 font-semibold flex items-center gap-1.5 self-end lg:self-auto">
           <span class="w-2 h-2 rounded-full bg-rose-500"></span>
           <span>Sorted by Hazard Severity & SLA Priority</span>
         </div>
       </div>
 
       <!-- Priority Triage Table Card -->
-      <div class="bg-white/95 rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden">
-        <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="dark-glass rounded-3xl border border-white/10 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
-              <i data-lucide="layers" class="w-4 h-4 text-indigo-600"></i>
+            <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+              <i data-lucide="layers" class="w-4 h-4 text-indigo-400"></i>
               <span>Live Civic Incident Triage & Dispatch Table</span>
             </h3>
-            <p class="text-xs text-slate-500 mt-0.5">Assigned field inspectors receive instant dispatch and statutory breach alerts.</p>
+            <p class="text-xs text-slate-400 mt-0.5">Assigned field inspectors receive instant dispatch and statutory breach alerts.</p>
           </div>
-          <span id="admin-table-count" class="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-full self-start sm:self-auto">Showing 0 incidents</span>
+          <span id="admin-table-count" class="text-xs font-bold text-slate-300 bg-white/5 border border-white/10 px-3 py-1 rounded-full self-start sm:self-auto">Showing 0 incidents</span>
         </div>
 
         <div class="overflow-x-auto custom-scroll">
-          <table class="w-full text-left text-xs text-slate-600">
-            <thead class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900/90 border-b border-white/10 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               <tr>
                 <th class="py-3.5 px-4">Incident & Evidence</th>
                 <th class="py-3.5 px-3">Dept & Jurisdiction</th>
@@ -578,10 +565,10 @@
                 <th class="py-3.5 px-4 text-right">Dispatch Action</th>
               </tr>
             </thead>
-            <tbody id="admin-triage-tbody" class="divide-y divide-slate-100">
+            <tbody id="admin-triage-tbody" class="divide-y divide-white/10">
               <tr>
                 <td colspan="7" class="py-12 text-center text-slate-400">
-                  <div class="inline-block animate-spin rounded-full h-6 w-6 border-2 border-indigo-600 border-t-transparent mb-2"></div>
+                  <div class="inline-block animate-spin rounded-full h-6 w-6 border-2 border-indigo-500 border-t-transparent mb-2"></div>
                   <p class="text-xs">Loading operational triage queue...</p>
                 </td>
               </tr>
@@ -635,50 +622,50 @@
       <!-- Technician Quick Stats Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <!-- Stat 1: Total Locked Earnings -->
-        <div class="p-5 rounded-2xl bg-white/95 border border-emerald-200/90 shadow-xs flex items-center gap-4">
-          <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+        <div class="p-5 rounded-2xl dark-glass border border-emerald-500/30 shadow-xs flex items-center gap-4">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-400/30 flex items-center justify-center text-emerald-400 shrink-0">
             <i data-lucide="wallet" class="w-6 h-6 stroke-[2.5]"></i>
           </div>
           <div>
-            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Confirmed Job Payouts</div>
-            <div id="tech-stat-earnings" class="text-2xl font-black text-emerald-600 leading-tight">₹0</div>
-            <span class="text-[10px] text-emerald-600 font-semibold">Locked escrow earnings</span>
+            <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Confirmed Job Payouts</div>
+            <div id="tech-stat-earnings" class="text-2xl font-black text-emerald-400 leading-tight">₹0</div>
+            <span class="text-[10px] text-emerald-400/90 font-semibold">Locked escrow earnings</span>
           </div>
         </div>
 
         <!-- Stat 2: Active Open Leads -->
-        <div class="p-5 rounded-2xl bg-white/95 border border-indigo-200/90 shadow-xs flex items-center gap-4">
-          <div class="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+        <div class="p-5 rounded-2xl dark-glass border border-indigo-500/30 shadow-xs flex items-center gap-4">
+          <div class="w-12 h-12 rounded-2xl bg-indigo-500/15 border border-indigo-400/30 flex items-center justify-center text-indigo-400 shrink-0">
             <i data-lucide="briefcase" class="w-6 h-6 stroke-[2.5]"></i>
           </div>
           <div>
-            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Available Leads</div>
-            <div id="tech-stat-leads" class="text-2xl font-black text-indigo-600 leading-tight">0</div>
-            <span class="text-[10px] text-indigo-600 font-semibold">Neighborhood repair requests</span>
+            <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Available Leads</div>
+            <div id="tech-stat-leads" class="text-2xl font-black text-indigo-400 leading-tight">0</div>
+            <span class="text-[10px] text-indigo-400/90 font-semibold">Neighborhood repair requests</span>
           </div>
         </div>
 
         <!-- Stat 3: Confirmed Deals -->
-        <div class="p-5 rounded-2xl bg-white/95 border border-purple-200/90 shadow-xs flex items-center gap-4">
-          <div class="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+        <div class="p-5 rounded-2xl dark-glass border border-purple-500/30 shadow-xs flex items-center gap-4">
+          <div class="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-400/30 flex items-center justify-center text-purple-400 shrink-0">
             <i data-lucide="shield-check" class="w-6 h-6 stroke-[2.5]"></i>
           </div>
           <div>
-            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Active Deals & Contracts</div>
-            <div id="tech-stat-confirmed" class="text-2xl font-black text-purple-600 leading-tight">0</div>
-            <span class="text-[10px] text-purple-600 font-semibold">Accepted client contracts</span>
+            <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active Deals & Contracts</div>
+            <div id="tech-stat-confirmed" class="text-2xl font-black text-purple-400 leading-tight">0</div>
+            <span class="text-[10px] text-purple-400/90 font-semibold">Accepted client contracts</span>
           </div>
         </div>
       </div>
 
       <!-- Technician Sub-Tabs -->
-      <div class="flex items-center gap-2 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shadow-inner max-w-fit">
-        <button id="tech-tab-leads" onclick="switchTechTab('leads')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-emerald-900 shadow-sm border border-slate-200/90 transition-all">
-          <i data-lucide="search" class="w-4 h-4 text-emerald-600"></i>
+      <div class="flex items-center gap-2 bg-slate-900/90 p-1 rounded-2xl border border-white/10 shadow-inner max-w-fit">
+        <button id="tech-tab-leads" onclick="switchTechTab('leads')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-sm border border-emerald-400/30 transition-all">
+          <i data-lucide="search" class="w-4 h-4"></i>
           <span>Available Household Leads</span>
         </button>
-        <button id="tech-tab-quotes" onclick="switchTechTab('quotes')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all">
-          <i data-lucide="handshake" class="w-4 h-4 text-indigo-600"></i>
+        <button id="tech-tab-quotes" onclick="switchTechTab('quotes')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition-all">
+          <i data-lucide="handshake" class="w-4 h-4 text-indigo-400"></i>
           <span>My Quotes & Confirmed Deals</span>
           <span id="tech-badge-counter-alert" class="hidden px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-bold">1</span>
         </button>
@@ -1109,50 +1096,204 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL: DEDICATED MULTI-ROLE AUTHENTICATION & REGISTRATION GATEWAY ==================== -->
+  <div id="authModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto" onclick="closeAuthModalOnBackdrop(event)">
+    <div class="bg-slate-900/95 border border-white/10 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative my-8" onclick="event.stopPropagation()">
+      
+      <!-- Top Header & Brand Mark -->
+      <div class="flex items-center justify-between pb-4 border-b border-white/10">
+        <div class="flex items-center gap-3">
+          <img src="/static/images/logo.png" alt="CivicPulse" class="w-12 h-12 object-contain drop-shadow-[0_0_14px_rgba(79,70,229,0.5)]">
+          <div>
+            <h3 class="text-base sm:text-lg font-black text-white flex items-center gap-2">
+              <span class="bg-gradient-to-r from-indigo-400 via-purple-300 to-emerald-400 bg-clip-text text-transparent">CivicPulse</span>
+              <span class="text-xs text-slate-400 font-normal">| Stakeholder Gateway</span>
+            </h3>
+            <p class="text-[11px] text-slate-400">Multi-Role Authentication &amp; Operations Access</p>
+          </div>
+        </div>
+        <button onclick="closeAuthModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center transition-colors">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Tab 1: Login | Tab 2: Create Account (Register) -->
+      <div class="flex items-center gap-2 mt-5 p-1 rounded-2xl bg-white/[0.04] border border-white/10">
+        <button id="auth-tab-login" onclick="switchAuthTab('login')" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/20">
+          Sign In (Login)
+        </button>
+        <button id="auth-tab-register" onclick="switchAuthTab('register')" class="flex-1 py-2 px-3 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-all">
+          Create Account (Register)
+        </button>
+      </div>
+
+      <!-- Persona Selector Pills inside Auth -->
+      <div class="mt-4">
+        <label class="block text-[11px] font-bold text-slate-300 mb-2 uppercase tracking-wider">Select Stakeholder Persona</label>
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" id="auth-role-citizen" onclick="setAuthRole('citizen')" class="btn-tactile p-2.5 rounded-xl border border-indigo-400/40 bg-indigo-500/20 text-indigo-300 text-xs font-bold text-center flex flex-col items-center justify-center gap-1 transition-all">
+            <span class="text-base">👤</span>
+            <span class="text-[11px]">Citizen</span>
+          </button>
+          <button type="button" id="auth-role-admin" onclick="setAuthRole('admin')" class="btn-tactile p-2.5 rounded-xl border border-white/10 bg-white/5 text-slate-400 hover:text-white text-xs font-semibold text-center flex flex-col items-center justify-center gap-1 transition-all">
+            <span class="text-base">🛡️</span>
+            <span class="text-[11px]">Officer</span>
+          </button>
+          <button type="button" id="auth-role-technician" onclick="setAuthRole('technician')" class="btn-tactile p-2.5 rounded-xl border border-white/10 bg-white/5 text-slate-400 hover:text-white text-xs font-semibold text-center flex flex-col items-center justify-center gap-1 transition-all">
+            <span class="text-base">🔧</span>
+            <span class="text-[11px]">Technician</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Dynamic Form Fields Based on Role -->
+      <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="mt-4 space-y-3">
+        
+        <!-- Role 1: Citizen Fields -->
+        <div id="auth-fields-citizen" class="space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Full Name</label>
+            <input id="auth-citizen-name" type="text" placeholder="e.g. Ayush Chauhan" value="Ayush Chauhan" class="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-800/80 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Phone or Email Address</label>
+            <input id="auth-citizen-contact" type="text" placeholder="e.g. citizen@civicpulse.org or +91 98765 00000" value="+91 98765 43210" class="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-800/80 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Locality / Ward</label>
+            <input id="auth-citizen-locality" type="text" placeholder="e.g. Sector 62, Noida" value="Sector 62, Noida" class="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-800/80 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>
+
+        <!-- Role 2: Municipal Officer Fields -->
+        <div id="auth-fields-admin" class="hidden space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Officer Name &amp; Designation</label>
+            <input id="auth-admin-name" type="text" placeholder="e.g. Inspector R. Sharma" value="Inspector R. Sharma" class="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-800/80 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-rose-500">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Municipal Department</label>
+            <select id="auth-admin-dept" class="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-800/80 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-rose-500">
+              <option value="Roads & Transport">🛣️ Roads & Transport</option>
+              <option value="Electricity & Streetlights">⚡ Electricity & Streetlights</option>
+              <option value="Water Supply & Sewage">💧 Water Supply & Sewage</option>
+              <option value="Solid Waste & Sanitation">🗑️ Solid Waste & Sanitation</option>
+              <option value="Public Health & Encroachment">🏥 Public Health & Encroachment</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Official Employee / Zone ID</label>
+            <input id="auth-admin-empid" type="text" placeholder="e.g. MCD-NW-4019" value="MCD-NW-4019" class="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-800/80 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-rose-500">
+          </div>
+        </div>
+
+        <!-- Role 3: Technician / Worker Fields -->
+        <div id="auth-fields-technician" class="hidden space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Full Name</label>
+            <input id="auth-tech-name" type="text" placeholder="e.g. Ramesh Kumar" value="Ramesh Kumar" class="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-800/80 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Mobile Phone (For WhatsApp &amp; Bids)</label>
+            <input id="auth-tech-phone" type="text" placeholder="+91 98765 43210" value="+91 98765 43210" class="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-800/80 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Primary Trade</label>
+              <select id="auth-tech-trade" class="w-full px-3 py-2.5 text-xs rounded-xl bg-slate-800/80 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="Electrical">⚡ Electrical</option>
+                <option value="Plumbing">🔧 Plumbing</option>
+                <option value="Carpentry">🪚 Carpentry</option>
+                <option value="Appliance Repair">❄️ Appliance Repair</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Hourly Expectation (₹)</label>
+              <input id="auth-tech-rate" type="number" placeholder="450" value="450" class="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-800/80 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+          </div>
+        </div>
+
+        <!-- Password Field -->
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Password</label>
+          <input id="auth-password" type="password" value="demo1234" placeholder="••••••••" class="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-800/80 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <!-- Submit Button -->
+        <button id="auth-submit-btn" type="submit" class="btn-tactile w-full py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-extrabold text-xs shadow-lg shadow-indigo-600/30 transition-all mt-2">
+          Sign In to Portal
+        </button>
+      </form>
+
+      <!-- Hackathon Judge 1-Click Fast Passes (Quick Demo Logins) -->
+      <div class="mt-6 pt-5 border-t border-white/10">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+            <span>⚡ Instant Demo Pass (For Judges)</span>
+          </span>
+          <span class="text-[10px] text-slate-400 font-semibold bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">1-Click Fast Login</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <button type="button" onclick="fastLogin('citizen')" class="btn-tactile p-2.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all text-center">
+            <span>👤 Fast Login Citizen</span>
+          </button>
+          <button type="button" onclick="fastLogin('admin')" class="btn-tactile p-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-400/30 text-rose-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all text-center">
+            <span>🛡️ Fast Login Officer</span>
+          </button>
+          <button type="button" onclick="fastLogin('technician')" class="btn-tactile p-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all text-center">
+            <span>🔧 Fast Login Electrician</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== MODAL: CHANGE CITY SELECTOR ==================== -->
-  <div id="modal-city" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeCityModalOnBackdrop(event)">
-    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200/90" onclick="event.stopPropagation()">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+  <div id="modal-city" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4" onclick="closeCityModalOnBackdrop(event)">
+    <div class="bg-slate-900/95 border border-white/10 rounded-3xl max-w-md w-full p-6 shadow-2xl backdrop-blur-xl text-white" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
         <div class="flex items-center gap-2.5">
-          <div class="w-9 h-9 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+          <div class="w-9 h-9 rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-400/30 flex items-center justify-center">
             <i data-lucide="map-pin" class="w-5 h-5"></i>
           </div>
           <div>
-            <h3 class="text-sm font-extrabold text-slate-900">Select City or Locality</h3>
-            <p class="text-[11px] text-slate-500">View municipal triage in your specific neighborhood</p>
+            <h3 class="text-sm font-extrabold text-white">Select City or Locality</h3>
+            <p class="text-[11px] text-slate-400">View municipal triage in your specific neighborhood</p>
           </div>
         </div>
-        <button onclick="closeCityModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors">
+        <button onclick="closeCityModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-400 flex items-center justify-center transition-colors">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
 
       <div class="space-y-2 mb-4">
         <div class="grid grid-cols-2 gap-2 text-xs">
-          <button onclick="selectCity('📍 Sector 62, Noida')" class="btn-tactile p-3 text-left rounded-2xl border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/60 transition-all font-semibold text-slate-800">
+          <button onclick="selectCity('📍 Sector 62, Noida')" class="btn-tactile p-3 text-left rounded-2xl border border-white/10 hover:border-indigo-400/50 bg-white/5 hover:bg-white/10 transition-all font-semibold text-slate-200">
             🏙️ Sector 62, Noida
           </button>
-          <button onclick="selectCity('📍 Indirapuram, Ghaziabad')" class="btn-tactile p-3 text-left rounded-2xl border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/60 transition-all font-semibold text-slate-800">
+          <button onclick="selectCity('📍 Indirapuram, Ghaziabad')" class="btn-tactile p-3 text-left rounded-2xl border border-white/10 hover:border-indigo-400/50 bg-white/5 hover:bg-white/10 transition-all font-semibold text-slate-200">
             🛣️ Indirapuram, Ghaziabad
           </button>
-          <button onclick="selectCity('📍 Connaught Place, New Delhi')" class="btn-tactile p-3 text-left rounded-2xl border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/60 transition-all font-semibold text-slate-800">
+          <button onclick="selectCity('📍 Connaught Place, New Delhi')" class="btn-tactile p-3 text-left rounded-2xl border border-white/10 hover:border-indigo-400/50 bg-white/5 hover:bg-white/10 transition-all font-semibold text-slate-200">
             🏛️ Connaught Place, Delhi
           </button>
-          <button onclick="selectCity('📍 Cyber City, Gurugram')" class="btn-tactile p-3 text-left rounded-2xl border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/60 transition-all font-semibold text-slate-800">
+          <button onclick="selectCity('📍 Cyber City, Gurugram')" class="btn-tactile p-3 text-left rounded-2xl border border-white/10 hover:border-indigo-400/50 bg-white/5 hover:bg-white/10 transition-all font-semibold text-slate-200">
             🏢 Cyber City, Gurugram
           </button>
-          <button onclick="selectCity('📍 Bandra West, Mumbai')" class="btn-tactile p-3 text-left rounded-2xl border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/60 transition-all font-semibold text-slate-800">
+          <button onclick="selectCity('📍 Bandra West, Mumbai')" class="btn-tactile p-3 text-left rounded-2xl border border-white/10 hover:border-indigo-400/50 bg-white/5 hover:bg-white/10 transition-all font-semibold text-slate-200">
             🌊 Bandra West, Mumbai
           </button>
-          <button onclick="selectCity('📍 Koramangala, Bengaluru')" class="btn-tactile p-3 text-left rounded-2xl border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/60 transition-all font-semibold text-slate-800">
+          <button onclick="selectCity('📍 Koramangala, Bengaluru')" class="btn-tactile p-3 text-left rounded-2xl border border-white/10 hover:border-indigo-400/50 bg-white/5 hover:bg-white/10 transition-all font-semibold text-slate-200">
             🌳 Koramangala, Bengaluru
           </button>
         </div>
       </div>
 
       <!-- Custom City Input -->
-      <div class="pt-3 border-t border-slate-100 flex gap-2">
-        <input id="custom-city-input" type="text" placeholder="Enter other sector or city..." class="flex-1 px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+      <div class="pt-3 border-t border-white/10 flex gap-2">
+        <input id="custom-city-input" type="text" placeholder="Enter other sector or city..." class="flex-1 px-3 py-2 text-xs rounded-xl bg-slate-800 border border-white/10 text-white placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
         <button onclick="applyCustomCity()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition-all">
           Apply
         </button>
@@ -1160,21 +1301,21 @@
     </div>
   </div>
 
-  <!-- Minimal Footer -->
-  <footer class="bg-white/90 border-t border-slate-200/80 py-6 text-xs text-slate-500 mt-auto">
+  <!-- Minimal Dark Glass Footer -->
+  <footer class="dark-glass border-t border-white/10 py-6 text-xs text-slate-400 mt-auto">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
       <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-center sm:text-left">
         <div class="flex items-center gap-2">
-          <div class="w-5 h-5 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px]">CP</div>
-          <span class="font-bold text-slate-800">CivicPulse</span>
+          <img src="/static/images/logo.png" alt="CivicPulse" class="w-6 h-6 object-contain">
+          <span class="font-bold text-white">CivicPulse</span>
         </div>
-        <span class="hidden sm:inline text-slate-300">•</span>
-        <span>Built with ❤️ by <strong class="text-slate-800">Team Version Controllers</strong> (Ayush Chauhan, Rishav Ranjan, Hardik Kumar)</span>
+        <span class="hidden sm:inline text-slate-600">•</span>
+        <span>Built with ❤️ by <strong class="text-white">Team Version Controllers</strong> (Ayush Chauhan, Rishav Ranjan, Hardik Kumar)</span>
       </div>
-      <div class="flex items-center gap-4 text-slate-500">
-        <a href="/docs" target="_blank" class="hover:text-indigo-600 font-medium">FastAPI Interactive Docs</a>
+      <div class="flex items-center gap-4 text-slate-400">
+        <a href="/docs" target="_blank" class="hover:text-indigo-400 font-medium">FastAPI Interactive Docs</a>
         <span>•</span>
-        <a href="/api/health" target="_blank" class="hover:text-indigo-600 font-medium">Health Status</a>
+        <a href="/api/health" target="_blank" class="hover:text-indigo-400 font-medium">Health Status</a>
       </div>
     </div>
   </footer>

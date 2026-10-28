@@ -4,6 +4,30 @@
    ========================================================================== */
 
 /* 1. Ambient Background Floating Blurred Gradient Orbs */
+@keyframes floatOrbs {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(30px, -20px) scale(1.08);
+  }
+}
+
+.ambient-orb-indigo {
+  animation: floatOrbs 12s infinite ease-in-out;
+  will-change: transform;
+}
+
+.ambient-orb-emerald {
+  animation: floatOrbs 16s infinite ease-in-out reverse;
+  will-change: transform;
+}
+
+.ambient-orb-purple {
+  animation: floatOrbs 14s infinite ease-in-out 2s;
+  will-change: transform;
+}
+
 @keyframes floatOrb1 {
   0%, 100% {
     transform: translate3d(0, 0, 0) scale(1);
@@ -333,48 +357,90 @@
 .audiowave-bar:nth-child(5) { animation-delay: 0.65s; }
 .audiowave-bar:nth-child(6) { animation-delay: 0.25s; }
 
-/* 13. Consumer-Grade Radiant Mesh & Card Architecture (Airbnb / Linear Aesthetic) */
-.radiant-mesh {
-  background-color: #fafbfc;
+/* 13. Deep Midnight Cosmic Mesh & Modern Dark Glassmorphism */
+.deep-midnight {
+  background-color: #0B0F19;
+  color: #f8fafc;
+}
+
+.cosmic-mesh {
+  background-color: #0B0F19;
   background-image: 
-    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.07) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.06) 0px, transparent 50%),
-    radial-gradient(at 50% 50%, rgba(244, 63, 94, 0.04) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(14, 165, 233, 0.05) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.04) 0px, transparent 50%);
+    radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.16) 0px, transparent 45%),
+    radial-gradient(circle at 85% 20%, rgba(16, 185, 129, 0.14) 0px, transparent 45%),
+    radial-gradient(circle at 50% 60%, rgba(139, 92, 246, 0.12) 0px, transparent 45%),
+    radial-gradient(circle at 20% 90%, rgba(6, 182, 212, 0.12) 0px, transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(244, 63, 94, 0.10) 0px, transparent 45%);
 }
 
-/* Glassmorphism Surface with Ultra-Subtle Ring */
-.glass-surface {
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(226, 232, 240, 0.85);
+/* Dark Glassmorphic Modern Surface */
+.dark-glass {
+  background: rgba(15, 23, 42, 0.82);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.65);
 }
 
-.glass-surface-dark {
-  background: rgba(15, 23, 42, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.dark-glass-subtle {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Consumer Card Architecture */
+.dark-glass-card {
+  background: rgba(17, 24, 39, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.5rem;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.28s ease,
+              box-shadow 0.28s ease;
+}
+
+.dark-glass-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(99, 102, 241, 0.45);
+  box-shadow: 0 20px 40px -12px rgba(99, 102, 241, 0.25);
+}
+
+/* Animated Cyan Border Glow for Gemma 4 Live Tag */
+@keyframes cyanBorderGlow {
+  0%, 100% {
+    border-color: rgba(6, 182, 212, 0.35);
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+  }
+  50% {
+    border-color: rgba(6, 182, 212, 0.9);
+    box-shadow: 0 0 22px rgba(6, 182, 212, 0.45);
+  }
+}
+
+.gemma-tag-glow {
+  animation: cyanBorderGlow 2.8s infinite ease-in-out;
+}
+
+/* Consumer Card Architecture (Dark / Adaptive) */
 .consumer-card {
   border-radius: 1.5rem;
-  background: #ffffff;
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  background: rgba(17, 24, 39, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
   transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
               box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1),
               border-color 0.28s ease;
+  color: #f1f5f9;
 }
 
 .consumer-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 32px -8px rgba(79, 70, 229, 0.09),
-              0 8px 16px -4px rgba(15, 23, 42, 0.04);
-  border-color: rgba(199, 210, 254, 0.9);
+  box-shadow: 0 20px 40px -12px rgba(99, 102, 241, 0.25);
+  border-color: rgba(99, 102, 241, 0.45);
 }
 
 /* Tactile Pill Buttons */
@@ -396,7 +462,7 @@
 }
 .action-dock-item:hover {
   transform: translateY(-3px) scale(1.015);
-  box-shadow: 0 16px 30px -6px rgba(79, 70, 229, 0.15);
+  box-shadow: 0 16px 30px -6px rgba(79, 70, 229, 0.25);
 }
 
 /* Pulse Glow Keyframes */
