@@ -393,11 +393,11 @@
 
 /* Brand Logo & Header Identity Optimization */
 .brand-logo-img {
+  image-rendering: auto;
   image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-  filter: contrast(1.04) brightness(1.02) drop-shadow(0 1px 2px rgba(15, 23, 42, 0.08));
   transform: translateZ(0);
   backface-visibility: hidden;
+  filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.06));
 }
 
 
