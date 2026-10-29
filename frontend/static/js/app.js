@@ -23,6 +23,7 @@ const state = {
   technicianPhone: '+91 98765 43210',
   technicianData: null,
   techActiveTab: 'leads',
+  currentView: 'landing', // 'landing' or 'workspace'
 };
 
 // Lifecycle initialization
@@ -30,7 +31,15 @@ document.addEventListener('DOMContentLoaded', () => {
   initGeolocation();
   initDragAndDrop();
   initModals();
-  switchTab('civic');
+  initLandingLetterShowcase();
+  
+  // Hash check or default to landing page
+  if (window.location.hash === '#workspace' || window.location.hash === '#app') {
+    showWorkspaceView('citizen');
+  } else {
+    showLandingView();
+  }
+
   loadCivicFeed();
   loadServicesFeed();
 });
@@ -175,8 +184,11 @@ function showToast(message, type = 'success') {
 // --- 1. Dynamic Geolocation Detection ---
 function initGeolocation() {
   const locBadge = document.getElementById('location-pill-text');
+  const landingBadge = document.getElementById('landingLocationPill');
+  
   if (!navigator.geolocation) {
     if (locBadge) locBadge.textContent = state.location;
+    if (landingBadge) landingBadge.textContent = state.location;
     return;
   }
 
@@ -205,11 +217,13 @@ function initGeolocation() {
         state.location = '📍 Sector 62, Noida';
       }
       if (locBadge) locBadge.textContent = state.location;
+      if (landingBadge) landingBadge.textContent = state.location;
       syncLocationInputs();
     },
     () => {
       state.location = '📍 Sector 62, Noida';
       if (locBadge) locBadge.textContent = state.location;
+      if (landingBadge) landingBadge.textContent = state.location;
       syncLocationInputs();
     },
     { timeout: 7000 }
@@ -2255,6 +2269,223 @@ function resetCivicTalk() {
   if (resBox) resBox.classList.add('hidden');
 }
 
+// --- Dual-View Architecture (Landing Page vs. Operations Workspace) ---
+function showLandingView() {
+  state.currentView = 'landing';
+  const landing = document.getElementById('landingView');
+  const workspace = document.getElementById('appWorkspaceView');
+  
+  if (workspace) {
+    workspace.classList.add('view-hidden');
+    workspace.classList.remove('view-active');
+  }
+  if (landing) {
+    landing.classList.remove('view-hidden');
+    landing.classList.add('view-active');
+  }
+
+  // Smooth scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (window.lucide) lucide.createIcons();
+}
+
+function showWorkspaceView(role = 'citizen') {
+  state.currentView = 'workspace';
+  const landing = document.getElementById('landingView');
+  const workspace = document.getElementById('appWorkspaceView');
+  
+  if (landing) {
+    landing.classList.add('view-hidden');
+    landing.classList.remove('view-active');
+  }
+  if (workspace) {
+    workspace.classList.remove('view-hidden');
+    workspace.classList.add('view-active');
+  }
+
+  switchPersona(role);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (window.lucide) lucide.createIcons();
+}
+
+// --- Dynamic Landing Metrics Updater ---
+function updateLandingMetrics() {
+  const totalCountEl = document.getElementById('landing-stat-total');
+  const resolvedCountEl = document.getElementById('landing-stat-resolved');
+  if (totalCountEl && state.civicPosts) {
+    totalCountEl.textContent = state.civicPosts.length;
+  }
+  if (resolvedCountEl && state.civicPosts) {
+    const resolved = state.civicPosts.filter(p => p.status === 'Resolved').length;
+    resolvedCountEl.textContent = resolved;
+  }
+}
+
+// --- City / Neighborhood Selector ---
+function openCityModal() {
+  const m = document.getElementById('modal-city');
+  if (m) m.classList.remove('hidden');
+}
+
+function closeCityModal() {
+  const m = document.getElementById('modal-city');
+  if (m) m.classList.add('hidden');
+}
+
+function closeCityModalOnBackdrop(e) {
+  if (e.target.id === 'modal-city') closeCityModal();
+}
+
+function selectCity(city) {
+  state.location = city;
+  const pill = document.getElementById('location-pill-text');
+  const landingPill = document.getElementById('landingLocationPill');
+  if (pill) pill.textContent = city;
+  if (landingPill) landingPill.textContent = city;
+  
+  const clean = city.replace('📍 ', '');
+  const cInp = document.getElementById('civic-location-input');
+  const jInp = document.getElementById('job-location-input');
+  if (cInp) cInp.value = clean;
+  if (jInp) jInp.value = clean;
+
+  closeCityModal();
+  showToast(`📍 Location updated to ${clean}`, 'info');
+}
+
+function applyCustomCity() {
+  const inp = document.getElementById('custom-city-input');
+  if (inp && inp.value.trim()) {
+    const custom = inp.value.trim();
+    selectCity(`📍 ${custom}`);
+    inp.value = '';
+  }
+}
+
+// --- Landing Page Interactive RTI Showcase ---
+const sampleLetters = {
+  municipal: `FORMAL STATUTORY NOTICE OF PUBLIC NUISANCE & IMMINENT HAZARD
+Under Statutory Provisions of the State Municipal Corporation Act & CrPC / Bharatiya Nagarik Suraksha Sanhita
+
+Date: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}
+Incident Reference: CIVIC-ND-2026-88192
+GPS Coordinates: 28.6289° N, 77.3670° E (Geo-tagged via CivicPulse Audit)
+Severity Assessment: CRITICAL (Statutory SLA: 24 Hours)
+
+TO:
+The Municipal Commissioner / Executive Officer,
+Municipal Corporation / Authority Office.
+
+SUBJECT: URGENT STATUTORY NOTICE: Critical Safety Hazard Regarding Open High-Voltage Cable Sparking & Road Subsidence
+
+Sir / Madam,
+
+1. STATUTORY NOTICE OF HAZARD:
+This formal notice is served upon your office pursuant to the mandatory statutory obligations mandated under the Municipal Corporation Act to maintain public highways, electrical conduits, and civil infrastructure free from physical hazards endangering human life.
+
+2. FORENSIC EVIDENCE & INCIDENT LOCATION:
+On ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}, physical inspection confirmed exposed energized conduit wiring sparking adjacent to a 4-foot deep waterlogged tarmac depression directly obstructing vehicular transit at GPS Coordinates: 28.6289° N, 77.3670° E.
+
+3. MANDATORY TIME-BOUND REMEDIATION DEMAND:
+The subject hazard poses an immediate risk of electrocution and structural road collapse. Under the citizen service charter, this defect has been categorized as CRITICAL requiring an initial safety cordoning within 4 hours and definitive engineering remediation within 24 hours of notice delivery.
+
+4. ESCALATION WARNING:
+Failure to initiate corrective measures within the statutory SLA will result in direct escalation to the Public Grievance Portal (CPGRAMS) and the initiation of legal proceedings under public nuisance provisions.
+
+Yours faithfully,
+Concerned Residents & Neighborhood Welfare Association
+(Digitally logged and archived via CivicPulse Citizen Governance Portal)`,
+
+  rti: `APPLICATION FOR INFORMATION UNDER SECTION 6(1) OF THE RIGHT TO INFORMATION ACT, 2005
+
+Date: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}
+Public Authority: Office of the Municipal Commissioner / Executive Engineer
+Location Jurisdiction: Sector 62, Noida (GPS: 28.6289° N, 77.3670° E)
+
+TO:
+The Public Information Officer (PIO),
+Municipal Corporation / Development Authority.
+
+1. FULL NAME OF APPLICANT: Concerned Citizen / CivicPulse Community Auditor
+2. PARTICULARS OF INFORMATION REQUIRED:
+   Concerning the public infrastructure defect identified at GPS Coordinates: 28.6289° N, 77.3670° E (Reference Ticket: CIVIC-ND-2026-88192):
+
+   (a) Certified copies of the road repair and electrical maintenance contracts awarded for this ward/stretch for the financial years 2024–2026.
+   (b) The name, designation, and official contact details of the Junior Engineer (JE) and Executive Engineer (EE) responsible for periodic safety inspections of this sector.
+   (c) The exact budgeted expenditure and funds disbursed to contractors for maintenance of this designated roadway.
+   (d) Certified copy of the defect liability period (DLP) clause governing the contractor responsible for this infrastructure.
+   (e) Daily progress report and action taken log on grievances filed concerning this hazard.
+
+3. STATUTORY TIMELINE:
+As per Section 7(1) of the RTI Act, 2005, you are requested to provide this information within 30 days. If the hazard concerns life and liberty, the statutory period is 48 hours.
+
+Application Fee: Paid under statutory provisions.
+
+Applicant Signature: CivicPulse Certified Resident Auditor`
+};
+
+let currentLandingLetterType = 'municipal';
+
+function initLandingLetterShowcase() {
+  const paper = document.getElementById('landing-letter-paper');
+  if (paper) {
+    paper.textContent = sampleLetters[currentLandingLetterType];
+  }
+}
+
+function switchLandingLetterType(type) {
+  currentLandingLetterType = type;
+  const btnMun = document.getElementById('landing-letter-tab-municipal');
+  const btnRti = document.getElementById('landing-letter-tab-rti');
+  const paper = document.getElementById('landing-letter-paper');
+
+  if (type === 'municipal') {
+    if (btnMun) btnMun.className = 'btn-tactile px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/90 transition-all';
+    if (btnRti) btnRti.className = 'btn-tactile px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-900 transition-all';
+  } else {
+    if (btnRti) btnRti.className = 'btn-tactile px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/90 transition-all';
+    if (btnMun) btnMun.className = 'btn-tactile px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-900 transition-all';
+  }
+
+  if (paper) {
+    paper.textContent = sampleLetters[type];
+  }
+}
+
+function copyLandingLetter() {
+  const text = sampleLetters[currentLandingLetterType];
+  navigator.clipboard.writeText(text).then(() => {
+    const lbl = document.getElementById('btn-copy-landing-text');
+    if (lbl) {
+      lbl.textContent = 'Copied!';
+      setTimeout(() => { lbl.textContent = 'Copy Notice'; }, 2000);
+    }
+    showToast('Formal notice copied to clipboard!');
+  });
+}
+
+function printLandingLetter() {
+  const paper = document.getElementById('landing-letter-paper');
+  if (!paper) return;
+  const printWin = window.open('', '', 'width=800,height=700');
+  printWin.document.write(`
+    <html>
+      <head>
+        <title>CivicPulse Statutory Legal Notice</title>
+        <style>
+          body { font-family: Georgia, serif; line-height: 1.6; padding: 40px; font-size: 13pt; color: #111; }
+          pre { white-space: pre-wrap; font-family: inherit; font-size: inherit; }
+        </style>
+      </head>
+      <body>
+        <pre>${paper.textContent}</pre>
+        <script>window.print(); window.close();</script>
+      </body>
+    </html>
+  `);
+  printWin.document.close();
+}
+
 // Global window exposure for inline HTML event handlers
 window.openLetterModal = openLetterModal;
 window.closeLetterModal = closeLetterModal;
@@ -2280,6 +2511,20 @@ window.toggleCivicTalkRecording = toggleCivicTalkRecording;
 window.startCivicTalkRecording = startCivicTalkRecording;
 window.stopCivicTalkRecording = stopCivicTalkRecording;
 window.resetCivicTalk = resetCivicTalk;
+
+// Dual-View Switcher window exposures
+window.showLandingView = showLandingView;
+window.showWorkspaceView = showWorkspaceView;
+window.switchLandingLetterType = switchLandingLetterType;
+window.copyLandingLetter = copyLandingLetter;
+window.printLandingLetter = printLandingLetter;
+
+// City Selector window exposures
+window.openCityModal = openCityModal;
+window.closeCityModal = closeCityModal;
+window.closeCityModalOnBackdrop = closeCityModalOnBackdrop;
+window.selectCity = selectCity;
+window.applyCustomCity = applyCustomCity;
 
 
 

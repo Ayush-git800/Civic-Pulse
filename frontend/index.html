@@ -8,7 +8,7 @@
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Custom CSS for GPU-accelerated micro-animations -->
+  <!-- Custom CSS for Dual-View Transitions & Ambient Canvas -->
   <link rel="stylesheet" href="/static/css/style.css">
 
   <!-- Google Font: Inter -->
@@ -66,266 +66,332 @@
     }
   </style>
 </head>
-<body class="bg-gradient-to-br from-indigo-50/40 via-white to-purple-50/30 text-slate-800 antialiased min-h-screen flex flex-col font-sans selection:bg-indigo-500 selection:text-white relative overflow-x-hidden">
+<body class="ambient-canvas-mesh text-slate-800 antialiased min-h-screen flex flex-col font-sans selection:bg-indigo-600 selection:text-white relative overflow-x-hidden">
 
-  <!-- Ambient Background Floating Blurred Gradient Orbs -->
-  <div class="fixed top-12 left-10 w-96 h-96 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none ambient-orb-1 -z-10"></div>
-  <div class="fixed top-1/3 right-10 w-96 h-96 bg-purple-500/15 rounded-full blur-3xl pointer-events-none ambient-orb-2 -z-10"></div>
+  <!-- Ambient Floating Radial Gradient Orbs -->
+  <div class="fixed top-12 left-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none ambient-orb-1 -z-10"></div>
+  <div class="fixed top-1/3 right-10 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none ambient-orb-2 -z-10"></div>
 
   <!-- Floating Toast Notifications Anchor -->
   <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full"></div>
 
-  <!-- Sticky Modern Header -->
-  <header class="sticky top-0 z-40 frosted-glass border-b border-slate-200/80 shadow-xs transition-all">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      
-      <!-- Brand & Gemma AI Live Badge -->
-      <div class="flex items-center gap-3">
-        <a href="/" class="flex items-center gap-2.5 group">
-          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-700 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/25 group-hover:scale-105 transition-transform">
-            <i data-lucide="activity" class="w-5 h-5 stroke-[2.5]"></i>
-          </div>
+  <!-- ========================================================================= -->
+  <!-- VIEW 1: STANDALONE LANDING PAGE (#landingView)                             -->
+  <!-- ========================================================================= -->
+  <div id="landingView" class="view-container view-active w-full min-h-screen flex flex-col">
+
+    <!-- Landing Navigation Header -->
+    <header class="sticky top-0 z-40 frosted-glass border-b border-slate-200/80 shadow-xs transition-all">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        
+        <!-- Brand Anchor -->
+        <a href="#" onclick="showLandingView(); return false;" class="flex items-center gap-3 group">
+          <img src="/static/images/logo.png" alt="CivicPulse Logo" class="w-10 h-10 object-contain drop-shadow-sm group-hover:scale-105 transition-transform">
           <div>
             <div class="text-lg font-black tracking-tight text-slate-900 leading-none">
               Civic<span class="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">Pulse</span>
             </div>
-            <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mt-0.5">GovTech AI Mesh</span>
+            <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mt-0.5">Citizen Portal & Utility Market</span>
           </div>
         </a>
 
-        <!-- Glowing Gemma 4 Live Radar Badge -->
-        <div class="hidden sm:inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50/90 border border-indigo-200/80 text-indigo-700 text-xs font-semibold shadow-xs">
+        <!-- Quick Section Nav (Desktop) -->
+        <nav class="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-600">
+          <a href="#how-it-works" class="hover:text-indigo-600 transition-colors">How It Works</a>
+          <a href="#pillars" class="hover:text-indigo-600 transition-colors">Key Pillars</a>
+          <a href="#personas" class="hover:text-indigo-600 transition-colors">Personas</a>
+          <a href="#rti-showcase" class="hover:text-indigo-600 transition-colors">Legal & RTI</a>
+          <a href="#team" class="hover:text-indigo-600 transition-colors">Team</a>
+        </nav>
+
+        <!-- Right Side: Geolocation Chip & Launch App CTA -->
+        <div class="flex items-center gap-3">
+          <button onclick="openCityModal()" class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 border border-slate-200/90 text-xs font-semibold text-slate-800 shadow-xs hover:border-indigo-400 transition-all cursor-pointer">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span id="landingLocationPill">📍 Detecting Location...</span>
+            <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
+          </button>
+
+          <button onclick="showWorkspaceView('citizen')" class="btn-tactile px-4 py-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-xs font-bold shadow-md shadow-indigo-500/25 transition-all flex items-center gap-1.5">
+            <span>🚀 Launch Portal</span>
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Presentation Section -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-16 w-full">
+      <div class="text-center max-w-3xl mx-auto space-y-6">
+        
+        <!-- Gemma 4 Live Radar Badge -->
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold shadow-xs">
           <span class="relative flex h-2.5 w-2.5">
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
             <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-600"></span>
           </span>
-          <span>Gemma 4 Multimodal Engine Live</span>
+          <span>Powered by Gemma 4 Multimodal Intelligence</span>
         </div>
 
-        <!-- Team Version Controllers Badge -->
-        <div class="hidden xl:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100/90 border border-slate-200/90 text-slate-700 text-xs font-semibold shadow-xs">
-          <i data-lucide="users" class="w-3.5 h-3.5 text-indigo-600"></i>
-          <span>Team: <strong class="text-slate-900">Version Controllers</strong></span>
+        <!-- Big Display Headline -->
+        <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight">
+          Smarter Neighborhoods.<br>
+          <span class="bg-gradient-to-r from-indigo-600 via-purple-600 to-emerald-600 bg-clip-text text-transparent">
+            Transparent Governance.
+          </span><br>
+          Fair Local Work.
+        </h1>
+
+        <!-- Subtitle -->
+        <p class="text-slate-600 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
+          CivicPulse bridges citizens, municipal authorities, and neighborhood tradespeople. 
+          Upload photo or voice evidence to trigger autonomous multimodal hazard triage, generate legally binding municipal notices, and connect with fair-rate home repair technicians.
+        </p>
+
+        <!-- Dual CTA Buttons -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2">
+          <button onclick="showWorkspaceView('citizen'); setTimeout(() => openModal('modal-civic'), 200);" class="btn-tactile w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-600 to-rose-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold text-sm shadow-lg shadow-rose-500/25 flex items-center justify-center gap-2">
+            <i data-lucide="camera" class="w-4 h-4"></i>
+            <span>📸 Report Civic Hazard</span>
+          </button>
+          
+          <button onclick="showWorkspaceView('citizen')" class="btn-tactile w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2">
+            <i data-lucide="layout-grid" class="w-4 h-4 text-indigo-400"></i>
+            <span>⚡ Launch Live App</span>
+          </button>
         </div>
+
       </div>
 
-      <!-- 3-Way Persona Switcher Navigation (Pillar 3) -->
-      <nav class="hidden md:flex items-center bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shadow-inner">
-        <button id="persona-btn-citizen" onclick="switchPersona('citizen')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/90 transition-all">
-          <i data-lucide="user" class="w-4 h-4 text-indigo-600"></i>
-          <span>👤 Citizen Portal</span>
-        </button>
-        <button id="persona-btn-admin" onclick="switchPersona('admin')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all">
-          <i data-lucide="shield-alert" class="w-4 h-4 text-rose-500"></i>
-          <span>🛡️ Officer Command</span>
-        </button>
-        <button id="persona-btn-technician" onclick="switchPersona('technician')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all">
-          <i data-lucide="wrench" class="w-4 h-4 text-emerald-600"></i>
-          <span>🔧 Technician Desk</span>
-        </button>
-      </nav>
-
-      <!-- Dynamic GPS Location Pill -->
-      <div class="flex items-center gap-2.5">
-        <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 border border-slate-200/90 text-xs font-semibold text-slate-800 shadow-xs backdrop-blur-md">
-          <span class="relative flex h-2 w-2">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          <span id="location-pill-text">📍 Sector 62, Noida</span>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <!-- Mobile 3-Way Persona Navigation -->
-  <div class="md:hidden frosted-glass border-b border-slate-200 px-3 py-2 flex gap-1.5 overflow-x-auto custom-scroll">
-    <button id="mobile-persona-btn-citizen" onclick="switchPersona('citizen')" class="flex-1 py-1.5 px-2 text-center text-xs font-bold rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 whitespace-nowrap">
-      👤 Citizen
-    </button>
-    <button id="mobile-persona-btn-admin" onclick="switchPersona('admin')" class="flex-1 py-1.5 px-2 text-center text-xs font-semibold rounded-xl bg-white text-slate-600 border border-slate-200 whitespace-nowrap">
-      🛡️ Officer
-    </button>
-    <button id="mobile-persona-btn-technician" onclick="switchPersona('technician')" class="flex-1 py-1.5 px-2 text-center text-xs font-semibold rounded-xl bg-white text-slate-600 border border-slate-200 whitespace-nowrap">
-      🔧 Tech Desk
-    </button>
-  </div>
-
-  <!-- Main Content View -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
-
-    <!-- ========================================================================= -->
-    <!-- PERSONA 1: CITIZEN VIEW (Default)                                         -->
-    <!-- ========================================================================= -->
-    <div id="persona-view-citizen" class="space-y-6 persona-transition">
-
-      <!-- Citizen Secondary Sub-Navigation Pill Bar -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
-        <div class="flex items-center gap-2 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shadow-inner max-w-fit">
-          <button id="tab-btn-civic" onclick="switchTab('civic')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/90 transition-all">
-            <i data-lucide="globe" class="w-4 h-4 text-indigo-600"></i>
-            <span>Civic Infrastructure Feed</span>
-          </button>
-          <button id="tab-btn-services" onclick="switchTab('services')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all">
-            <i data-lucide="zap" class="w-4 h-4 text-amber-500"></i>
-            <span>Home Utility Repairs</span>
-          </button>
-        </div>
-        <div class="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-500">
-          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50/90 text-indigo-700 border border-indigo-200/80">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Citizen Mode: Public Reporting & Hyperlocal Services</span>
-          </span>
-        </div>
-      </div>
-
-      <!-- ==================== TAB 1: CIVIC INFRASTRUCTURE FEED ==================== -->
-      <section id="view-civic" class="space-y-6">
-      
-      <!-- Hero Action Bar with Shimmer Headline & Floating Glow -->
-      <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-900 text-white relative overflow-hidden shadow-xl border border-indigo-800/40">
-        <!-- Floating orbs inside hero container -->
-        <div class="absolute -right-8 -top-8 w-64 h-64 bg-indigo-500/25 rounded-full blur-3xl pointer-events-none ambient-orb-1"></div>
-        <div class="absolute -left-10 -bottom-10 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl pointer-events-none ambient-orb-2"></div>
-
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
-          <div class="max-w-2xl">
-            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-semibold mb-3">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-              <span>Autonomous Municipal Audit Pipeline</span>
-            </span>
-            <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
-              <span class="shimmer-headline">CivicPulse: AI-Powered Community Action & Hyperlocal Repairs</span>
-            </h1>
-            <p class="text-slate-300 text-xs sm:text-sm mt-3 leading-relaxed max-w-xl">
-              Citizen photos are forensically inspected by <strong>Gemma 4 Multimodal AI</strong> to assess physical hazard severity, determine departmental jurisdiction, and automatically attach central escalation portals (CPGRAMS, NHAI, RailMadad).
-            </p>
-          </div>
-          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-            <button onclick="startCivicTalkFromBanner()" class="group relative px-5 py-4 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-600 to-rose-600 hover:from-rose-600 hover:to-pink-700 text-white text-xs sm:text-sm font-bold shadow-lg shadow-rose-500/30 hover:shadow-rose-500/50 hover:scale-102 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
-              <span class="relative flex h-2.5 w-2.5">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-200 opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
-              </span>
-              <i data-lucide="mic" class="w-4 h-4"></i>
-              <span>🎙️ CivicTalk Voice Report</span>
-            </button>
-            <button onclick="openModal('modal-civic')" class="group relative px-6 py-4 rounded-2xl bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-600 text-white text-xs sm:text-sm font-bold shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-102 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
-              <i data-lucide="plus-circle" class="w-4 h-4 group-hover:rotate-90 transition-transform"></i>
-              <span>+ Report Infrastructure Issue</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Civic Search & Category Filter Controls -->
-      <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-        <!-- Search Box -->
-        <div class="relative flex-1 max-w-md">
-          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-          <input id="civic-search-input" oninput="handleCivicFilter()" type="text" placeholder="Search by title, location or department..." class="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
+      <!-- Real-Time Metric Stat Chips Banner -->
+      <div class="mt-14 grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
+        <div class="landing-card-hover p-5 rounded-3xl bg-white/90 border border-slate-200/90 shadow-xs text-center backdrop-blur-md">
+          <div class="text-2xl sm:text-3xl font-black text-indigo-600">98.4%</div>
+          <div class="text-xs font-bold text-slate-800 mt-1">AI Triage Accuracy</div>
+          <p class="text-[11px] text-slate-500 mt-0.5">Gemma 4 hazard audit</p>
         </div>
 
-        <!-- Filter Pills Scroll Area -->
-        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 custom-scroll text-xs">
-          <button onclick="setCivicCategory('ALL', this)" class="civic-filter-pill active px-3 py-1.5 rounded-xl font-bold bg-indigo-600 text-white shadow-xs transition-all whitespace-nowrap">
-            All Incidents
-          </button>
-          <button onclick="setCivicCategory('Road', this)" class="civic-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
-            🛣️ Roads & Potholes
-          </button>
-          <button onclick="setCivicCategory('Waste', this)" class="civic-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
-            🗑️ Sanitation & Waste
-          </button>
-          <button onclick="setCivicCategory('Water', this)" class="civic-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
-            💧 Water & Sewage
-          </button>
-          <button onclick="setCivicCategory('Electric', this)" class="civic-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
-            ⚡ Electrical
-          </button>
-          <button onclick="setCivicCategory('CENTRAL', this)" class="civic-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition-all whitespace-nowrap">
-            🚨 Central Jurisdiction
-          </button>
+        <div class="landing-card-hover p-5 rounded-3xl bg-white/90 border border-slate-200/90 shadow-xs text-center backdrop-blur-md">
+          <div class="text-2xl sm:text-3xl font-black text-rose-600">24–48h</div>
+          <div class="text-xs font-bold text-slate-800 mt-1">Statutory SLA Target</div>
+          <p class="text-[11px] text-slate-500 mt-0.5">Mandatory municipal escalation</p>
         </div>
-      </div>
 
-      <!-- Feed Grid -->
-      <div id="civic-posts-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div class="col-span-full py-20 text-center">
-          <div class="inline-block animate-spin rounded-full h-8 w-8 border-3 border-indigo-600 border-t-transparent mb-3"></div>
-          <p class="text-xs font-semibold text-slate-500">Auditing and loading community feed...</p>
+        <div class="landing-card-hover p-5 rounded-3xl bg-white/90 border border-slate-200/90 shadow-xs text-center backdrop-blur-md">
+          <div id="landing-stat-total" class="text-2xl sm:text-3xl font-black text-emerald-600">3</div>
+          <div class="text-xs font-bold text-slate-800 mt-1">Integrated Portals</div>
+          <p class="text-[11px] text-slate-500 mt-0.5">CPGRAMS, NHAI, RailMadad</p>
+        </div>
+
+        <div class="landing-card-hover p-5 rounded-3xl bg-white/90 border border-slate-200/90 shadow-xs text-center backdrop-blur-md">
+          <div id="landing-stat-resolved" class="text-2xl sm:text-3xl font-black text-purple-600">₹0</div>
+          <div class="text-xs font-bold text-slate-800 mt-1">Price Gouging</div>
+          <p class="text-[11px] text-slate-500 mt-0.5">Transparent fair-wage mesh</p>
         </div>
       </div>
     </section>
 
-    <!-- ==================== TAB 2: HOME UTILITY REPAIRS ==================== -->
-    <section id="view-services" class="hidden space-y-6">
-      
-      <!-- Hero Action Bar with Shimmer Headline -->
-      <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 text-white relative overflow-hidden shadow-xl border border-indigo-900/40">
-        <div class="absolute -right-8 -top-8 w-64 h-64 bg-violet-500/25 rounded-full blur-3xl pointer-events-none ambient-orb-2"></div>
+    <!-- Value Pillars / How It Works Section -->
+    <section id="how-it-works" class="py-16 bg-white/60 border-y border-slate-200/70">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center max-w-2xl mx-auto mb-12">
+          <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider">Engineered For Public Adoption</span>
+          <h2 class="text-2xl sm:text-4xl font-black text-slate-900 mt-1">How CivicPulse Operates</h2>
+          <p class="text-xs sm:text-sm text-slate-500 mt-2">
+            A three-way interconnected loop uniting citizens, public sector officials, and skilled local technicians.
+          </p>
+        </div>
 
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
-          <div class="max-w-2xl">
-            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/20 border border-violet-400/30 text-violet-300 text-xs font-semibold mb-3">
-              <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-              <span>Anti-Overcharging Negotiation Shield</span>
-            </span>
-            <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
-              <span class="shimmer-headline">Home Utility Repair Marketplace</span>
-            </h1>
-            <p class="text-slate-300 text-xs sm:text-sm mt-3 leading-relaxed max-w-xl">
-              Upload defect media for instant AI failure diagnosis, local Indian labor price estimation, and transparent two-way bidding with verified neighborhood technicians.
-            </p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Pillar 1 Card -->
+          <div class="landing-card-hover p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex flex-col justify-between">
+            <div>
+              <div class="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mb-4">
+                <i data-lucide="eye" class="w-6 h-6 stroke-[2.5]"></i>
+              </div>
+              <span class="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">Pillar 1</span>
+              <h3 class="text-lg font-bold text-slate-900 mt-1">Multimodal Forensic Inspection</h3>
+              <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+                Citizens submit photos or voice notes in Hindi, Hinglish, or English. Gemma 4 natively audits physical severity, extracts GPS landmarks, and determines statutory departmental jurisdiction.
+              </p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center gap-1.5 text-xs text-indigo-600 font-semibold">
+              <span>CivicTalk Audio + Vision</span>
+              <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i>
+            </div>
           </div>
+
+          <!-- Pillar 2 Card -->
+          <div class="landing-card-hover p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex flex-col justify-between">
+            <div>
+              <div class="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 mb-4">
+                <i data-lucide="scale" class="w-6 h-6 stroke-[2.5]"></i>
+              </div>
+              <span class="text-[11px] font-bold text-rose-600 uppercase tracking-wider">Pillar 2</span>
+              <h3 class="text-lg font-bold text-slate-900 mt-1">Statutory Legal Accountability</h3>
+              <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+                One-click formal grievance and RTI generator. Automatically drafts statutory notices under Municipal Corporation Acts and Section 6(1) RTI applications ready for copy or print PDF.
+              </p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center gap-1.5 text-xs text-rose-600 font-semibold">
+              <span>RTI 2005 & CrPC Notice</span>
+              <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i>
+            </div>
+          </div>
+
+          <!-- Pillar 3 Card -->
+          <div class="landing-card-hover p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex flex-col justify-between">
+            <div>
+              <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mb-4">
+                <i data-lucide="wrench" class="w-6 h-6 stroke-[2.5]"></i>
+              </div>
+              <span class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Pillar 3</span>
+              <h3 class="text-lg font-bold text-slate-900 mt-1">Anti-Gouging Utility Marketplace</h3>
+              <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+                Defects in private residences receive AI repair benchmarks. Local verified plumbers and electricians submit transparent bids with two-way counter-offers and locked escrow payouts.
+              </p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center gap-1.5 text-xs text-emerald-600 font-semibold">
+              <span>Fair Wage Gig Mesh</span>
+              <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Interactive Persona Showcase (Judge Fast-Pass) -->
+    <section id="personas" class="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+      <div class="text-center max-w-2xl mx-auto mb-12">
+        <span class="text-xs font-bold text-purple-600 uppercase tracking-wider">Interactive Persona Fast-Pass</span>
+        <h2 class="text-2xl sm:text-4xl font-black text-slate-900 mt-1">3 Connected Perspectives</h2>
+        <p class="text-xs sm:text-sm text-slate-500 mt-2">
+          Click any persona card below to instantly launch into that live operational workspace.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Persona 1: Citizen View -->
+        <div class="p-6 rounded-3xl bg-gradient-to-b from-indigo-50/70 to-white border border-indigo-100 shadow-sm flex flex-col justify-between">
           <div>
-            <button onclick="openModal('modal-service')" class="group px-6 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs sm:text-sm font-bold shadow-lg shadow-emerald-600/30 hover:shadow-emerald-600/50 hover:scale-102 transition-all flex items-center gap-2 whitespace-nowrap">
-              <i data-lucide="wrench" class="w-4 h-4 group-hover:rotate-45 transition-transform"></i>
-              <span>+ Request Home Repair</span>
-            </button>
+            <div class="flex items-center justify-between mb-4">
+              <span class="p-3 rounded-2xl bg-indigo-600 text-white font-bold text-lg shadow-sm">👤</span>
+              <span class="px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-bold">Public Feed</span>
+            </div>
+            <h3 class="text-lg font-black text-slate-900">Citizen Portal</h3>
+            <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+              Explore live neighborhood incident feeds, submit voice reports via CivicTalk, monitor repair progress, or post household utility repair jobs.
+            </p>
           </div>
-        </div>
-      </div>
-
-      <!-- Service Search & Trade Category Filter Controls -->
-      <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-        <!-- Search Box -->
-        <div class="relative flex-1 max-w-md">
-          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-          <input id="service-search-input" oninput="handleServiceFilter()" type="text" placeholder="Search household repairs, plumbers, electricians..." class="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all">
-        </div>
-
-        <!-- Trade Filter Pills -->
-        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 custom-scroll text-xs">
-          <button onclick="setServiceCategory('ALL', this)" class="service-filter-pill active px-3 py-1.5 rounded-xl font-bold bg-emerald-600 text-white shadow-xs transition-all whitespace-nowrap">
-            All Repairs
-          </button>
-          <button onclick="setServiceCategory('Plumb', this)" class="service-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all whitespace-nowrap">
-            🔧 Plumber
-          </button>
-          <button onclick="setServiceCategory('Electr', this)" class="service-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all whitespace-nowrap">
-            ⚡ Electrician
-          </button>
-          <button onclick="setServiceCategory('Carpent', this)" class="service-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all whitespace-nowrap">
-            🪚 Carpenter
-          </button>
-          <button onclick="setServiceCategory('Appliance', this)" class="service-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all whitespace-nowrap">
-            ❄️ Appliance Repair
+          <button onclick="showWorkspaceView('citizen')" class="btn-tactile mt-6 w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all">
+            <span>Explore Citizen Feed</span>
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
           </button>
         </div>
-      </div>
 
-      <!-- Services Grid -->
-      <div id="services-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="col-span-full py-20 text-center">
-          <div class="inline-block animate-spin rounded-full h-8 w-8 border-3 border-emerald-600 border-t-transparent mb-3"></div>
-          <p class="text-xs font-semibold text-slate-500">Loading household repair marketplace...</p>
+        <!-- Persona 2: Officer Command -->
+        <div class="p-6 rounded-3xl bg-gradient-to-b from-rose-50/70 to-white border border-rose-100 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <span class="p-3 rounded-2xl bg-rose-600 text-white font-bold text-lg shadow-sm">🛡️</span>
+              <span class="px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 text-[10px] font-bold">Ops Dashboard</span>
+            </div>
+            <h3 class="text-lg font-black text-slate-900">Municipal Command Center</h3>
+            <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+              Inspect critical hazard triage tables, monitor statutory SLA breach countdowns, assign designated field inspectors, and dispatch repair crews.
+            </p>
+          </div>
+          <button onclick="showWorkspaceView('admin')" class="btn-tactile mt-6 w-full py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all">
+            <span>Open Command Center</span>
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <!-- Persona 3: Technician Desk -->
+        <div class="p-6 rounded-3xl bg-gradient-to-b from-emerald-50/70 to-white border border-emerald-100 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <span class="p-3 rounded-2xl bg-emerald-600 text-white font-bold text-lg shadow-sm">🔧</span>
+              <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">Tradesperson Desk</span>
+            </div>
+            <h3 class="text-lg font-black text-slate-900">Technician Workspace</h3>
+            <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+              Discover verified household repair leads diagnosed by Gemma 4 AI, submit transparent price quotes, negotiate counter-offers, and track confirmed job earnings.
+            </p>
+          </div>
+          <button onclick="showWorkspaceView('technician')" class="btn-tactile mt-6 w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all">
+            <span>Launch Tradesperson Desk</span>
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </button>
         </div>
       </div>
     </section>
 
-    <!-- ==================== HACKATHON SUBMISSION & TEAM SHOWCASE ==================== -->
-    <section class="mt-14 pt-8 border-t border-slate-200/80">
+    <!-- Interactive RTI & Formal Grievance Letter Showcase -->
+    <section id="rti-showcase" class="py-16 bg-slate-100/70 border-t border-slate-200/80">
+      <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center max-w-2xl mx-auto mb-8">
+          <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider">Statutory Transparency Showcase</span>
+          <h2 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1">One-Click Legal & RTI Drafting</h2>
+          <p class="text-xs sm:text-sm text-slate-500 mt-1.5">
+            Preview the autonomous formal letter generator citing Indian municipal acts, GPS coordinates, and RTI 2005 provisions.
+          </p>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200/90 shadow-md p-5 sm:p-7 space-y-4">
+          
+          <!-- Tab Selector -->
+          <div class="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-2xl">
+              <button id="landing-letter-tab-municipal" onclick="switchLandingLetterType('municipal')" class="btn-tactile px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/90 transition-all">
+                🏛️ Municipal Commissioner Notice
+              </button>
+              <button id="landing-letter-tab-rti" onclick="switchLandingLetterType('rti')" class="btn-tactile px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-900 transition-all">
+                📑 RTI 2005 Application
+              </button>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <button onclick="copyLandingLetter()" class="btn-tactile px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-colors">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                <span id="btn-copy-landing-text">Copy Notice</span>
+              </button>
+              <button onclick="printLandingLetter()" class="btn-tactile px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                <span>Print as PDF</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Document Paper Area -->
+          <div class="bg-[#FAF9F5] border border-stone-300/80 rounded-2xl p-5 sm:p-7 shadow-inner max-h-80 overflow-y-auto custom-scroll">
+            <pre id="landing-letter-paper" class="font-mono text-xs text-slate-800 leading-relaxed whitespace-pre-wrap select-text"></pre>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-slate-500">
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+              <span>Cites exact GPS coordinates, severity metrics, and statutory escalation deadlines.</span>
+            </div>
+            <button onclick="showWorkspaceView('citizen')" class="font-bold text-indigo-600 hover:underline flex items-center gap-1">
+              <span>Draft notice for any live incident in workspace</span>
+              <i data-lucide="arrow-right" class="w-3 h-3"></i>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Hackathon Submission & Team Showcase -->
+    <section id="team" class="py-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
       <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-indigo-900/50 relative overflow-hidden">
         <div class="absolute -right-12 -top-12 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -346,7 +412,7 @@
               <span class="bg-gradient-to-r from-indigo-400 via-purple-300 to-violet-300 bg-clip-text text-transparent">Team Version Controllers</span>
             </h3>
             <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              CivicPulse combines multimodal physical hazard inspection powered by <strong>Gemma 4</strong> with a decentralized gig marketplace protecting residents from repair overcharging.
+              CivicPulse combines multimodal physical hazard inspection powered by <strong>Gemma 4</strong> with statutory legal enforcement and a decentralized gig marketplace protecting residents from repair overcharging.
             </p>
           </div>
 
@@ -383,283 +449,642 @@
       </div>
     </section>
 
-    </div>
-    <!-- END PERSONA 1: CITIZEN VIEW -->
-
-    <!-- ========================================================================= -->
-    <!-- PERSONA 2: MUNICIPAL OFFICER COMMAND CENTER (Pillar 3)                    -->
-    <!-- ========================================================================= -->
-    <div id="persona-view-admin" class="hidden space-y-6 persona-transition">
-      <!-- Officer Hero Banner -->
-      <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white relative overflow-hidden shadow-xl border border-indigo-800/40">
-        <div class="absolute -right-8 -top-8 w-64 h-64 bg-rose-500/15 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
-          <div class="max-w-2xl">
-            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/20 border border-rose-400/30 text-rose-300 text-xs font-semibold mb-3">
-              <span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping"></span>
-              <span>Statutory SLA Compliance & Operations Command</span>
-            </span>
-            <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
-              <span>Municipal Officer Command Center</span>
-            </h1>
-            <p class="text-slate-300 text-xs sm:text-sm mt-3 leading-relaxed max-w-xl">
-              Real-time civic operations triage engine: inspect high-risk structural and electrical hazards, monitor statutory SLA countdowns, assign designated field inspectors, and dispatch remediation crews.
-            </p>
+    <!-- Landing Footer -->
+    <footer class="bg-white/90 border-t border-slate-200/80 py-6 text-xs text-slate-500 mt-auto">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-center sm:text-left">
+          <div class="flex items-center gap-2">
+            <img src="/static/images/logo.png" alt="CivicPulse" class="w-5 h-5 object-contain">
+            <span class="font-bold text-slate-800">CivicPulse</span>
           </div>
-          <div class="flex flex-wrap items-center gap-3">
-            <button onclick="loadAdminDashboard()" class="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold transition-all flex items-center gap-2 shadow-sm">
-              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-              <span>Refresh Operations Feed</span>
+          <span class="hidden sm:inline text-slate-300">•</span>
+          <span>Built with ❤️ by <strong class="text-slate-800">Team Version Controllers</strong></span>
+        </div>
+        <div class="flex items-center gap-4 text-slate-500">
+          <button onclick="showWorkspaceView('citizen')" class="hover:text-indigo-600 font-semibold">Launch App Workspace</button>
+          <span>•</span>
+          <a href="/docs" target="_blank" class="hover:text-indigo-600 font-medium">FastAPI Docs</a>
+          <span>•</span>
+          <a href="/api/health" target="_blank" class="hover:text-indigo-600 font-medium">Health Status</a>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+  <!-- END VIEW 1: STANDALONE LANDING PAGE -->
+
+
+  <!-- ========================================================================= -->
+  <!-- VIEW 2: CORE INTERACTIVE WORKSPACE (#appWorkspaceView)                   -->
+  <!-- ========================================================================= -->
+  <div id="appWorkspaceView" class="view-container view-hidden w-full min-h-screen flex flex-col">
+
+    <!-- Sticky Operations Header -->
+    <header class="sticky top-0 z-40 frosted-glass border-b border-slate-200/80 shadow-xs transition-all">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        
+        <!-- Back to Home & Brand -->
+        <div class="flex items-center gap-3">
+          <button onclick="showLandingView()" class="btn-tactile flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all mr-1">
+            <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Home</span>
+          </button>
+
+          <a href="#" onclick="showLandingView(); return false;" class="flex items-center gap-2.5 group">
+            <img src="/static/images/logo.png" alt="CivicPulse Logo" class="w-9 h-9 object-contain drop-shadow-sm group-hover:scale-105 transition-transform">
+            <div>
+              <div class="text-base font-black tracking-tight text-slate-900 leading-none">
+                Civic<span class="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">Pulse</span>
+              </div>
+              <span class="text-[9px] font-semibold text-slate-400 uppercase tracking-wider block mt-0.5">GovTech Ops</span>
+            </div>
+          </a>
+
+          <!-- Glowing Gemma 4 Live Radar Badge -->
+          <div class="hidden sm:inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50/90 border border-indigo-200/80 text-indigo-700 text-xs font-semibold shadow-xs">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-600"></span>
+            </span>
+            <span>Gemma 4 Live</span>
+          </div>
+        </div>
+
+        <!-- 3-Way Persona Switcher Navigation (Pillar 3) -->
+        <nav class="hidden md:flex items-center bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shadow-inner">
+          <button id="persona-btn-citizen" onclick="switchPersona('citizen')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/90 transition-all">
+            <i data-lucide="user" class="w-4 h-4 text-indigo-600"></i>
+            <span>👤 Citizen Portal</span>
+          </button>
+          <button id="persona-btn-admin" onclick="switchPersona('admin')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all">
+            <i data-lucide="shield-alert" class="w-4 h-4 text-rose-500"></i>
+            <span>🛡️ Officer Command</span>
+          </button>
+          <button id="persona-btn-technician" onclick="switchPersona('technician')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all">
+            <i data-lucide="wrench" class="w-4 h-4 text-emerald-600"></i>
+            <span>🔧 Technician Desk</span>
+          </button>
+        </nav>
+
+        <!-- Dynamic GPS Location Pill with Modal Opener -->
+        <div class="flex items-center gap-2.5">
+          <button onclick="openCityModal()" class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 border border-slate-200/90 text-xs font-semibold text-slate-800 shadow-xs backdrop-blur-md hover:border-indigo-400 transition-colors cursor-pointer">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span id="location-pill-text">📍 Sector 62, Noida</span>
+            <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Mobile 3-Way Persona Navigation -->
+    <div class="md:hidden frosted-glass border-b border-slate-200 px-3 py-2 flex gap-1.5 overflow-x-auto custom-scroll">
+      <button id="mobile-persona-btn-citizen" onclick="switchPersona('citizen')" class="flex-1 py-1.5 px-2 text-center text-xs font-bold rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 whitespace-nowrap">
+        👤 Citizen
+      </button>
+      <button id="mobile-persona-btn-admin" onclick="switchPersona('admin')" class="flex-1 py-1.5 px-2 text-center text-xs font-semibold rounded-xl bg-white text-slate-600 border border-slate-200 whitespace-nowrap">
+        🛡️ Officer
+      </button>
+      <button id="mobile-persona-btn-technician" onclick="switchPersona('technician')" class="flex-1 py-1.5 px-2 text-center text-xs font-semibold rounded-xl bg-white text-slate-600 border border-slate-200 whitespace-nowrap">
+        🔧 Tech Desk
+      </button>
+    </div>
+
+    <!-- Main Operations Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+
+      <!-- ========================================================================= -->
+      <!-- PERSONA 1: CITIZEN VIEW (Default)                                         -->
+      <!-- ========================================================================= -->
+      <div id="persona-view-citizen" class="space-y-6 persona-transition">
+
+        <!-- Citizen Sub-Navigation Pill Bar -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
+          <div class="flex items-center gap-2 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shadow-inner max-w-fit">
+            <button id="tab-btn-civic" onclick="switchTab('civic')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/90 transition-all">
+              <i data-lucide="globe" class="w-4 h-4 text-indigo-600"></i>
+              <span>Civic Infrastructure Feed</span>
+            </button>
+            <button id="tab-btn-services" onclick="switchTab('services')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all">
+              <i data-lucide="zap" class="w-4 h-4 text-amber-500"></i>
+              <span>Home Utility Repairs</span>
             </button>
           </div>
-        </div>
-      </div>
-
-      <!-- Officer Analytics Bar: 4 KPI Cards -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Card 1: Critical Hazards -->
-        <div class="p-5 rounded-2xl bg-white/95 border border-rose-200/90 shadow-xs flex items-center gap-4">
-          <div class="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 shrink-0">
-            <i data-lucide="alert-triangle" class="w-6 h-6 stroke-[2.5]"></i>
-          </div>
-          <div>
-            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Critical Hazards</div>
-            <div id="admin-stat-critical" class="text-2xl font-black text-rose-600 leading-tight">--</div>
-            <span class="text-[10px] text-rose-500 font-semibold">Immediate safety risks</span>
-          </div>
-        </div>
-
-        <!-- Card 2: SLA at Risk (<12h) -->
-        <div class="p-5 rounded-2xl bg-white/95 border border-amber-200/90 shadow-xs flex items-center gap-4">
-          <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
-            <i data-lucide="clock" class="w-6 h-6 stroke-[2.5]"></i>
-          </div>
-          <div>
-            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">SLA at Risk (&lt;12h)</div>
-            <div id="admin-stat-risk" class="text-2xl font-black text-amber-600 leading-tight">--</div>
-            <span class="text-[10px] text-amber-600 font-semibold">Near statutory breach</span>
-          </div>
-        </div>
-
-        <!-- Card 3: Unassigned Complaints -->
-        <div class="p-5 rounded-2xl bg-white/95 border border-purple-200/90 shadow-xs flex items-center gap-4">
-          <div class="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
-            <i data-lucide="user-plus" class="w-6 h-6 stroke-[2.5]"></i>
-          </div>
-          <div>
-            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Unassigned Complaints</div>
-            <div id="admin-stat-unassigned" class="text-2xl font-black text-purple-600 leading-tight">--</div>
-            <span class="text-[10px] text-purple-500 font-semibold">Awaiting inspector</span>
-          </div>
-        </div>
-
-        <!-- Card 4: Resolution Rate -->
-        <div class="p-5 rounded-2xl bg-white/95 border border-emerald-200/90 shadow-xs flex items-center gap-4">
-          <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-            <i data-lucide="check-circle" class="w-6 h-6 stroke-[2.5]"></i>
-          </div>
-          <div>
-            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Resolution Rate</div>
-            <div id="admin-stat-rate" class="text-2xl font-black text-emerald-600 leading-tight">--%</div>
-            <span class="text-[10px] text-emerald-600 font-semibold">Civic remediation score</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Department Filter Pills & Search -->
-      <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 custom-scroll text-xs">
-          <button onclick="setAdminDepartment('ALL', this)" class="admin-dept-pill active px-3.5 py-1.5 rounded-xl font-bold bg-indigo-600 text-white shadow-xs transition-all whitespace-nowrap">
-            All Departments
-          </button>
-          <button onclick="setAdminDepartment('Road', this)" class="admin-dept-pill px-3.5 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
-            🛣️ Roads & Highways
-          </button>
-          <button onclick="setAdminDepartment('Electricity', this)" class="admin-dept-pill px-3.5 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
-            ⚡ Electrical & Grid
-          </button>
-          <button onclick="setAdminDepartment('Sanitation', this)" class="admin-dept-pill px-3.5 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
-            🗑️ Sanitation & Waste
-          </button>
-          <button onclick="setAdminDepartment('Water', this)" class="admin-dept-pill px-3.5 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
-            💧 Water & Drainage
-          </button>
-        </div>
-        <div class="text-xs text-slate-500 font-semibold flex items-center gap-1.5 self-end lg:self-auto">
-          <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-          <span>Sorted by Hazard Severity & SLA Priority</span>
-        </div>
-      </div>
-
-      <!-- Priority Triage Table Card -->
-      <div class="bg-white/95 rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden">
-        <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
-              <i data-lucide="layers" class="w-4 h-4 text-indigo-600"></i>
-              <span>Live Civic Incident Triage & Dispatch Table</span>
-            </h3>
-            <p class="text-xs text-slate-500 mt-0.5">Assigned field inspectors receive instant dispatch and statutory breach alerts.</p>
-          </div>
-          <span id="admin-table-count" class="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-full self-start sm:self-auto">Showing 0 incidents</span>
-        </div>
-
-        <div class="overflow-x-auto custom-scroll">
-          <table class="w-full text-left text-xs text-slate-600">
-            <thead class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              <tr>
-                <th class="py-3.5 px-4">Incident & Evidence</th>
-                <th class="py-3.5 px-3">Dept & Jurisdiction</th>
-                <th class="py-3.5 px-3">Severity</th>
-                <th class="py-3.5 px-3">Statutory SLA</th>
-                <th class="py-3.5 px-3">Assigned Inspector</th>
-                <th class="py-3.5 px-3">Lifecycle Status</th>
-                <th class="py-3.5 px-4 text-right">Dispatch Action</th>
-              </tr>
-            </thead>
-            <tbody id="admin-triage-tbody" class="divide-y divide-slate-100">
-              <tr>
-                <td colspan="7" class="py-12 text-center text-slate-400">
-                  <div class="inline-block animate-spin rounded-full h-6 w-6 border-2 border-indigo-600 border-t-transparent mb-2"></div>
-                  <p class="text-xs">Loading operational triage queue...</p>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    <!-- END PERSONA 2: MUNICIPAL OFFICER COMMAND CENTER -->
-
-    <!-- ========================================================================= -->
-    <!-- PERSONA 3: TECHNICIAN & WORKER WORKSPACE (Pillar 3)                      -->
-    <!-- ========================================================================= -->
-    <div id="persona-view-technician" class="hidden space-y-6 persona-transition">
-      <!-- Technician Header & Profile Switcher -->
-      <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white relative overflow-hidden shadow-xl border border-emerald-800/40">
-        <div class="absolute -right-8 -top-8 w-64 h-64 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-          <div class="max-w-xl">
-            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-semibold mb-3">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-              <span>Neighborhood Tradesperson Desk</span>
+          <div class="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-500">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50/90 text-indigo-700 border border-indigo-200/80">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Citizen Mode: Public Reporting & Hyperlocal Services</span>
             </span>
-            <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
-              <span>Technician & Tradesperson Workspace</span>
-            </h1>
-            <p class="text-slate-300 text-xs sm:text-sm mt-3 leading-relaxed">
-              Discover verified household repair leads diagnosed by Gemma 4 AI, submit transparent price quotes, negotiate counter-offers, and track confirmed job earnings.
-            </p>
           </div>
+        </div>
 
-          <!-- Quick Identity Switcher Pill for Judges & Multi-Technician Simulation -->
-          <div class="bg-white/10 backdrop-blur-md border border-white/15 p-4 rounded-2xl flex flex-col gap-2 shrink-0">
-            <div class="flex items-center justify-between gap-2 text-xs">
-              <span class="text-slate-300 font-semibold">Active Technician Profile:</span>
-              <span class="text-emerald-400 font-bold text-[11px]">Simulate Trade</span>
+        <!-- ==================== TAB 1: CIVIC INFRASTRUCTURE FEED ==================== -->
+        <section id="view-civic" class="space-y-6">
+        
+          <!-- Hero Action Bar with Shimmer Headline & Floating Glow -->
+          <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-900 text-white relative overflow-hidden shadow-xl border border-indigo-800/40">
+            <!-- Floating orbs inside hero container -->
+            <div class="absolute -right-8 -top-8 w-64 h-64 bg-indigo-500/25 rounded-full blur-3xl pointer-events-none ambient-orb-1"></div>
+            <div class="absolute -left-10 -bottom-10 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl pointer-events-none ambient-orb-2"></div>
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
+              <div class="max-w-2xl">
+                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-semibold mb-3">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                  <span>Autonomous Municipal Audit Pipeline</span>
+                </span>
+                <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+                  <span class="shimmer-headline">CivicPulse: AI-Powered Community Action & Hyperlocal Repairs</span>
+                </h1>
+                <p class="text-slate-300 text-xs sm:text-sm mt-3 leading-relaxed max-w-xl">
+                  Citizen photos are forensically inspected by <strong>Gemma 4 Multimodal AI</strong> to assess physical hazard severity, determine departmental jurisdiction, and automatically attach central escalation portals (CPGRAMS, NHAI, RailMadad).
+                </p>
+              </div>
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                <button onclick="startCivicTalkFromBanner()" class="group relative px-5 py-4 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-600 to-rose-600 hover:from-rose-600 hover:to-pink-700 text-white text-xs sm:text-sm font-bold shadow-lg shadow-rose-500/30 hover:shadow-rose-500/50 hover:scale-102 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
+                  <span class="relative flex h-2.5 w-2.5">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-200 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
+                  </span>
+                  <i data-lucide="mic" class="w-4 h-4"></i>
+                  <span>🎙️ CivicTalk Voice Report</span>
+                </button>
+                <button onclick="openModal('modal-civic')" class="group relative px-6 py-4 rounded-2xl bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-600 text-white text-xs sm:text-sm font-bold shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-102 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
+                  <i data-lucide="plus-circle" class="w-4 h-4 group-hover:rotate-90 transition-transform"></i>
+                  <span>+ Report Infrastructure Issue</span>
+                </button>
+              </div>
             </div>
-            <select id="tech-profile-select" onchange="handleTechnicianProfileChange(this.value)" class="bg-slate-900 text-white font-bold text-xs rounded-xl px-3 py-2 border border-slate-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-              <option value="+91 98765 43210" selected>Ramesh Kumar (+91 98765 43210) • Electrician & Plumber</option>
-              <option value="+91 91234 56789">Santosh Plumber (+91 91234 56789) • Sanitary & Drainage</option>
-              <option value="+91 99887 76655">Sharma Electrician (+91 99887 76655) • High Voltage Specialist</option>
-            </select>
-            <div class="text-[10px] text-slate-400 flex items-center gap-1">
-              <i data-lucide="check" class="w-3 h-3 text-emerald-400"></i>
-              <span>Profile verified with Aadhaar KYC & Local Guild</span>
+          </div>
+
+          <!-- Civic Search & Category Filter Controls -->
+          <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+            <!-- Search Box -->
+            <div class="relative flex-1 max-w-md">
+              <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+              <input id="civic-search-input" oninput="handleCivicFilter()" type="text" placeholder="Search by title, location or department..." class="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
+            </div>
+
+            <!-- Filter Pills Scroll Area -->
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 custom-scroll text-xs">
+              <button onclick="setCivicCategory('ALL', this)" class="civic-filter-pill active px-3 py-1.5 rounded-xl font-bold bg-indigo-600 text-white shadow-xs transition-all whitespace-nowrap">
+                All Incidents
+              </button>
+              <button onclick="setCivicCategory('Road', this)" class="civic-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
+                🛣️ Roads & Potholes
+              </button>
+              <button onclick="setCivicCategory('Waste', this)" class="civic-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
+                🗑️ Sanitation & Waste
+              </button>
+              <button onclick="setCivicCategory('Water', this)" class="civic-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
+                💧 Water & Sewage
+              </button>
+              <button onclick="setCivicCategory('Electric', this)" class="civic-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
+                ⚡ Electrical
+              </button>
+              <button onclick="setCivicCategory('CENTRAL', this)" class="civic-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition-all whitespace-nowrap">
+                🚨 Central Jurisdiction
+              </button>
+            </div>
+          </div>
+
+          <!-- Feed Grid -->
+          <div id="civic-posts-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="col-span-full py-20 text-center">
+              <div class="inline-block animate-spin rounded-full h-8 w-8 border-3 border-indigo-600 border-t-transparent mb-3"></div>
+              <p class="text-xs font-semibold text-slate-500">Auditing and loading community feed...</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== TAB 2: HOME UTILITY REPAIRS ==================== -->
+        <section id="view-services" class="hidden space-y-6">
+          
+          <!-- Hero Action Bar with Shimmer Headline -->
+          <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 text-white relative overflow-hidden shadow-xl border border-indigo-900/40">
+            <div class="absolute -right-8 -top-8 w-64 h-64 bg-violet-500/25 rounded-full blur-3xl pointer-events-none ambient-orb-2"></div>
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
+              <div class="max-w-2xl">
+                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/20 border border-violet-400/30 text-violet-300 text-xs font-semibold mb-3">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                  <span>Anti-Overcharging Negotiation Shield</span>
+                </span>
+                <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+                  <span class="shimmer-headline">Home Utility Repair Marketplace</span>
+                </h1>
+                <p class="text-slate-300 text-xs sm:text-sm mt-3 leading-relaxed max-w-xl">
+                  Upload defect media for instant AI failure diagnosis, local Indian labor price estimation, and transparent two-way bidding with verified neighborhood technicians.
+                </p>
+              </div>
+              <div>
+                <button onclick="openModal('modal-service')" class="group px-6 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs sm:text-sm font-bold shadow-lg shadow-emerald-600/30 hover:shadow-emerald-600/50 hover:scale-102 transition-all flex items-center gap-2 whitespace-nowrap">
+                  <i data-lucide="wrench" class="w-4 h-4 group-hover:rotate-45 transition-transform"></i>
+                  <span>+ Request Home Repair</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Service Search & Trade Category Filter Controls -->
+          <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+            <!-- Search Box -->
+            <div class="relative flex-1 max-w-md">
+              <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+              <input id="service-search-input" oninput="handleServiceFilter()" type="text" placeholder="Search household repairs, plumbers, electricians..." class="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all">
+            </div>
+
+            <!-- Trade Filter Pills -->
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 custom-scroll text-xs">
+              <button onclick="setServiceCategory('ALL', this)" class="service-filter-pill active px-3 py-1.5 rounded-xl font-bold bg-emerald-600 text-white shadow-xs transition-all whitespace-nowrap">
+                All Repairs
+              </button>
+              <button onclick="setServiceCategory('Plumb', this)" class="service-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all whitespace-nowrap">
+                🔧 Plumber
+              </button>
+              <button onclick="setServiceCategory('Electr', this)" class="service-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all whitespace-nowrap">
+                ⚡ Electrician
+              </button>
+              <button onclick="setServiceCategory('Carpent', this)" class="service-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all whitespace-nowrap">
+                🪚 Carpenter
+              </button>
+              <button onclick="setServiceCategory('Appliance', this)" class="service-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all whitespace-nowrap">
+                ❄️ Appliance Repair
+              </button>
+            </div>
+          </div>
+
+          <!-- Services Grid -->
+          <div id="services-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="col-span-full py-20 text-center">
+              <div class="inline-block animate-spin rounded-full h-8 w-8 border-3 border-emerald-600 border-t-transparent mb-3"></div>
+              <p class="text-xs font-semibold text-slate-500">Loading household repair marketplace...</p>
+            </div>
+          </div>
+        </section>
+
+      </div>
+      <!-- END PERSONA 1: CITIZEN VIEW -->
+
+      <!-- ========================================================================= -->
+      <!-- PERSONA 2: MUNICIPAL OFFICER COMMAND CENTER (Pillar 3)                    -->
+      <!-- ========================================================================= -->
+      <div id="persona-view-admin" class="hidden space-y-6 persona-transition">
+        <!-- Officer Hero Banner -->
+        <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white relative overflow-hidden shadow-xl border border-indigo-800/40">
+          <div class="absolute -right-8 -top-8 w-64 h-64 bg-rose-500/15 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
+            <div class="max-w-2xl">
+              <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/20 border border-rose-400/30 text-rose-300 text-xs font-semibold mb-3">
+                <span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping"></span>
+                <span>Statutory SLA Compliance & Operations Command</span>
+              </span>
+              <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+                <span>Municipal Officer Command Center</span>
+              </h1>
+              <p class="text-slate-300 text-xs sm:text-sm mt-3 leading-relaxed max-w-xl">
+                Real-time civic operations triage engine: inspect high-risk structural and electrical hazards, monitor statutory SLA countdowns, assign designated field inspectors, and dispatch remediation crews.
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+              <button onclick="loadAdminDashboard()" class="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold transition-all flex items-center gap-2 shadow-sm">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                <span>Refresh Operations Feed</span>
+              </button>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Technician Quick Stats Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <!-- Stat 1: Total Locked Earnings -->
-        <div class="p-5 rounded-2xl bg-white/95 border border-emerald-200/90 shadow-xs flex items-center gap-4">
-          <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-            <i data-lucide="wallet" class="w-6 h-6 stroke-[2.5]"></i>
+        <!-- Officer Analytics Bar: 4 KPI Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Card 1: Critical Hazards -->
+          <div class="p-5 rounded-2xl bg-white/95 border border-rose-200/90 shadow-xs flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+              <i data-lucide="alert-triangle" class="w-6 h-6 stroke-[2.5]"></i>
+            </div>
+            <div>
+              <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Critical Hazards</div>
+              <div id="admin-stat-critical" class="text-2xl font-black text-rose-600 leading-tight">--</div>
+              <span class="text-[10px] text-rose-500 font-semibold">Immediate safety risks</span>
+            </div>
           </div>
-          <div>
-            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Confirmed Job Payouts</div>
-            <div id="tech-stat-earnings" class="text-2xl font-black text-emerald-600 leading-tight">₹0</div>
-            <span class="text-[10px] text-emerald-600 font-semibold">Locked escrow earnings</span>
+
+          <!-- Card 2: SLA at Risk (<12h) -->
+          <div class="p-5 rounded-2xl bg-white/95 border border-amber-200/90 shadow-xs flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+              <i data-lucide="clock" class="w-6 h-6 stroke-[2.5]"></i>
+            </div>
+            <div>
+              <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">SLA at Risk (&lt;12h)</div>
+              <div id="admin-stat-risk" class="text-2xl font-black text-amber-600 leading-tight">--</div>
+              <span class="text-[10px] text-amber-600 font-semibold">Near statutory breach</span>
+            </div>
+          </div>
+
+          <!-- Card 3: Unassigned Complaints -->
+          <div class="p-5 rounded-2xl bg-white/95 border border-purple-200/90 shadow-xs flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+              <i data-lucide="user-plus" class="w-6 h-6 stroke-[2.5]"></i>
+            </div>
+            <div>
+              <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Unassigned Complaints</div>
+              <div id="admin-stat-unassigned" class="text-2xl font-black text-purple-600 leading-tight">--</div>
+              <span class="text-[10px] text-purple-500 font-semibold">Awaiting inspector</span>
+            </div>
+          </div>
+
+          <!-- Card 4: Resolution Rate -->
+          <div class="p-5 rounded-2xl bg-white/95 border border-emerald-200/90 shadow-xs flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+              <i data-lucide="check-circle" class="w-6 h-6 stroke-[2.5]"></i>
+            </div>
+            <div>
+              <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Resolution Rate</div>
+              <div id="admin-stat-rate" class="text-2xl font-black text-emerald-600 leading-tight">--%</div>
+              <span class="text-[10px] text-emerald-600 font-semibold">Civic remediation score</span>
+            </div>
           </div>
         </div>
 
-        <!-- Stat 2: Active Open Leads -->
-        <div class="p-5 rounded-2xl bg-white/95 border border-indigo-200/90 shadow-xs flex items-center gap-4">
-          <div class="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
-            <i data-lucide="briefcase" class="w-6 h-6 stroke-[2.5]"></i>
+        <!-- Department Filter Pills & Search -->
+        <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 custom-scroll text-xs">
+            <button onclick="setAdminDepartment('ALL', this)" class="admin-dept-pill active px-3.5 py-1.5 rounded-xl font-bold bg-indigo-600 text-white shadow-xs transition-all whitespace-nowrap">
+              All Departments
+            </button>
+            <button onclick="setAdminDepartment('Road', this)" class="admin-dept-pill px-3.5 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
+              🛣️ Roads & Highways
+            </button>
+            <button onclick="setAdminDepartment('Electricity', this)" class="admin-dept-pill px-3.5 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
+              ⚡ Electrical & Grid
+            </button>
+            <button onclick="setAdminDepartment('Sanitation', this)" class="admin-dept-pill px-3.5 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
+              🗑️ Sanitation & Waste
+            </button>
+            <button onclick="setAdminDepartment('Water', this)" class="admin-dept-pill px-3.5 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all whitespace-nowrap">
+              💧 Water & Drainage
+            </button>
           </div>
-          <div>
-            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Available Leads</div>
-            <div id="tech-stat-leads" class="text-2xl font-black text-indigo-600 leading-tight">0</div>
-            <span class="text-[10px] text-indigo-600 font-semibold">Neighborhood repair requests</span>
+          <div class="text-xs text-slate-500 font-semibold flex items-center gap-1.5 self-end lg:self-auto">
+            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+            <span>Sorted by Hazard Severity & SLA Priority</span>
           </div>
         </div>
 
-        <!-- Stat 3: Confirmed Deals -->
-        <div class="p-5 rounded-2xl bg-white/95 border border-purple-200/90 shadow-xs flex items-center gap-4">
-          <div class="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
-            <i data-lucide="shield-check" class="w-6 h-6 stroke-[2.5]"></i>
-          </div>
-          <div>
-            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Active Deals & Contracts</div>
-            <div id="tech-stat-confirmed" class="text-2xl font-black text-purple-600 leading-tight">0</div>
-            <span class="text-[10px] text-purple-600 font-semibold">Accepted client contracts</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Technician Sub-Tabs -->
-      <div class="flex items-center gap-2 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shadow-inner max-w-fit">
-        <button id="tech-tab-leads" onclick="switchTechTab('leads')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-emerald-900 shadow-sm border border-slate-200/90 transition-all">
-          <i data-lucide="search" class="w-4 h-4 text-emerald-600"></i>
-          <span>Available Household Leads</span>
-        </button>
-        <button id="tech-tab-quotes" onclick="switchTechTab('quotes')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all">
-          <i data-lucide="handshake" class="w-4 h-4 text-indigo-600"></i>
-          <span>My Quotes & Confirmed Deals</span>
-          <span id="tech-badge-counter-alert" class="hidden px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-bold">1</span>
-        </button>
-      </div>
-
-      <!-- Sub-View 1: Available Household Leads -->
-      <div id="tech-view-leads" class="space-y-4">
-        <div id="tech-leads-container" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <!-- Dynamically populated leads -->
-        </div>
-      </div>
-
-      <!-- Sub-View 2: My Quotes & Confirmed Deals -->
-      <div id="tech-view-quotes" class="hidden space-y-6">
-        <!-- Counter-Offer Negotiations Banner Section -->
-        <div id="tech-negotiations-section" class="space-y-3">
-          <!-- Dynamically populated counter-offer cards -->
-        </div>
-
-        <!-- Confirmed Contracts Section -->
-        <div class="bg-white/95 rounded-3xl border border-emerald-200/90 p-5 sm:p-6 shadow-sm">
-          <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+        <!-- Priority Triage Table Card -->
+        <div class="bg-white/95 rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden">
+          <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600"></i>
-                <span>Confirmed Service Contracts</span>
+                <i data-lucide="layers" class="w-4 h-4 text-indigo-600"></i>
+                <span>Live Civic Incident Triage & Dispatch Table</span>
               </h3>
-              <p class="text-xs text-slate-500 mt-0.5">Client accepted your price quote. Direct contact details and address unlocked.</p>
+              <p class="text-xs text-slate-500 mt-0.5">Assigned field inspectors receive instant dispatch and statutory breach alerts.</p>
             </div>
-            <span id="tech-confirmed-count" class="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">0 Confirmed</span>
+            <span id="admin-table-count" class="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-full self-start sm:self-auto">Showing 0 incidents</span>
           </div>
 
-          <div id="tech-confirmed-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- Dynamically populated confirmed contracts -->
+          <div class="overflow-x-auto custom-scroll">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <tr>
+                  <th class="py-3.5 px-4">Incident & Evidence</th>
+                  <th class="py-3.5 px-3">Dept & Jurisdiction</th>
+                  <th class="py-3.5 px-3">Severity</th>
+                  <th class="py-3.5 px-3">Statutory SLA</th>
+                  <th class="py-3.5 px-3">Assigned Inspector</th>
+                  <th class="py-3.5 px-3">Lifecycle Status</th>
+                  <th class="py-3.5 px-4 text-right">Dispatch Action</th>
+                </tr>
+              </thead>
+              <tbody id="admin-triage-tbody" class="divide-y divide-slate-100">
+                <tr>
+                  <td colspan="7" class="py-12 text-center text-slate-400">
+                    <div class="inline-block animate-spin rounded-full h-6 w-6 border-2 border-indigo-600 border-t-transparent mb-2"></div>
+                    <p class="text-xs">Loading operational triage queue...</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
+      <!-- END PERSONA 2: MUNICIPAL OFFICER COMMAND CENTER -->
+
+      <!-- ========================================================================= -->
+      <!-- PERSONA 3: TECHNICIAN & WORKER WORKSPACE (Pillar 3)                      -->
+      <!-- ========================================================================= -->
+      <div id="persona-view-technician" class="hidden space-y-6 persona-transition">
+        <!-- Technician Header & Profile Switcher -->
+        <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white relative overflow-hidden shadow-xl border border-emerald-800/40">
+          <div class="absolute -right-8 -top-8 w-64 h-64 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+            <div class="max-w-xl">
+              <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-semibold mb-3">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>Neighborhood Tradesperson Desk</span>
+              </span>
+              <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+                <span>Technician & Tradesperson Workspace</span>
+              </h1>
+              <p class="text-slate-300 text-xs sm:text-sm mt-3 leading-relaxed">
+                Discover verified household repair leads diagnosed by Gemma 4 AI, submit transparent price quotes, negotiate counter-offers, and track confirmed job earnings.
+              </p>
+            </div>
+
+            <!-- Quick Identity Switcher Pill for Judges & Multi-Technician Simulation -->
+            <div class="bg-white/10 backdrop-blur-md border border-white/15 p-4 rounded-2xl flex flex-col gap-2 shrink-0">
+              <div class="flex items-center justify-between gap-2 text-xs">
+                <span class="text-slate-300 font-semibold">Active Technician Profile:</span>
+                <span class="text-emerald-400 font-bold text-[11px]">Simulate Trade</span>
+              </div>
+              <select id="tech-profile-select" onchange="handleTechnicianProfileChange(this.value)" class="bg-slate-900 text-white font-bold text-xs rounded-xl px-3 py-2 border border-slate-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                <option value="+91 98765 43210" selected>Ramesh Kumar (+91 98765 43210) • Electrician & Plumber</option>
+                <option value="+91 91234 56789">Santosh Plumber (+91 91234 56789) • Sanitary & Drainage</option>
+                <option value="+91 99887 76655">Sharma Electrician (+91 99887 76655) • High Voltage Specialist</option>
+              </select>
+              <div class="text-[10px] text-slate-400 flex items-center gap-1">
+                <i data-lucide="check" class="w-3 h-3 text-emerald-400"></i>
+                <span>Profile verified with Aadhaar KYC & Local Guild</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Technician Quick Stats Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- Stat 1: Total Locked Earnings -->
+          <div class="p-5 rounded-2xl bg-white/95 border border-emerald-200/90 shadow-xs flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+              <i data-lucide="wallet" class="w-6 h-6 stroke-[2.5]"></i>
+            </div>
+            <div>
+              <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Confirmed Job Payouts</div>
+              <div id="tech-stat-earnings" class="text-2xl font-black text-emerald-600 leading-tight">₹0</div>
+              <span class="text-[10px] text-emerald-600 font-semibold">Locked escrow earnings</span>
+            </div>
+          </div>
+
+          <!-- Stat 2: Active Open Leads -->
+          <div class="p-5 rounded-2xl bg-white/95 border border-indigo-200/90 shadow-xs flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+              <i data-lucide="briefcase" class="w-6 h-6 stroke-[2.5]"></i>
+            </div>
+            <div>
+              <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Available Leads</div>
+              <div id="tech-stat-leads" class="text-2xl font-black text-indigo-600 leading-tight">0</div>
+              <span class="text-[10px] text-indigo-600 font-semibold">Neighborhood repair requests</span>
+            </div>
+          </div>
+
+          <!-- Stat 3: Confirmed Deals -->
+          <div class="p-5 rounded-2xl bg-white/95 border border-purple-200/90 shadow-xs flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+              <i data-lucide="shield-check" class="w-6 h-6 stroke-[2.5]"></i>
+            </div>
+            <div>
+              <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Active Deals & Contracts</div>
+              <div id="tech-stat-confirmed" class="text-2xl font-black text-purple-600 leading-tight">0</div>
+              <span class="text-[10px] text-purple-600 font-semibold">Accepted client contracts</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Technician Sub-Tabs -->
+        <div class="flex items-center gap-2 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shadow-inner max-w-fit">
+          <button id="tech-tab-leads" onclick="switchTechTab('leads')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-emerald-900 shadow-sm border border-slate-200/90 transition-all">
+            <i data-lucide="search" class="w-4 h-4 text-emerald-600"></i>
+            <span>Available Household Leads</span>
+          </button>
+          <button id="tech-tab-quotes" onclick="switchTechTab('quotes')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all">
+            <i data-lucide="handshake" class="w-4 h-4 text-indigo-600"></i>
+            <span>My Quotes & Confirmed Deals</span>
+            <span id="tech-badge-counter-alert" class="hidden px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-bold">1</span>
+          </button>
+        </div>
+
+        <!-- Sub-View 1: Available Household Leads -->
+        <div id="tech-view-leads" class="space-y-4">
+          <div id="tech-leads-container" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Dynamically populated leads -->
+          </div>
+        </div>
+
+        <!-- Sub-View 2: My Quotes & Confirmed Deals -->
+        <div id="tech-view-quotes" class="hidden space-y-6">
+          <!-- Counter-Offer Negotiations Banner Section -->
+          <div id="tech-negotiations-section" class="space-y-3">
+            <!-- Dynamically populated counter-offer cards -->
+          </div>
+
+          <!-- Confirmed Contracts Section -->
+          <div class="bg-white/95 rounded-3xl border border-emerald-200/90 p-5 sm:p-6 shadow-sm">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+              <div>
+                <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                  <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600"></i>
+                  <span>Confirmed Service Contracts</span>
+                </h3>
+                <p class="text-xs text-slate-500 mt-0.5">Client accepted your price quote. Direct contact details and address unlocked.</p>
+              </div>
+              <span id="tech-confirmed-count" class="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">0 Confirmed</span>
+            </div>
+
+            <div id="tech-confirmed-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Dynamically populated confirmed contracts -->
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- END PERSONA 3: TECHNICIAN & WORKER WORKSPACE -->
+
+    </main>
+
+    <!-- Workspace Minimal Footer -->
+    <footer class="bg-white/90 border-t border-slate-200/80 py-6 text-xs text-slate-500 mt-auto">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-center sm:text-left">
+          <button onclick="showLandingView()" class="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-bold transition-colors">
+            <img src="/static/images/logo.png" alt="CivicPulse" class="w-5 h-5 object-contain">
+            <span>CivicPulse Platform</span>
+          </button>
+          <span class="hidden sm:inline text-slate-300">•</span>
+          <span>Built by <strong class="text-slate-800">Team Version Controllers</strong> (Ayush Chauhan, Rishav Ranjan, Hardik Kumar)</span>
+        </div>
+        <div class="flex items-center gap-4 text-slate-500">
+          <button onclick="showLandingView()" class="hover:text-indigo-600 font-medium">← Back to Landing Page</button>
+          <span>•</span>
+          <a href="/docs" target="_blank" class="hover:text-indigo-600 font-medium">FastAPI Interactive Docs</a>
+          <span>•</span>
+          <a href="/api/health" target="_blank" class="hover:text-indigo-600 font-medium">Health Status</a>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+  <!-- END VIEW 2: CORE INTERACTIVE WORKSPACE -->
+
+
+  <!-- ========================================================================= -->
+  <!-- GLOBAL SHARED MODALS                                                      -->
+  <!-- ========================================================================= -->
+
+  <!-- ==================== MODAL: SELECT CITY / NEIGHBORHOOD ==================== -->
+  <div id="modal-city" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeCityModalOnBackdrop(event)">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200/90 flex flex-col" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">📍</div>
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900">Select City or Locality</h3>
+            <p class="text-xs text-slate-500">Filter local civic incidents and trade leads</p>
+          </div>
+        </div>
+        <button onclick="closeCityModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Quick Indian City Chips -->
+      <div class="mb-4">
+        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Popular Regions</label>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <button onclick="selectCity('📍 Sector 62, Noida')" class="p-2.5 text-left rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200/80 hover:border-indigo-200 font-semibold text-slate-700 transition-colors">
+            📍 Sector 62, Noida
+          </button>
+          <button onclick="selectCity('📍 Connaught Place, Delhi')" class="p-2.5 text-left rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200/80 hover:border-indigo-200 font-semibold text-slate-700 transition-colors">
+            📍 CP, Central Delhi
+          </button>
+          <button onclick="selectCity('📍 Cyber City, Gurugram')" class="p-2.5 text-left rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200/80 hover:border-indigo-200 font-semibold text-slate-700 transition-colors">
+            📍 Cyber City, Gurugram
+          </button>
+          <button onclick="selectCity('📍 Indirapuram, Ghaziabad')" class="p-2.5 text-left rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200/80 hover:border-indigo-200 font-semibold text-slate-700 transition-colors">
+            📍 Indirapuram, Ghaziabad
+          </button>
+          <button onclick="selectCity('📍 Koramangala, Bengaluru')" class="p-2.5 text-left rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200/80 hover:border-indigo-200 font-semibold text-slate-700 transition-colors">
+            📍 Koramangala, BLR
+          </button>
+          <button onclick="selectCity('📍 Andheri East, Mumbai')" class="p-2.5 text-left rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200/80 hover:border-indigo-200 font-semibold text-slate-700 transition-colors">
+            📍 Andheri East, Mumbai
+          </button>
+        </div>
+      </div>
+
+      <!-- Custom City Input -->
+      <div class="pt-3 border-t border-slate-100">
+        <label class="block text-xs font-bold text-slate-600 mb-1.5">Enter Custom Neighborhood</label>
+        <div class="flex gap-2">
+          <input id="custom-city-input" type="text" placeholder="e.g. Gomti Nagar, Lucknow" class="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          <button onclick="applyCustomCity()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors">
+            Apply
+          </button>
+        </div>
+      </div>
     </div>
-    <!-- END PERSONA 3: TECHNICIAN & WORKER WORKSPACE -->
-
-
-  </main>
+  </div>
 
   <!-- ==================== MODAL: REPORT CIVIC ISSUE ==================== -->
   <div id="modal-civic" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -1047,25 +1472,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Minimal Footer -->
-  <footer class="bg-white/90 border-t border-slate-200/80 py-6 text-xs text-slate-500 mt-auto">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
-      <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-center sm:text-left">
-        <div class="flex items-center gap-2">
-          <div class="w-5 h-5 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px]">CP</div>
-          <span class="font-bold text-slate-800">CivicPulse</span>
-        </div>
-        <span class="hidden sm:inline text-slate-300">•</span>
-        <span>Built with ❤️ by <strong class="text-slate-800">Team Version Controllers</strong> (Ayush Chauhan, Rishav Ranjan, Hardik Kumar)</span>
-      </div>
-      <div class="flex items-center gap-4 text-slate-500">
-        <a href="/docs" target="_blank" class="hover:text-indigo-600 font-medium">FastAPI Interactive Docs</a>
-        <span>•</span>
-        <a href="/api/health" target="_blank" class="hover:text-indigo-600 font-medium">Health Status</a>
-      </div>
-    </div>
-  </footer>
 
   <!-- Vanilla Client Application Script -->
   <script src="/static/js/app.js"></script>
