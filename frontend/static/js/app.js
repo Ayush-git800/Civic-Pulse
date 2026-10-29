@@ -42,6 +42,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadCivicFeed();
   loadServicesFeed();
+
+  // Attach brand logo return-to-landing listeners
+  document.querySelectorAll('.brand-logo-img').forEach(img => {
+    const link = img.closest('a');
+    if (link) {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        showLandingView();
+      });
+    }
+  });
 });
 
 // --- High-Quality SVG Graphic Fallbacks for Offline & Missing Media ---
