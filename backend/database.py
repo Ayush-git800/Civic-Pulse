@@ -481,7 +481,7 @@ def seed_initial_data() -> None:
                     "the electronic city roundabout. Two-wheelers frequently skid during waterlogging, "
                     "causing immediate hazard for daily commuters."
                 ),
-                "image_url": "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=800&q=80",
+                "image_url": "/static/images/demo/pothole.jpg",
                 "location_city": "Noida",
                 "lat": 28.6271,
                 "lng": 77.3617,
@@ -501,7 +501,7 @@ def seed_initial_data() -> None:
                     "Stray cattle are scattering plastic bags across the road, and the stench is severely "
                     "affecting local shopkeepers and nearby apartments."
                 ),
-                "image_url": "https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&q=80",
+                "image_url": "/static/images/demo/garbage.jpg",
                 "location_city": "Ghaziabad",
                 "lat": 28.6434,
                 "lng": 77.3752,
@@ -521,7 +521,7 @@ def seed_initial_data() -> None:
                     "a week due to a snapped overhead wire and burnt fixture. High risk of mugging and "
                     "pedestrian accidents at night."
                 ),
-                "image_url": "https://images.unsplash.com/photo-1509114397022-ed747cca3f65?auto=format&fit=crop&w=800&q=80",
+                "image_url": "/static/images/demo/utility_pole.jpg",
                 "location_city": "Delhi NCR",
                 "lat": 28.6315,
                 "lng": 77.3168,
@@ -561,7 +561,7 @@ def seed_initial_data() -> None:
                     "cabinets whenever sink is used. Need an experienced plumber with replacement pipe parts."
                 ),
                 "category": "Plumbing",
-                "media_url": "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=800&q=80",
+                "media_url": "/static/images/demo/drain_leak.jpg",
                 "location_city": "Noida Sector 62",
                 "estimated_price": "₹500 - ₹800",
                 "final_price": None,
@@ -575,7 +575,7 @@ def seed_initial_data() -> None:
                     "Requires immediate electrical inspection to avoid short circuit or wiring damage."
                 ),
                 "category": "Electrical",
-                "media_url": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=800&q=80",
+                "media_url": "/static/images/demo/mcb_breaker.jpg",
                 "location_city": "Ghaziabad",
                 "estimated_price": "₹700 - ₹1200",
                 "final_price": None,
@@ -615,7 +615,7 @@ def seed_initial_data() -> None:
                     "Rooftop Water Tank Ball Valve Replacement",
                     "Overhead Sintex 1000L tank valve jammed and continuously overflowing onto terrace. Brass ball valve replaced and float calibrated.",
                     "Plumbing",
-                    "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=800&q=80",
+                    "/static/images/demo/water_tank.jpg",
                     "Sector 62, Noida",
                     "₹800 - ₹1200",
                     "₹950",
