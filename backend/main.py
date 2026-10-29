@@ -15,6 +15,7 @@ from backend.config import UPLOAD_DIR
 from backend.database import (
     accept_bid,
     add_comment,
+    add_technician_review,
     counter_bid,
     create_bid,
     create_civic_post,
@@ -27,7 +28,11 @@ from backend.database import (
     get_civic_post_by_id,
     get_comments,
     get_service_job_by_id,
+    get_technician_by_id,
+    get_technician_by_phone,
     get_technician_jobs_and_bids,
+    get_technician_reviews,
+    get_technicians,
     init_db,
     seed_initial_data,
     update_civic_status_and_officer,
@@ -49,6 +54,7 @@ from backend.models import (
     CommentCreate,
     CounterBidCreate,
     LetterRequest,
+    ReviewCreate,
     ServiceJobCreate,
 )
 
@@ -327,9 +333,79 @@ async def get_technician_jobs(phone: str) -> Dict[str, Any]:
     """
     Technician & Tradesperson Workspace:
     Returns active submitted quotes, counter-offers, confirmed contracts with agreed payouts,
-    and open household repair leads matching their trade.
+    reputation stats, and open household repair leads matching their trade.
     """
     return get_technician_jobs_and_bids(phone)
+
+
+# --- Technician Reputation & Rating System ---
+
+@app.get("/api/technicians", tags=["Technician Reputation"])
+async def list_technicians() -> List[Dict[str, Any]]:
+    """Retrieve all registered technicians with rating and completed works counts."""
+    return get_technicians()
+
+
+@app.get("/api/technicians/{tech_id}", tags=["Technician Reputation"])
+async def get_technician_profile(tech_id: int) -> Dict[str, Any]:
+    """Retrieve technician reputation profile with verified citizen reviews."""
+    tech = get_technician_by_id(tech_id)
+    if not tech:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Technician with ID {tech_id} not found."
+        )
+    return tech
+
+
+@app.get("/api/technicians/phone/{phone:path}", tags=["Technician Reputation"])
+async def get_technician_profile_by_phone(phone: str) -> Dict[str, Any]:
+    """Retrieve technician profile by phone number."""
+    tech = get_technician_by_phone(phone)
+    if not tech:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Technician with phone '{phone}' not found."
+        )
+    return tech
+
+
+@app.get("/api/technicians/{tech_id}/reviews", tags=["Technician Reputation"])
+async def list_technician_reviews(tech_id: int) -> List[Dict[str, Any]]:
+    """List all verified citizen reviews for a technician."""
+    return get_technician_reviews(tech_id)
+
+
+@app.post("/api/technicians/{tech_id}/reviews", status_code=status.HTTP_201_CREATED, tags=["Technician Reputation"])
+async def post_technician_review(tech_id: int, payload: ReviewCreate) -> Dict[str, Any]:
+    """
+    Submit a citizen rating (1-5 stars) and feedback for a technician.
+    Recalculates cumulative average rating and updates completed works count.
+    """
+    try:
+        result = add_technician_review(
+            service_id=payload.service_id,
+            technician_id=tech_id,
+            citizen_name=payload.citizen_name,
+            rating=payload.rating,
+            review_text=payload.review_text or "",
+        )
+        return result
+    except Exception as e:
+        logger.error(f"Failed to submit technician review: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/services/jobs/{job_id}/reviews", status_code=status.HTTP_201_CREATED, tags=["Services"])
+async def post_service_job_review(job_id: str, payload: ReviewCreate) -> Dict[str, Any]:
+    """Submit a citizen rating & review directly attached to a completed household repair job."""
+    return add_technician_review(
+        service_id=job_id,
+        technician_id=payload.technician_id,
+        citizen_name=payload.citizen_name,
+        rating=payload.rating,
+        review_text=payload.review_text or "",
+    )
 
 
 # --- AI Chat / PulseBot Endpoints (Phase 2) ---
@@ -353,10 +429,23 @@ async def chat_with_pulsebot(payload: ChatRequest) -> Dict[str, str]:
 
 @app.get("/api/services/jobs", tags=["Services"])
 async def list_service_jobs() -> List[Dict[str, Any]]:
-    """Retrieve all household service jobs with their attached bids."""
+    """Retrieve all household service jobs with their attached bids and technician reputation."""
     jobs = get_all_service_jobs()
     for job in jobs:
-        job["bids"] = get_bids_for_job(job["id"])
+        bids = get_bids_for_job(job["id"])
+        for b in bids:
+            tech = get_technician_by_phone(b.get("worker_phone", ""))
+            if tech:
+                b["technician_id"] = tech["id"]
+                b["rating"] = tech.get("rating", 5.0)
+                b["review_count"] = tech.get("review_count", 0)
+                b["works_completed"] = tech.get("works_completed", 0)
+            else:
+                b["technician_id"] = 1
+                b["rating"] = 5.0
+                b["review_count"] = 0
+                b["works_completed"] = 0
+        job["bids"] = bids
     return jobs
 
 

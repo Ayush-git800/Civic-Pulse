@@ -719,6 +719,9 @@ function renderServiceCards(jobs) {
         .map((b) => {
           const isAccepted = b.status === 'Accepted';
           const isCountered = b.status === 'Countered';
+          const techRating = b.rating ? Number(b.rating).toFixed(1) : '5.0';
+          const techReviews = b.review_count !== undefined ? b.review_count : 0;
+          const techWorks = b.works_completed !== undefined ? b.works_completed : 0;
 
           return `
             <div class="p-3.5 rounded-xl border ${
@@ -726,9 +729,13 @@ function renderServiceCards(jobs) {
                 ? 'bg-emerald-50/90 border-emerald-300 ring-1 ring-emerald-400'
                 : 'bg-white border-slate-200/90'
             } text-xs space-y-2 shadow-xs">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-1.5">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <div class="flex items-center gap-1.5 flex-wrap">
                   <span class="font-bold text-slate-900">${escapeHtml(b.worker_name)}</span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1 shadow-xs">
+                    <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-500"></i>
+                    <span>${techRating} (${techReviews} reviews) • ${techWorks} jobs</span>
+                  </span>
                   <span class="text-slate-400 text-[11px] font-mono flex items-center gap-0.5">
                     <i data-lucide="phone" class="w-2.5 h-2.5"></i> ${escapeHtml(b.worker_phone)}
                   </span>
@@ -761,9 +768,15 @@ function renderServiceCards(jobs) {
                 </div>
               `
                   : `
-                <div class="text-[11px] font-bold text-emerald-800 flex items-center gap-1 pt-1">
-                  <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
-                  <span>Rate Agreed & Contract Finalized</span>
+                <div class="flex items-center justify-between pt-1 flex-wrap gap-2">
+                  <div class="text-[11px] font-bold text-emerald-800 flex items-center gap-1">
+                    <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
+                    <span>Rate Agreed & Contract Finalized</span>
+                  </div>
+                  <button onclick="openReviewModal('${job.id}', ${b.technician_id || 1}, '${escapeHtml(b.worker_name)}')" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shadow-xs">
+                    <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-500"></i>
+                    <span>Rate & Review</span>
+                  </button>
                 </div>
               `
               }
@@ -1728,27 +1741,33 @@ function switchTechTab(tab) {
   state.techActiveTab = tab;
   const btnLeads = document.getElementById('tech-tab-leads');
   const btnQuotes = document.getElementById('tech-tab-quotes');
+  const btnReviews = document.getElementById('tech-tab-reviews');
   const viewLeads = document.getElementById('tech-view-leads');
   const viewQuotes = document.getElementById('tech-view-quotes');
+  const viewReviews = document.getElementById('tech-view-reviews');
+
+  [btnLeads, btnQuotes, btnReviews].forEach(b => {
+    if (b) b.className = 'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all';
+  });
+  if (viewLeads) viewLeads.classList.add('hidden');
+  if (viewQuotes) viewQuotes.classList.add('hidden');
+  if (viewReviews) viewReviews.classList.add('hidden');
 
   if (tab === 'leads') {
     if (btnLeads)
       btnLeads.className =
         'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-emerald-900 shadow-sm border border-slate-200/90 transition-all';
-    if (btnQuotes)
-      btnQuotes.className =
-        'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all';
     if (viewLeads) viewLeads.classList.remove('hidden');
-    if (viewQuotes) viewQuotes.classList.add('hidden');
-  } else {
+  } else if (tab === 'quotes') {
     if (btnQuotes)
       btnQuotes.className =
         'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/90 transition-all';
-    if (btnLeads)
-      btnLeads.className =
-        'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all';
-    if (viewLeads) viewLeads.classList.add('hidden');
     if (viewQuotes) viewQuotes.classList.remove('hidden');
+  } else if (tab === 'reviews') {
+    if (btnReviews)
+      btnReviews.className =
+        'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-amber-900 shadow-sm border border-slate-200/90 transition-all';
+    if (viewReviews) viewReviews.classList.remove('hidden');
   }
   if (window.lucide) lucide.createIcons();
 }
@@ -1757,7 +1776,17 @@ async function loadTechnicianWorkspace() {
   const earningsEl = document.getElementById('tech-stat-earnings');
   const leadsCountEl = document.getElementById('tech-stat-leads');
   const confirmedCountEl = document.getElementById('tech-stat-confirmed');
+  const ratingEl = document.getElementById('tech-stat-rating');
+  const reviewsEl = document.getElementById('tech-stat-reviews');
+  const badgeRatingPill = document.getElementById('tech-badge-rating-pill');
   const badgeAlert = document.getElementById('tech-badge-counter-alert');
+
+  const repName = document.getElementById('tech-rep-name');
+  const repTrade = document.getElementById('tech-rep-trade');
+  const repBigRating = document.getElementById('tech-rep-big-rating');
+  const repCompleted = document.getElementById('tech-rep-completed-count');
+  const repReviewTotal = document.getElementById('tech-rep-review-total');
+  const repAvatar = document.getElementById('tech-rep-avatar');
 
   try {
     const phone = encodeURIComponent(state.technicianPhone);
@@ -1769,6 +1798,28 @@ async function loadTechnicianWorkspace() {
     if (earningsEl) earningsEl.textContent = `₹${(data.total_earnings || 0).toLocaleString()}`;
     if (leadsCountEl) leadsCountEl.textContent = (data.available_leads || []).length;
     if (confirmedCountEl) confirmedCountEl.textContent = (data.confirmed_jobs || []).length;
+
+    // Reputation & Rating Stats
+    const ratingVal = data.rating ? Number(data.rating).toFixed(1) : '5.0';
+    const revCount = data.review_count !== undefined ? data.review_count : ((data.reviews || []).length);
+    const worksCount = data.works_completed !== undefined ? data.works_completed : ((data.confirmed_jobs || []).length);
+
+    if (ratingEl) ratingEl.innerHTML = `${ratingVal} <span class="text-amber-500">★</span>`;
+    if (reviewsEl) reviewsEl.textContent = `${revCount} reviews • ${worksCount} jobs`;
+    if (badgeRatingPill) badgeRatingPill.textContent = `★ ${ratingVal}`;
+
+    const prof = data.profile || {};
+    if (repName) repName.textContent = prof.name || 'Verified Technician';
+    if (repTrade) repTrade.textContent = `${prof.trade || 'Multi-Trade Specialist'} • ${prof.location || 'Local Guild'}`;
+    if (repBigRating) repBigRating.innerHTML = `<span>${ratingVal}</span> <i data-lucide="star" class="w-5 h-5 fill-amber-500 text-amber-500"></i>`;
+    if (repCompleted) repCompleted.textContent = worksCount;
+    if (repReviewTotal) repReviewTotal.textContent = `${revCount} Verified Reviews`;
+
+    if (repAvatar && prof.name) {
+      const parts = prof.name.trim().split(' ');
+      const initials = (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+      repAvatar.textContent = initials || 'TK';
+    }
 
     // Check for pending counter-offers
     const hasCountered = (data.active_bids || []).some((b) => b.status === 'Countered');
@@ -1782,10 +1833,64 @@ async function loadTechnicianWorkspace() {
 
     renderTechLeads(data.available_leads || []);
     renderTechQuotesAndDeals(data.active_bids || [], data.confirmed_jobs || []);
+    renderTechReviews(data.reviews || []);
   } catch (err) {
     console.error('Error loading technician workspace:', err);
     showToast('Failed to load technician workspace.', 'error');
   }
+}
+
+function renderTechReviews(reviews) {
+  const container = document.getElementById('tech-reviews-container');
+  if (!container) return;
+
+  if (!reviews || reviews.length === 0) {
+    container.innerHTML = `
+      <div class="col-span-full py-8 text-center text-slate-400 bg-slate-50 rounded-2xl border border-slate-200">
+        <p class="text-xs font-semibold">No citizen reviews logged yet for this profile.</p>
+        <p class="text-[10px] text-slate-400 mt-0.5">Reviews appear automatically after homeowners accept quotes and rate repairs.</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = reviews.map(r => {
+    const stars = Array.from({ length: 5 }, (_, i) => {
+      const filled = i < (r.rating || 5);
+      return `<i data-lucide="star" class="w-3.5 h-3.5 ${filled ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}"></i>`;
+    }).join('');
+
+    const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Verified Service';
+
+    return `
+      <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between space-y-2">
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-1.5">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-50 to-amber-100 border border-amber-200 flex items-center justify-center font-bold text-xs text-amber-800 shadow-xs">
+                ${escapeHtml((r.citizen_name || 'R')[0])}
+              </div>
+              <div>
+                <span class="font-bold text-slate-900 text-xs">${escapeHtml(r.citizen_name || 'Homeowner')}</span>
+                <span class="text-[10px] text-slate-400 block">${dateStr}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-0.5">
+              ${stars}
+            </div>
+          </div>
+          <p class="text-xs text-slate-700 leading-relaxed italic">"${escapeHtml(r.review_text || 'Job completed professionally and at the agreed fair rate.')}"</p>
+        </div>
+        <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+          <span class="flex items-center gap-1 text-emerald-600 font-semibold">
+            <i data-lucide="shield-check" class="w-3 h-3"></i> Verified Resident Review
+          </span>
+          <span class="font-mono text-slate-400">Job #${r.service_id || 'DEMO'}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (window.lucide) lucide.createIcons();
 }
 
 function renderTechLeads(leads) {
@@ -2497,6 +2602,107 @@ function printLandingLetter() {
   printWin.document.close();
 }
 
+// --- Technician Reputation & Review Modal Handlers ---
+let currentReviewRating = 5;
+
+function openReviewModal(serviceId, techId, techName) {
+  const m = document.getElementById('modal-review-technician');
+  const nameEl = document.getElementById('review-modal-tech-name');
+  const sInp = document.getElementById('review-service-id');
+  const tInp = document.getElementById('review-tech-id');
+
+  if (nameEl) nameEl.textContent = techName || 'Verified Technician';
+  if (sInp) sInp.value = serviceId || 'job-demo-001';
+  if (tInp) tInp.value = techId || 1;
+
+  setReviewRating(5);
+  if (m) m.classList.remove('hidden');
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeReviewModal() {
+  const m = document.getElementById('modal-review-technician');
+  if (m) m.classList.add('hidden');
+}
+
+function closeReviewModalOnBackdrop(e) {
+  if (e.target.id === 'modal-review-technician') closeReviewModal();
+}
+
+function setReviewRating(stars) {
+  currentReviewRating = stars;
+  const ratingInput = document.getElementById('review-rating-val');
+  const ratingLabel = document.getElementById('review-rating-label');
+  if (ratingInput) ratingInput.value = stars;
+
+  const labels = {
+    1: '1 Star - Poor Service / Overcharged',
+    2: '2 Stars - Below Average Work',
+    3: '3 Stars - Acceptable Quality',
+    4: '4 Stars - Good Work & Punctual',
+    5: '5 Stars - Exceptional Work & Honest Pricing'
+  };
+  if (ratingLabel) ratingLabel.textContent = labels[stars] || `${stars} Stars`;
+
+  document.querySelectorAll('.star-rating-btn').forEach(btn => {
+    const starNum = parseInt(btn.getAttribute('data-star') || '0', 10);
+    const icon = btn.querySelector('svg, i');
+    if (starNum <= stars) {
+      btn.className = 'star-rating-btn p-1 text-amber-400 transition-colors';
+      if (icon) {
+        icon.classList.add('fill-amber-400');
+        icon.classList.remove('text-slate-300');
+      }
+    } else {
+      btn.className = 'star-rating-btn p-1 text-slate-300 hover:text-amber-400 transition-colors';
+      if (icon) {
+        icon.classList.remove('fill-amber-400');
+        icon.classList.add('text-slate-300');
+      }
+    }
+  });
+}
+
+async function submitReviewForm(e) {
+  e.preventDefault();
+  const serviceId = document.getElementById('review-service-id')?.value || 'job-demo-001';
+  const techId = parseInt(document.getElementById('review-tech-id')?.value || '1', 10);
+  const citizenName = document.getElementById('review-citizen-name')?.value.trim();
+  const reviewText = document.getElementById('review-text-input')?.value.trim();
+  const rating = currentReviewRating;
+
+  if (!citizenName) {
+    showToast('Please enter your name.', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/technicians/${techId}/reviews`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service_id: serviceId,
+        technician_id: techId,
+        citizen_name: citizenName,
+        rating: rating,
+        review_text: reviewText
+      })
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    closeReviewModal();
+    showToast(`⭐ Review submitted! Technician rating updated to ${data.new_rating} ★`, 'success');
+
+    // Refresh service jobs and technician workspace
+    loadServicesFeed();
+    loadTechnicianWorkspace();
+  } catch (err) {
+    console.error('Error submitting review:', err);
+    showToast('Failed to submit review.', 'error');
+  }
+}
+
 // Global window exposure for inline HTML event handlers
 window.openLetterModal = openLetterModal;
 window.closeLetterModal = closeLetterModal;
@@ -2515,6 +2721,13 @@ window.switchTechTab = switchTechTab;
 window.loadTechnicianWorkspace = loadTechnicianWorkspace;
 window.submitTechBid = submitTechBid;
 window.acceptCounterAsTechnician = acceptCounterAsTechnician;
+
+// Review Modal window exposures
+window.openReviewModal = openReviewModal;
+window.closeReviewModal = closeReviewModal;
+window.closeReviewModalOnBackdrop = closeReviewModalOnBackdrop;
+window.setReviewRating = setReviewRating;
+window.submitReviewForm = submitReviewForm;
 
 // CivicTalk window exposures
 window.startCivicTalkFromBanner = startCivicTalkFromBanner;
@@ -2536,6 +2749,7 @@ window.closeCityModal = closeCityModal;
 window.closeCityModalOnBackdrop = closeCityModalOnBackdrop;
 window.selectCity = selectCity;
 window.applyCustomCity = applyCustomCity;
+
 
 
 

@@ -22,11 +22,11 @@ if os.getenv("VERCEL"):
 else:
     DB_PATH = Path(__file__).resolve().parent.parent / "civicpulse.db"
 
-# Thread-safe database lock for SQLite writes
-db_lock = threading.Lock()
+# Thread-safe re-entrant database lock for SQLite writes and nested queries
+db_lock = threading.RLock()
 
 # Persistent SQLite connection with check_same_thread=False
-conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+conn = sqlite3.connect(str(DB_PATH), check_same_thread=False, timeout=30.0)
 conn.row_factory = sqlite3.Row
 # Enable foreign keys and WAL mode for better concurrency
 conn.execute("PRAGMA foreign_keys = ON;")
@@ -113,6 +113,40 @@ def init_db() -> None:
             """
         )
 
+        # 5. Users / Technicians Table (Reputation & Profile)
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                phone TEXT UNIQUE NOT NULL,
+                role TEXT DEFAULT 'technician',
+                trade TEXT,
+                location TEXT,
+                works_completed INTEGER DEFAULT 0,
+                rating REAL DEFAULT 5.0,
+                review_count INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            """
+        )
+
+        # 6. Technician Reviews Table (Pillar 3 Reputation Mesh)
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS technician_reviews (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                service_id INTEGER NOT NULL,
+                technician_id INTEGER NOT NULL,
+                citizen_name TEXT NOT NULL,
+                rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+                review_text TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (technician_id) REFERENCES users(id)
+            );
+            """
+        )
+
         # Dynamic Schema Migrations for Existing Databases
         cursor.execute("PRAGMA table_info(civic_posts);")
         columns = [row[1] for row in cursor.fetchall()]
@@ -125,6 +159,49 @@ def init_db() -> None:
         job_cols = [row[1] for row in cursor.fetchall()]
         if "assigned_worker_phone" not in job_cols:
             cursor.execute("ALTER TABLE service_jobs ADD COLUMN assigned_worker_phone TEXT DEFAULT NULL;")
+
+        cursor.execute("PRAGMA table_info(users);")
+        user_cols = [row[1] for row in cursor.fetchall()]
+        if user_cols:
+            if "works_completed" not in user_cols:
+                cursor.execute("ALTER TABLE users ADD COLUMN works_completed INTEGER DEFAULT 0;")
+            if "rating" not in user_cols:
+                cursor.execute("ALTER TABLE users ADD COLUMN rating REAL DEFAULT 5.0;")
+            if "review_count" not in user_cols:
+                cursor.execute("ALTER TABLE users ADD COLUMN review_count INTEGER DEFAULT 0;")
+
+        # Seed default technicians and reviews if empty
+        cursor.execute("SELECT COUNT(*) AS count FROM users WHERE role = 'technician';")
+        if cursor.fetchone()["count"] == 0:
+            demo_technicians = [
+                (1, "Ramesh Kumar", "+91 98765 43210", "technician", "Electrician & Plumber", "Sector 62, Noida", 24, 4.9, 3),
+                (2, "Santosh Plumber", "+91 91234 56789", "technician", "Sanitary & Drainage", "Indirapuram, Ghaziabad", 15, 4.8, 2),
+                (3, "Sharma Electrician", "+91 99887 76655", "technician", "High Voltage Specialist", "Delhi NCR", 31, 5.0, 2),
+            ]
+            cursor.executemany(
+                """
+                INSERT OR IGNORE INTO users (id, name, phone, role, trade, location, works_completed, rating, review_count)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+                """,
+                demo_technicians,
+            )
+
+            demo_reviews = [
+                (1, 1, "Ananya Sen", 5, "Ramesh fixed the water tank overflow within 30 minutes! Very honest with parts pricing and clean workmanship."),
+                (2, 1, "Rajiv Mehra", 5, "Excellent electrical repair on the MCB board. Clean work and no overcharging. Recommended!"),
+                (3, 1, "Sunita Sharma", 5, "Punctual and courteous. Replaced the kitchen sink u-trap cleanly. Rate was completely transparent."),
+                (1, 2, "Deepak Roy", 5, "Diagnosed the hidden bathroom drainage clog quickly. Fair quotation without any surprise charges."),
+                (3, 2, "Meenakshi Iyer", 4, "Good piping work. Cleaned up the terrace area properly after completing the job."),
+                (2, 3, "Harish Verma", 5, "Master electrician. Fixed 3-phase AC wiring safely with proper insulation tape and test lamp."),
+                (2, 3, "Rohit Aggarwal", 5, "Aadhaar verified professional. Transparent meter check and gave receipt."),
+            ]
+            cursor.executemany(
+                """
+                INSERT OR IGNORE INTO technician_reviews (service_id, technician_id, citizen_name, rating, review_text)
+                VALUES (?, ?, ?, ?, ?);
+                """,
+                demo_reviews,
+            )
 
         # Normalize existing posts with valid SLAs and officer assignments
         cursor.execute("UPDATE civic_posts SET assigned_officer = 'Unassigned' WHERE assigned_officer IS NULL;")
@@ -866,11 +943,175 @@ def get_technician_jobs_and_bids(worker_phone: str) -> dict:
         elif job.get("bid_amount"):
             total_earnings += int(job["bid_amount"])
 
+    # Query technician reputation profile
+    tech_profile = get_technician_by_phone(clean_phone)
+    if not tech_profile:
+        # Fallback profile if phone not explicitly in users table yet
+        tech_profile = {
+            "id": 1,
+            "name": "Verified Guild Technician",
+            "phone": clean_phone,
+            "role": "technician",
+            "trade": "Household Services",
+            "location": "Local Ward",
+            "works_completed": len(confirmed_jobs),
+            "rating": 5.0,
+            "review_count": 0,
+        }
+
+    reviews = get_technician_reviews(tech_profile["id"]) if tech_profile else []
+
     return {
         "worker_phone": clean_phone,
         "total_earnings": total_earnings,
         "active_bids": active_bids,
         "confirmed_jobs": confirmed_jobs,
         "available_leads": available_leads,
+        "profile": tech_profile,
+        "rating": tech_profile.get("rating", 5.0),
+        "review_count": tech_profile.get("review_count", len(reviews)),
+        "works_completed": tech_profile.get("works_completed", len(confirmed_jobs)),
+        "reviews": reviews,
     }
+
+
+# ==============================================================================
+# TECHNICIAN REPUTATION & RATING SYSTEM
+# ==============================================================================
+
+def get_technicians() -> List[dict]:
+    """Retrieve all technicians registered in the reputation registry."""
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT id, name, phone, role, trade, location, works_completed, rating, review_count, created_at
+            FROM users
+            WHERE role = 'technician'
+            ORDER BY rating DESC, works_completed DESC;
+            """
+        )
+        return [dict(r) for r in cursor.fetchall()]
+
+
+def get_technician_by_id(tech_id: int) -> Optional[dict]:
+    """Retrieve a single technician by primary key ID along with recent reviews."""
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT id, name, phone, role, trade, location, works_completed, rating, review_count, created_at
+            FROM users
+            WHERE id = ?;
+            """,
+            (tech_id,),
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+        tech = dict(row)
+        tech["reviews"] = get_technician_reviews(tech_id)
+        return tech
+
+
+def get_technician_by_phone(phone: str) -> Optional[dict]:
+    """Retrieve a technician profile by phone number (tolerant of format)."""
+    clean = phone.strip()
+    digits_only = "".join(ch for ch in clean if ch.isdigit())
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT id, name, phone, role, trade, location, works_completed, rating, review_count, created_at
+            FROM users
+            WHERE phone = ? OR phone LIKE ?;
+            """,
+            (clean, f"%{digits_only[-10:]}"),
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+        tech = dict(row)
+        tech["reviews"] = get_technician_reviews(tech["id"])
+        return tech
+
+
+def get_technician_reviews(tech_id: int) -> List[dict]:
+    """Fetch all citizen feedback reviews for a specific technician."""
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT id, service_id, technician_id, citizen_name, rating, review_text, created_at
+            FROM technician_reviews
+            WHERE technician_id = ?
+            ORDER BY created_at DESC;
+            """,
+            (tech_id,),
+        )
+        return [dict(r) for r in cursor.fetchall()]
+
+
+def add_technician_review(
+    service_id: Any,
+    technician_id: int,
+    citizen_name: str,
+    rating: int,
+    review_text: str = "",
+) -> dict:
+    """Submit a verified homeowner rating and review for a technician."""
+    with db_lock:
+        cursor = conn.cursor()
+
+        # 1. Insert review record
+        cursor.execute(
+            """
+            INSERT INTO technician_reviews (service_id, technician_id, citizen_name, rating, review_text)
+            VALUES (?, ?, ?, ?, ?);
+            """,
+            (int(service_id) if str(service_id).isdigit() else 1, technician_id, citizen_name.strip(), rating, review_text.strip()),
+        )
+        review_id = cursor.lastrowid
+
+        # 2. Recalculate average rating and review count
+        cursor.execute(
+            """
+            SELECT COUNT(*) AS total_reviews, AVG(rating) AS avg_rating
+            FROM technician_reviews
+            WHERE technician_id = ?;
+            """,
+            (technician_id,),
+        )
+        stats = cursor.fetchone()
+        rev_count = stats["total_reviews"] if stats else 1
+        avg_rating = round(float(stats["avg_rating"]), 1) if stats and stats["avg_rating"] is not None else float(rating)
+
+        # 3. Update users table with new rating, review count, and works completed
+        cursor.execute(
+            """
+            UPDATE users
+            SET rating = ?, review_count = ?, works_completed = works_completed + 1
+            WHERE id = ?;
+            """,
+            (avg_rating, rev_count, technician_id),
+        )
+        conn.commit()
+
+        # Fetch updated technician profile
+        cursor.execute("SELECT * FROM users WHERE id = ?;", (technician_id,))
+        updated_tech = dict(cursor.fetchone() or {})
+
+    return {
+        "success": True,
+        "review_id": review_id,
+        "service_id": service_id,
+        "technician_id": technician_id,
+        "citizen_name": citizen_name,
+        "rating": rating,
+        "review_text": review_text,
+        "new_rating": avg_rating,
+        "total_reviews": rev_count,
+        "technician": updated_tech,
+    }
+
 

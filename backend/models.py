@@ -86,3 +86,13 @@ class CivicStatusUpdate(BaseModel):
         "Unassigned",
         description="Designated field inspector, junior engineer, or response squad"
     )
+
+
+class ReviewCreate(BaseModel):
+    """Schema for citizen submitting a rating & review for a technician."""
+    service_id: Any = Field("job-demo-001", description="Associated service job ID or reference")
+    technician_id: int = Field(..., description="Target technician user ID")
+    citizen_name: str = Field(..., min_length=2, description="Citizen/homeowner full name")
+    rating: int = Field(..., ge=1, le=5, description="Star rating between 1 and 5")
+    review_text: Optional[str] = Field("", description="Optional written review feedback")
+
