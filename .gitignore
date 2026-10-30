@@ -224,3 +224,5 @@ civicpulse.db*
 uploads/*
 !uploads/.gitkeep
 .vercel
+.DS_Store
+*.DS_Store

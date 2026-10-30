@@ -40,6 +40,37 @@ Submitted for **Hacktoberfest Hackathon 2026**:
 
 ---
 
+## 🏆 Hackathon Evaluation & Recent Feature Changelog
+
+> ⚡ **Judges & Evaluators Quickstart**:  
+> Navigate to `#/auth` on the local web server (`http://localhost:8000/#/auth`) to view the **⚡ Evaluator Fast-Pass Bar**. A single click instantly seeds session credentials and launches you into any isolated role dashboard:
+> - **[👤 Citizen Demo]**: Ayush Chauhan (Ward 150 - Bellandur) -> `#/citizen`
+> - **[🛡️ Municipal Officer]**: Officer Rajesh Rao (BBMP HQ) -> `#/municipal`
+> - **[🔧 Technician Lead]**: Ramesh Kumar (4.9★ Electrician) -> `#/technician`
+
+### 📋 Architectural Upgrade Summary:
+1. **Strict Role-Based Access Control (RBAC) & Dedicated Auth Gateway (`#/auth`)**:
+   - Replaced open public switcher bars with strict route-level protection (`#/`, `#/auth`, `#/citizen`, `#/municipal`, `#/technician`).
+   - Dynamic form schemas customized for Citizens (contact & locality), Municipal Authorities (officer ID & department jurisdiction), and Verified Technicians (trade category & standard hourly rates).
+   - Route guards actively block unauthorized cross-role tampering (e.g. citizens attempting to access `#/municipal` receive immediate 403-style UI toast blocks and auto-redirection).
+   - Authenticated operations header displaying user initial avatar, full name, role pill, and a tactile Sign Out action that purges local session state.
+
+2. **Backend Endpoint Protection (`backend/main.py`)**:
+   - Enforces `X-User-Role` verification via FastAPI dependency injection (`require_role(...)`).
+   - Incident triage and field squad assignments (`POST` / `PUT /api/civic/{id}/status`) restricted exclusively to `municipal` officers (`HTTP 403 Forbidden` on role breach).
+   - Household repair quote submissions (`POST /api/services/{id}/bid`) restricted exclusively to `technician` accounts.
+
+3. **Technician Reputation & Review Pipeline (`backend/database.py`, `backend/main.py`)**:
+   - Added `works_completed`, `rating`, and `review_count` attributes to the SQLite `users` table, backed by a relational `technician_reviews` schema.
+   - Dynamic review submission endpoint (`POST /api/technicians/{id}/reviews`) automatically recalculates running average ratings and increments verified job counters.
+   - Tactile star rating modals allow citizens to rate completed jobs with real-time feedback loop.
+
+4. **Standalone Consumer Landing Page & Asset Fidelity**:
+   - High-contrast visual architecture with soft radiant ambient meshes, micro-animations, and interactive RTI legal grievance showcase.
+   - Enhanced Option 4.8 brand mark rendering (`/static/images/logo.png`) with contrast-optimized crisp borders.
+
+---
+
 ## 📌 The Problem & The Solution
 
 Citizens encounter two interconnected friction points every single day:
