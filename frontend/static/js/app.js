@@ -4,6 +4,37 @@
  * live negotiation engine, drag & drop previews, and PulseBot AI.
  */
 
+// Helper functions for persistent session storage (RBAC)
+const SESSION_STORAGE_KEY = 'civicpulse_session';
+
+function getStoredSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+}
+
+function setStoredSession(session) {
+  try {
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+    state.auth = session;
+  } catch (e) {
+    console.error('Failed to persist session:', e);
+  }
+}
+
+function clearStoredSession() {
+  try {
+    localStorage.removeItem(SESSION_STORAGE_KEY);
+    state.auth = null;
+  } catch (e) {
+    console.error('Failed to clear session:', e);
+  }
+}
+
 // Application State
 const state = {
   currentPersona: 'citizen', // 'citizen', 'admin', 'technician'
@@ -20,10 +51,13 @@ const state = {
   // Pillar 3: Multi-Sided Persona & Operations State
   adminDeptFilter: 'ALL',
   adminData: null,
-  technicianPhone: '+91 98765 43210',
+  technicianPhone: '+91 98450 12345',
   technicianData: null,
   techActiveTab: 'leads',
-  currentView: 'landing', // 'landing' or 'workspace'
+  currentView: 'landing', // 'landing', 'auth', or 'workspace'
+  auth: getStoredSession(),
+  authMode: 'signin', // 'signin' or 'signup'
+  authRole: 'citizen', // 'citizen', 'municipal', 'technician'
 };
 
 // Lifecycle initialization
@@ -33,12 +67,14 @@ document.addEventListener('DOMContentLoaded', () => {
   initModals();
   initLandingLetterShowcase();
   
-  // Hash check or default to landing page
-  if (window.location.hash === '#workspace' || window.location.hash === '#app') {
-    showWorkspaceView('citizen');
-  } else {
-    showLandingView();
+  // Set initial technician phone from session if available
+  if (state.auth?.user?.phone) {
+    state.technicianPhone = state.auth.user.phone;
   }
+
+  // Handle Hash Routing
+  handleHashRouting();
+  window.addEventListener('hashchange', handleHashRouting);
 
   loadCivicFeed();
   loadServicesFeed();
@@ -49,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (link) {
       link.addEventListener('click', (e) => {
         e.preventDefault();
-        showLandingView();
+        window.location.hash = '#/';
       });
     }
   });
@@ -882,9 +918,13 @@ async function handleQuickBid(e, jobId) {
   if (!name || !phone || isNaN(amount)) return;
 
   try {
+    const role = state.auth?.user?.role || 'technician';
     const res = await fetch(`/api/services/${jobId}/bid`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Role': role,
+      },
       body: JSON.stringify({ worker_name: name, worker_phone: phone, bid_amount: amount }),
     });
     if (res.ok) {
@@ -1477,7 +1517,7 @@ function switchPersona(persona) {
     if (mBtnCitizen)
       mBtnCitizen.className =
         'flex-1 py-1.5 px-2 text-center text-xs font-bold rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 whitespace-nowrap';
-  } else if (persona === 'admin') {
+  } else if (persona === 'admin' || persona === 'municipal') {
     if (viewAdmin) viewAdmin.classList.remove('hidden');
     if (btnAdmin)
       btnAdmin.className =
@@ -1495,6 +1535,26 @@ function switchPersona(persona) {
       mBtnTech.className =
         'flex-1 py-1.5 px-2 text-center text-xs font-bold rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap';
     loadTechnicianWorkspace();
+  }
+
+  // Update persistent role display badge
+  const roleBadge = document.getElementById('workspaceRoleBadge');
+  const roleIcon = document.getElementById('workspaceRoleIcon');
+  const roleTitle = document.getElementById('workspaceRoleTitle');
+  if (roleBadge && roleIcon && roleTitle) {
+    if (persona === 'citizen') {
+      roleIcon.textContent = '👤';
+      roleTitle.textContent = 'Citizen Portal';
+      roleBadge.className = 'hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold shadow-xs';
+    } else if (persona === 'admin' || persona === 'municipal') {
+      roleIcon.textContent = '🛡️';
+      roleTitle.textContent = 'Municipal Command Center';
+      roleBadge.className = 'hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold shadow-xs';
+    } else if (persona === 'technician') {
+      roleIcon.textContent = '🔧';
+      roleTitle.textContent = 'Technician Workspace';
+      roleBadge.className = 'hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold shadow-xs';
+    }
   }
 
   if (window.lucide) lucide.createIcons();
@@ -1698,9 +1758,14 @@ async function updatePostOfficerStatus(postId) {
   }
 
   try {
+    const role = state.auth?.user?.role || 'municipal';
+    const effectiveRole = role === 'admin' ? 'municipal' : role;
     const res = await fetch(`/api/civic/${postId}/status`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Role': effectiveRole,
+      },
       body: JSON.stringify({ status, assigned_officer }),
     });
 
@@ -1972,9 +2037,13 @@ async function submitTechBid(jobId) {
   const worker_phone = state.technicianPhone;
 
   try {
+    const role = state.auth?.user?.role || 'technician';
     const res = await fetch(`/api/services/${jobId}/bid`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Role': role,
+      },
       body: JSON.stringify({
         worker_name,
         worker_phone,
@@ -2385,10 +2454,37 @@ function resetCivicTalk() {
   if (resBox) resBox.classList.add('hidden');
 }
 
-// --- Dual-View Architecture (Landing Page vs. Operations Workspace) ---
+// --- Multi-View Architecture & Strict Role-Based Access Control (RBAC) ---
+
 function showLandingView() {
   state.currentView = 'landing';
   const landing = document.getElementById('landingView');
+  const auth = document.getElementById('authView');
+  const workspace = document.getElementById('appWorkspaceView');
+  
+  if (workspace) {
+    workspace.classList.add('view-hidden');
+    workspace.classList.remove('view-active');
+  }
+  if (auth) {
+    auth.classList.add('view-hidden');
+    auth.classList.remove('view-active');
+  }
+  if (landing) {
+    landing.classList.remove('view-hidden');
+    landing.classList.add('view-active');
+  }
+
+  updateLandingAuthUI();
+  updateLandingMetrics();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (window.lucide) lucide.createIcons();
+}
+
+function showAuthView() {
+  state.currentView = 'auth';
+  const landing = document.getElementById('landingView');
+  const auth = document.getElementById('authView');
   const workspace = document.getElementById('appWorkspaceView');
   
   if (workspace) {
@@ -2396,32 +2492,435 @@ function showLandingView() {
     workspace.classList.remove('view-active');
   }
   if (landing) {
-    landing.classList.remove('view-hidden');
-    landing.classList.add('view-active');
+    landing.classList.add('view-hidden');
+    landing.classList.remove('view-active');
+  }
+  if (auth) {
+    auth.classList.remove('view-hidden');
+    auth.classList.add('view-active');
   }
 
-  // Smooth scroll to top
+  setAuthRole(state.authRole || 'citizen');
+  setAuthMode(state.authMode || 'signin');
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (window.lucide) lucide.createIcons();
 }
 
-function showWorkspaceView(role = 'citizen') {
+function showDashboardView(role = 'citizen') {
   state.currentView = 'workspace';
   const landing = document.getElementById('landingView');
+  const auth = document.getElementById('authView');
   const workspace = document.getElementById('appWorkspaceView');
   
   if (landing) {
     landing.classList.add('view-hidden');
     landing.classList.remove('view-active');
   }
+  if (auth) {
+    auth.classList.add('view-hidden');
+    auth.classList.remove('view-active');
+  }
   if (workspace) {
     workspace.classList.remove('view-hidden');
     workspace.classList.add('view-active');
   }
 
-  switchPersona(role);
+  const persona = role === 'municipal' ? 'admin' : role;
+  switchPersona(persona);
+  updateDashboardUserHeader();
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (window.lucide) lucide.createIcons();
+}
+
+function showWorkspaceView(role = 'citizen') {
+  showDashboardView(role);
+}
+
+function updateDashboardUserHeader() {
+  const session = getStoredSession();
+  const avatarEl = document.getElementById('navUserAvatar');
+  const nameEl = document.getElementById('navUserName');
+  const roleEl = document.getElementById('navUserRole');
+  
+  if (!session || !session.user) return;
+  
+  const user = session.user;
+  const name = user.name || 'User';
+  const role = user.role === 'admin' ? 'municipal' : (user.role || 'citizen');
+  
+  if (avatarEl) {
+    avatarEl.textContent = name.charAt(0).toUpperCase();
+  }
+  if (nameEl) {
+    nameEl.textContent = name;
+  }
+  if (roleEl) {
+    if (role === 'municipal') {
+      roleEl.textContent = 'Municipal Officer';
+      roleEl.className = 'text-[10px] font-semibold text-rose-600 capitalize leading-none';
+    } else if (role === 'technician') {
+      roleEl.textContent = 'Verified Technician';
+      roleEl.className = 'text-[10px] font-semibold text-emerald-600 capitalize leading-none';
+    } else {
+      roleEl.textContent = 'Citizen (Public)';
+      roleEl.className = 'text-[10px] font-semibold text-indigo-600 capitalize leading-none';
+    }
+  }
+}
+
+function updateLandingAuthUI() {
+  const container = document.getElementById('landingAuthContainer');
+  if (!container) return;
+  const session = getStoredSession();
+  
+  if (session && session.user && session.user.role) {
+    const role = session.user.role === 'admin' ? 'municipal' : session.user.role;
+    const name = session.user.name || 'User';
+    container.innerHTML = `
+      <a href="#/${role}" class="btn-tactile px-3.5 py-2 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold shadow-xs transition-all flex items-center gap-1.5">
+        <span class="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">${name.charAt(0).toUpperCase()}</span>
+        <span class="hidden sm:inline">${name}</span>
+      </a>
+      <button onclick="handleLaunchPortal()" class="btn-tactile px-4 py-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-xs font-bold shadow-md shadow-indigo-500/25 transition-all flex items-center gap-1.5 cursor-pointer">
+        <span>🚀 Dashboard</span>
+        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+      </button>
+      <button onclick="signOut()" title="Sign Out" class="btn-tactile p-2 rounded-2xl bg-white border border-slate-200 text-slate-500 hover:text-rose-600 hover:bg-rose-50 text-xs font-bold transition-all cursor-pointer">
+        <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+      </button>
+    `;
+  } else {
+    container.innerHTML = `
+      <a href="#/auth" class="btn-tactile px-3.5 py-2 rounded-2xl bg-white border border-slate-200/90 hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-xs transition-all flex items-center gap-1.5">
+        <span>🔐 Sign In</span>
+      </a>
+      <button onclick="handleLaunchPortal()" class="btn-tactile px-4 py-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-xs font-bold shadow-md shadow-indigo-500/25 transition-all flex items-center gap-1.5 cursor-pointer">
+        <span>🚀 Launch Portal</span>
+        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+      </button>
+    `;
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+function setAuthMode(mode) {
+  state.authMode = mode;
+  const btnIn = document.getElementById('auth-mode-signin');
+  const btnUp = document.getElementById('auth-mode-signup');
+  const heading = document.getElementById('authCardHeading');
+  const subHeading = document.getElementById('authCardSubheading');
+  const submitText = document.getElementById('authSubmitText');
+
+  const cNameGroup = document.getElementById('authCitizenNameGroup');
+  const cWardGroup = document.getElementById('authCitizenWardGroup');
+  const mNameGroup = document.getElementById('authMunNameGroup');
+  const tNameGroup = document.getElementById('authTechNameGroup');
+  const tRateGroup = document.getElementById('authTechRateGroup');
+
+  if (mode === 'signup') {
+    if (btnUp) btnUp.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/80 transition-all cursor-pointer';
+    if (btnIn) btnIn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-800 transition-all cursor-pointer';
+    if (heading) heading.textContent = 'Create CivicPulse Account';
+    if (subHeading) subHeading.textContent = 'Register your details to establish a verified identity';
+    if (submitText) submitText.textContent = 'Create Account & Access Portal';
+
+    if (cNameGroup) cNameGroup.classList.remove('hidden');
+    if (cWardGroup) cWardGroup.classList.remove('hidden');
+    if (mNameGroup) mNameGroup.classList.remove('hidden');
+    if (tNameGroup) tNameGroup.classList.remove('hidden');
+    if (tRateGroup) tRateGroup.classList.remove('hidden');
+  } else {
+    if (btnIn) btnIn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/80 transition-all cursor-pointer';
+    if (btnUp) btnUp.className = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-800 transition-all cursor-pointer';
+    if (heading) heading.textContent = 'Sign In to CivicPulse';
+    if (subHeading) subHeading.textContent = 'Select your role to access your authorized workspace';
+    
+    const roleLabels = { citizen: 'Citizen Portal', municipal: 'Municipal Command Center', technician: 'Technician Workspace' };
+    if (submitText) submitText.textContent = `Continue to ${roleLabels[state.authRole || 'citizen']}`;
+
+    if (cNameGroup) cNameGroup.classList.add('hidden');
+    if (cWardGroup) cWardGroup.classList.add('hidden');
+    if (mNameGroup) mNameGroup.classList.add('hidden');
+    if (tNameGroup) tNameGroup.classList.add('hidden');
+    if (tRateGroup) tRateGroup.classList.add('hidden');
+  }
+}
+
+function setAuthRole(role) {
+  state.authRole = role;
+  const btnCitizen = document.getElementById('auth-role-btn-citizen');
+  const btnMunicipal = document.getElementById('auth-role-btn-municipal');
+  const btnTech = document.getElementById('auth-role-btn-technician');
+
+  const fieldsCitizen = document.getElementById('authFieldsCitizen');
+  const fieldsMunicipal = document.getElementById('authFieldsMunicipal');
+  const fieldsTech = document.getElementById('authFieldsTechnician');
+  const submitText = document.getElementById('authSubmitText');
+
+  const inactiveClass = 'p-3 rounded-2xl border-2 border-slate-200 hover:border-slate-300 bg-white text-slate-700 text-left transition-all flex flex-col gap-1 cursor-pointer';
+  if (btnCitizen) btnCitizen.className = inactiveClass;
+  if (btnMunicipal) btnMunicipal.className = inactiveClass;
+  if (btnTech) btnTech.className = inactiveClass;
+
+  if (fieldsCitizen) fieldsCitizen.classList.add('hidden');
+  if (fieldsMunicipal) fieldsMunicipal.classList.add('hidden');
+  if (fieldsTech) fieldsTech.classList.add('hidden');
+
+  if (role === 'citizen') {
+    if (btnCitizen) btnCitizen.className = 'p-3 rounded-2xl border-2 border-indigo-600 bg-indigo-50/70 text-indigo-900 text-left transition-all flex flex-col gap-1 cursor-pointer';
+    if (fieldsCitizen) fieldsCitizen.classList.remove('hidden');
+    if (submitText) submitText.textContent = state.authMode === 'signup' ? 'Create Citizen Account' : 'Continue to Citizen Portal';
+  } else if (role === 'municipal') {
+    if (btnMunicipal) btnMunicipal.className = 'p-3 rounded-2xl border-2 border-rose-600 bg-rose-50/70 text-rose-900 text-left transition-all flex flex-col gap-1 cursor-pointer';
+    if (fieldsMunicipal) fieldsMunicipal.classList.remove('hidden');
+    if (submitText) submitText.textContent = state.authMode === 'signup' ? 'Register Officer ID' : 'Continue to Municipal Command';
+  } else if (role === 'technician') {
+    if (btnTech) btnTech.className = 'p-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50/70 text-emerald-900 text-left transition-all flex flex-col gap-1 cursor-pointer';
+    if (fieldsTech) fieldsTech.classList.remove('hidden');
+    if (submitText) submitText.textContent = state.authMode === 'signup' ? 'Register Verified Technician' : 'Continue to Technician Desk';
+  }
+}
+
+function handleAuthSubmit(e) {
+  if (e) e.preventDefault();
+  const role = state.authRole || 'citizen';
+  let session = null;
+
+  if (role === 'citizen') {
+    const name = document.getElementById('authCitizenName')?.value.trim() || 'Ayush Chauhan';
+    const contact = document.getElementById('authCitizenContact')?.value.trim() || '9876543210';
+    const ward = document.getElementById('authCitizenWard')?.value.trim() || 'Ward 150 - Bellandur';
+    session = {
+      token: 'civic_token_' + Math.random().toString(36).substring(2, 10),
+      user: {
+        id: 1,
+        name: name,
+        role: 'citizen',
+        contact: contact,
+        locality: ward,
+      }
+    };
+    setStoredSession(session);
+    showToast(`✓ Welcome, ${name}! Signed in as Citizen.`, 'success');
+    window.location.hash = '#/citizen';
+  } else if (role === 'municipal') {
+    const name = document.getElementById('authMunName')?.value.trim() || 'Officer Rajesh Rao';
+    const officerId = document.getElementById('authMunOfficialId')?.value.trim() || 'BBMP-ENG-4091';
+    const dept = document.getElementById('authMunDept')?.value || 'Roads & Infrastructure';
+    session = {
+      token: 'mun_token_' + Math.random().toString(36).substring(2, 10),
+      user: {
+        id: 2,
+        name: name,
+        role: 'municipal',
+        officerId: officerId,
+        department: dept,
+      }
+    };
+    setStoredSession(session);
+    showToast(`✓ Welcome, ${name}! Authenticated as Municipal Commander.`, 'success');
+    window.location.hash = '#/municipal';
+  } else if (role === 'technician') {
+    const name = document.getElementById('authTechName')?.value.trim() || 'Ramesh Kumar';
+    const phone = document.getElementById('authTechPhone')?.value.trim() || '+91 98450 12345';
+    const trade = document.getElementById('authTechTrade')?.value || 'Electrical & Wiring';
+    const rate = parseInt(document.getElementById('authTechRate')?.value) || 450;
+    session = {
+      token: 'tech_token_' + Math.random().toString(36).substring(2, 10),
+      user: {
+        id: 3,
+        name: name,
+        role: 'technician',
+        phone: phone,
+        trade: trade,
+        rating: 4.9,
+        works_completed: 47,
+        standard_rate: rate,
+      }
+    };
+    state.technicianPhone = phone;
+    setStoredSession(session);
+    showToast(`✓ Welcome, ${name}! Authenticated as Verified Technician.`, 'success');
+    window.location.hash = '#/technician';
+  }
+}
+
+function fastPassLogin(role) {
+  if (role === 'citizen') {
+    const session = {
+      token: 'demo_token_citizen_2026',
+      user: {
+        id: 1,
+        name: 'Ayush Chauhan',
+        role: 'citizen',
+        locality: 'Ward 150 - Bellandur, Bengaluru',
+        contact: '9876543210',
+      }
+    };
+    setStoredSession(session);
+    showToast('⚡ Fast-Pass: Signed in as Citizen (Ayush Chauhan)', 'success');
+    window.location.hash = '#/citizen';
+  } else if (role === 'municipal') {
+    const session = {
+      token: 'demo_token_municipal_2026',
+      user: {
+        id: 2,
+        name: 'Officer Rajesh Rao',
+        role: 'municipal',
+        officerId: 'BBMP-ENG-4091',
+        department: 'Roads & Stormwater Drains',
+      }
+    };
+    setStoredSession(session);
+    showToast('⚡ Fast-Pass: Signed in as Municipal Commander (Officer Rajesh Rao)', 'success');
+    window.location.hash = '#/municipal';
+  } else if (role === 'technician') {
+    const session = {
+      token: 'demo_token_tech_2026',
+      user: {
+        id: 3,
+        name: 'Ramesh Kumar (Master Electrician)',
+        role: 'technician',
+        phone: '+91 98450 12345',
+        trade: 'Electrical & Wiring',
+        rating: 4.9,
+        works_completed: 47,
+      }
+    };
+    state.technicianPhone = '+91 98450 12345';
+    setStoredSession(session);
+    showToast('⚡ Fast-Pass: Signed in as Technician (Ramesh Kumar - 4.9★)', 'success');
+    window.location.hash = '#/technician';
+  }
+}
+
+function signOut() {
+  clearStoredSession();
+  showToast('Signed out of CivicPulse. Session cleared.', 'info');
+  window.location.hash = '#/';
+}
+
+function handleHashRouting() {
+  const hash = window.location.hash || '#/';
+  const cleanRoute = hash.split('?')[0].toLowerCase();
+  const session = getStoredSession();
+
+  if (cleanRoute === '#/' || cleanRoute === '#' || cleanRoute === '') {
+    showLandingView();
+    return;
+  }
+
+  if (cleanRoute === '#/auth') {
+    if (session && session.user && session.user.role) {
+      const activeRole = session.user.role === 'admin' ? 'municipal' : session.user.role;
+      window.location.hash = '#/' + activeRole;
+      return;
+    }
+    showAuthView();
+    return;
+  }
+
+  // Protected Dashboard Views with RBAC Route Guards
+  if (cleanRoute === '#/citizen' || cleanRoute === '#/municipal' || cleanRoute === '#/technician') {
+    if (!session || !session.user || !session.user.role) {
+      showToast('Authentication required. Please sign in to access this portal.', 'warning');
+      window.location.hash = '#/auth';
+      return;
+    }
+
+    const currentRole = session.user.role === 'admin' ? 'municipal' : session.user.role;
+
+    if (cleanRoute === '#/citizen') {
+      if (currentRole !== 'citizen') {
+        showToast(`Access Restricted: You are signed in as a ${currentRole}. Redirecting to your authorized dashboard.`, 'warning');
+        window.location.hash = '#/' + currentRole;
+        return;
+      }
+      showDashboardView('citizen');
+      return;
+    }
+
+    if (cleanRoute === '#/municipal') {
+      if (currentRole !== 'municipal') {
+        showToast('Access Restricted: Authorized Personnel Only.', 'error');
+        window.location.hash = '#/' + currentRole;
+        return;
+      }
+      showDashboardView('municipal');
+      return;
+    }
+
+    if (cleanRoute === '#/technician') {
+      if (currentRole !== 'technician') {
+        showToast('Access Restricted: Authorized Personnel Only.', 'error');
+        window.location.hash = '#/' + currentRole;
+        return;
+      }
+      showDashboardView('technician');
+      return;
+    }
+  }
+
+  // Legacy fallback
+  if (cleanRoute === '#workspace' || cleanRoute === '#app') {
+    if (session && session.user && session.user.role) {
+      const activeRole = session.user.role === 'admin' ? 'municipal' : session.user.role;
+      window.location.hash = '#/' + activeRole;
+    } else {
+      window.location.hash = '#/auth';
+    }
+    return;
+  }
+
+  // Default fallback
+  showLandingView();
+}
+
+function handleLaunchPortal() {
+  const session = getStoredSession();
+  if (session && session.user && session.user.role) {
+    const role = session.user.role === 'admin' ? 'municipal' : session.user.role;
+    window.location.hash = '#/' + role;
+  } else {
+    window.location.hash = '#/auth';
+  }
+}
+
+function navigateToRole(targetRole) {
+  const session = getStoredSession();
+  if (!session || !session.user) {
+    setAuthRole(targetRole);
+    window.location.hash = '#/auth';
+    return;
+  }
+  const currentRole = session.user.role === 'admin' ? 'municipal' : session.user.role;
+  if (currentRole === targetRole) {
+    window.location.hash = '#/' + targetRole;
+  } else {
+    showToast(`Access Restricted: You are signed in as a ${currentRole}. Authorized Personnel Only.`, 'warning');
+    window.location.hash = '#/' + currentRole;
+  }
+}
+
+function navigateToReportHazard() {
+  const session = getStoredSession();
+  if (!session || !session.user) {
+    setAuthRole('citizen');
+    window.location.hash = '#/auth';
+    showToast('Please sign in as a citizen to submit a hazard report.', 'info');
+    return;
+  }
+  if (session.user.role !== 'citizen') {
+    showToast('Access Restricted: Only citizens can submit public hazard reports.', 'warning');
+    return;
+  }
+  window.location.hash = '#/citizen';
+  setTimeout(() => openModal('modal-civic'), 300);
+}
+
+function navigateToAuth() {
+  window.location.hash = '#/auth';
 }
 
 // --- Dynamic Landing Metrics Updater ---
