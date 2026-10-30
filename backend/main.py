@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile, status
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -106,6 +106,19 @@ FRONTEND_PATH = Path(__file__).resolve().parent.parent / "frontend" / "index.htm
 
 
 # --- Frontend Root ---
+def require_role(allowed_roles: List[str]):
+    """Role-Based Access Control (RBAC) dependency to protect sensitive endpoints."""
+    async def role_dependency(x_user_role: Optional[str] = Header(None, alias="X-User-Role")):
+        role = (x_user_role or "").strip().lower()
+        if role not in [r.lower() for r in allowed_roles]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access forbidden: role '{x_user_role}' not authorized. Requires: {', '.join(allowed_roles)}",
+            )
+        return role
+    return role_dependency
+
+
 @app.get("/", tags=["Frontend"])
 async def serve_dashboard():
     """Serve the CivicPulse web application dashboard."""
@@ -305,9 +318,12 @@ async def get_admin_overview() -> Dict[str, Any]:
 
 @app.post("/api/civic/{post_id}/status", tags=["Command Center"])
 @app.post("/api/civic/posts/{post_id}/status", tags=["Command Center"])
+@app.put("/api/civic/{post_id}/status", tags=["Command Center"])
+@app.put("/api/civic/posts/{post_id}/status", tags=["Command Center"])
 async def update_post_status(
     post_id: str,
     payload: CivicStatusUpdate,
+    _role: str = Depends(require_role(["municipal"])),
 ) -> Dict[str, Any]:
     """
     Municipal Officer Complaint Lifecycle & Field Inspector Assignment:
@@ -520,7 +536,11 @@ async def get_service_job_bids(job_id: str) -> List[Dict[str, Any]]:
 
 @app.post("/api/services/{job_id}/bid", status_code=status.HTTP_201_CREATED, tags=["Services"])
 @app.post("/api/services/jobs/{job_id}/bids", status_code=status.HTTP_201_CREATED, tags=["Services"])
-async def submit_bid_on_job(job_id: str, payload: BidCreate) -> Dict[str, Any]:
+async def submit_bid_on_job(
+    job_id: str,
+    payload: BidCreate,
+    _role: str = Depends(require_role(["technician"])),
+) -> Dict[str, Any]:
     """Submit worker bid on job and advance job status to Negotiating."""
     job = get_service_job_by_id(job_id)
     if not job:

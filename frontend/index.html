@@ -120,8 +120,8 @@
           <a href="#team" class="hover:text-indigo-600 transition-colors">Team</a>
         </nav>
 
-        <!-- Right Side: Geolocation Chip & Launch App CTA -->
-        <div class="flex items-center gap-3">
+        <!-- Right Side: Geolocation Chip & Auth / Launch App CTA -->
+        <div class="flex items-center gap-2.5">
           <button onclick="openCityModal()" class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 border border-slate-200/90 text-xs font-semibold text-slate-800 shadow-xs hover:border-indigo-400 transition-all cursor-pointer">
             <span class="relative flex h-2 w-2">
               <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -131,10 +131,16 @@
             <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
           </button>
 
-          <button onclick="showWorkspaceView('citizen')" class="btn-tactile px-4 py-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-xs font-bold shadow-md shadow-indigo-500/25 transition-all flex items-center gap-1.5">
-            <span>🚀 Launch Portal</span>
-            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-          </button>
+          <!-- Dynamic Auth / Dashboard Pill -->
+          <div id="landingAuthContainer" class="flex items-center gap-2">
+            <a href="#/auth" class="btn-tactile px-3.5 py-2 rounded-2xl bg-white border border-slate-200/90 hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-xs transition-all flex items-center gap-1.5">
+              <span>🔐 Sign In</span>
+            </a>
+            <button onclick="handleLaunchPortal()" class="btn-tactile px-4 py-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-xs font-bold shadow-md shadow-indigo-500/25 transition-all flex items-center gap-1.5">
+              <span>🚀 Launch Portal</span>
+              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
         </div>
       </div>
     </header>
@@ -169,12 +175,12 @@
 
         <!-- Dual CTA Buttons -->
         <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2">
-          <button onclick="showWorkspaceView('citizen'); setTimeout(() => openModal('modal-civic'), 200);" class="btn-tactile w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-600 to-rose-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold text-sm shadow-lg shadow-rose-500/25 flex items-center justify-center gap-2">
+          <button onclick="navigateToReportHazard()" class="btn-tactile w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-600 to-rose-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold text-sm shadow-lg shadow-rose-500/25 flex items-center justify-center gap-2">
             <i data-lucide="camera" class="w-4 h-4"></i>
             <span>📸 Report Civic Hazard</span>
           </button>
           
-          <button onclick="showWorkspaceView('citizen')" class="btn-tactile w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2">
+          <button onclick="handleLaunchPortal()" class="btn-tactile w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2">
             <i data-lucide="layout-grid" class="w-4 h-4 text-indigo-400"></i>
             <span>⚡ Launch Live App</span>
           </button>
@@ -304,7 +310,7 @@
               Explore live neighborhood incident feeds, submit voice reports via CivicTalk, monitor repair progress, or post household utility repair jobs.
             </p>
           </div>
-          <button onclick="showWorkspaceView('citizen')" class="btn-tactile mt-6 w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all">
+          <button onclick="navigateToRole('citizen')" class="btn-tactile mt-6 w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all">
             <span>Explore Citizen Feed</span>
             <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
           </button>
@@ -322,7 +328,7 @@
               Inspect critical hazard triage tables, monitor statutory SLA breach countdowns, assign designated field inspectors, and dispatch repair crews.
             </p>
           </div>
-          <button onclick="showWorkspaceView('admin')" class="btn-tactile mt-6 w-full py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all">
+          <button onclick="navigateToRole('municipal')" class="btn-tactile mt-6 w-full py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all">
             <span>Open Command Center</span>
             <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
           </button>
@@ -340,7 +346,7 @@
               Discover verified household repair leads diagnosed by Gemma 4 AI, submit transparent price quotes, negotiate counter-offers, and track confirmed job earnings.
             </p>
           </div>
-          <button onclick="showWorkspaceView('technician')" class="btn-tactile mt-6 w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all">
+          <button onclick="navigateToRole('technician')" class="btn-tactile mt-6 w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all">
             <span>Launch Tradesperson Desk</span>
             <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
           </button>
@@ -395,7 +401,7 @@
               <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
               <span>Cites exact GPS coordinates, severity metrics, and statutory escalation deadlines.</span>
             </div>
-            <button onclick="showWorkspaceView('citizen')" class="font-bold text-indigo-600 hover:underline flex items-center gap-1">
+            <button onclick="navigateToRole('citizen')" class="font-bold text-indigo-600 hover:underline flex items-center gap-1">
               <span>Draft notice for any live incident in workspace</span>
               <i data-lucide="arrow-right" class="w-3 h-3"></i>
             </button>
@@ -477,7 +483,7 @@
           <span>Built with ❤️ by <strong class="text-slate-800">Team Version Controllers</strong></span>
         </div>
         <div class="flex items-center gap-4 text-slate-500">
-          <button onclick="showWorkspaceView('citizen')" class="hover:text-indigo-600 font-semibold">Launch App Workspace</button>
+          <button onclick="handleLaunchPortal()" class="hover:text-indigo-600 font-semibold">Launch App Workspace</button>
           <span>•</span>
           <a href="/docs" target="_blank" class="hover:text-indigo-600 font-medium">FastAPI Docs</a>
           <span>•</span>
@@ -491,22 +497,268 @@
 
 
   <!-- ========================================================================= -->
-  <!-- VIEW 2: CORE INTERACTIVE WORKSPACE (#appWorkspaceView)                   -->
+  <!-- VIEW 2: DEDICATED AUTHENTICATION & REGISTRATION GATEWAY (#authView)      -->
+  <!-- ========================================================================= -->
+  <div id="authView" class="view-container view-hidden w-full min-h-screen flex flex-col bg-slate-50 relative overflow-hidden">
+    <!-- Radiant ambient orbs -->
+    <div class="absolute -top-32 -left-32 w-96 h-96 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none ambient-orb-1"></div>
+    <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none ambient-orb-2"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none ambient-orb-3"></div>
+
+    <!-- Auth Header -->
+    <header class="sticky top-0 z-40 frosted-glass border-b border-slate-200/80 shadow-xs">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <a href="#/" class="flex items-center gap-3 group select-none transition-opacity duration-150 hover:opacity-95">
+          <div class="relative w-10 h-10 flex items-center justify-center rounded-xl bg-white/90 border border-slate-200/90 shadow-sm p-1 flex-shrink-0 group-hover:scale-105 group-hover:shadow-md transition-all duration-200 ease-out">
+            <img 
+              src="/static/images/logo.png" 
+              alt="CivicPulse 4.8 Logo" 
+              class="brand-logo-img w-full h-full object-contain"
+              loading="eager"
+              decoding="async"
+            />
+          </div>
+          <div class="flex flex-col">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xl font-black tracking-tight text-slate-900 leading-none">
+                Civic<span class="bg-gradient-to-r from-indigo-600 to-emerald-600 bg-clip-text text-transparent">Pulse</span>
+              </span>
+              <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 leading-none">v1.0</span>
+            </div>
+            <span class="text-[9px] font-bold tracking-wider text-slate-400 uppercase mt-1">
+              Authentication & Security Gateway
+            </span>
+          </div>
+        </a>
+
+        <div class="flex items-center gap-2">
+          <a href="#/" class="btn-tactile flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all">
+            <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+            <span>Back to Home</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Auth Content Container -->
+    <main class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1 w-full flex flex-col justify-center relative z-10">
+
+      <!-- ⚡ JUDGE FAST-PASS BAR (Evaluator 1-Click Access) -->
+      <div class="mb-8 p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-indigo-900 via-slate-900 to-emerald-950 text-white shadow-xl border border-indigo-700/50 relative overflow-hidden">
+        <div class="absolute -right-6 -bottom-6 w-40 h-40 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="relative z-10">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-4 border-b border-indigo-800/60">
+            <div class="flex items-center gap-2">
+              <span class="p-1.5 rounded-lg bg-amber-400/20 text-amber-300 text-base">⚡</span>
+              <div>
+                <h3 class="text-sm font-black tracking-wide text-white uppercase">Hackathon Judge & Evaluator Fast-Pass</h3>
+                <p class="text-[11px] text-slate-300">1-click instant credential injection. Test each protected role view immediately without typing:</p>
+              </div>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 max-w-fit">
+              ACTIVE RBAC
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button onclick="fastPassLogin('citizen')" class="btn-tactile p-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 text-left transition-all flex flex-col justify-between group cursor-pointer">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+                  <span>👤</span> Citizen Demo
+                </span>
+                <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-white/50 group-hover:text-white group-hover:translate-x-0.5 transition-all"></i>
+              </div>
+              <div class="mt-2">
+                <div class="text-xs font-bold text-white">Ayush Chauhan</div>
+                <div class="text-[10px] text-slate-300 truncate">Ward 150 - Bellandur</div>
+              </div>
+            </button>
+
+            <button onclick="fastPassLogin('municipal')" class="btn-tactile p-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 text-left transition-all flex flex-col justify-between group cursor-pointer">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-rose-300 flex items-center gap-1.5">
+                  <span>🛡️</span> Officer Command
+                </span>
+                <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-white/50 group-hover:text-white group-hover:translate-x-0.5 transition-all"></i>
+              </div>
+              <div class="mt-2">
+                <div class="text-xs font-bold text-white">Officer Rajesh Rao</div>
+                <div class="text-[10px] text-slate-300 truncate">BBMP Road & Drain HQ</div>
+              </div>
+            </button>
+
+            <button onclick="fastPassLogin('technician')" class="btn-tactile p-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 text-left transition-all flex flex-col justify-between group cursor-pointer">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                  <span>🔧</span> Technician Lead
+                </span>
+                <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-white/50 group-hover:text-white group-hover:translate-x-0.5 transition-all"></i>
+              </div>
+              <div class="mt-2">
+                <div class="text-xs font-bold text-white">Ramesh Kumar</div>
+                <div class="text-[10px] text-slate-300 truncate">Electrician • 4.9★ (47 Jobs)</div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Gateway Card -->
+      <div class="p-6 sm:p-8 rounded-3xl bg-white/90 backdrop-blur-xl border border-slate-200/90 shadow-xl space-y-6">
+        
+        <!-- Toggle: Sign In vs Create Account -->
+        <div class="flex items-center justify-between pb-4 border-b border-slate-200/80">
+          <div>
+            <h2 id="authCardHeading" class="text-xl font-black text-slate-900 tracking-tight">Sign In to CivicPulse</h2>
+            <p id="authCardSubheading" class="text-xs text-slate-500 mt-0.5">Select your role to access your authorized workspace</p>
+          </div>
+          <div class="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/80">
+            <button type="button" id="auth-mode-signin" onclick="setAuthMode('signin')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/80 transition-all cursor-pointer">
+              Sign In
+            </button>
+            <button type="button" id="auth-mode-signup" onclick="setAuthMode('signup')" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-800 transition-all cursor-pointer">
+              Create Account
+            </button>
+          </div>
+        </div>
+
+        <!-- Role Selector Pills -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Select User Role</label>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <button type="button" id="auth-role-btn-citizen" onclick="setAuthRole('citizen')" class="p-3 rounded-2xl border-2 border-indigo-600 bg-indigo-50/70 text-indigo-900 text-left transition-all flex flex-col gap-1 cursor-pointer">
+              <span class="text-base">👤</span>
+              <span class="text-xs font-bold">Citizen (Public)</span>
+              <span class="text-[10px] text-slate-500">Report & Book Repairs</span>
+            </button>
+            <button type="button" id="auth-role-btn-municipal" onclick="setAuthRole('municipal')" class="p-3 rounded-2xl border-2 border-slate-200 hover:border-slate-300 bg-white text-slate-700 text-left transition-all flex flex-col gap-1 cursor-pointer">
+              <span class="text-base">🛡️</span>
+              <span class="text-xs font-bold">Municipal Authority</span>
+              <span class="text-[10px] text-slate-500">Triage & Dispatch Crew</span>
+            </button>
+            <button type="button" id="auth-role-btn-technician" onclick="setAuthRole('technician')" class="p-3 rounded-2xl border-2 border-slate-200 hover:border-slate-300 bg-white text-slate-700 text-left transition-all flex flex-col gap-1 cursor-pointer">
+              <span class="text-base">🔧</span>
+              <span class="text-xs font-bold">Verified Technician</span>
+              <span class="text-[10px] text-slate-500">Bid on Household Work</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamic Form Fields -->
+        <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+          <!-- Citizen Fields Container -->
+          <div id="authFieldsCitizen" class="space-y-3">
+            <div id="authCitizenNameGroup" class="hidden">
+              <label class="block text-xs font-bold text-slate-700 mb-1">Full Name</label>
+              <input type="text" id="authCitizenName" placeholder="e.g. Ayush Chauhan" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Mobile Number or Email</label>
+              <input type="text" id="authCitizenContact" placeholder="e.g. 9876543210 or ayush@example.com" value="9876543210" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all" required>
+            </div>
+            <div id="authCitizenWardGroup" class="hidden">
+              <label class="block text-xs font-bold text-slate-700 mb-1">Ward / Locality</label>
+              <input type="text" id="authCitizenWard" placeholder="e.g. Ward 150 - Bellandur, Bengaluru" value="Ward 150 - Bellandur" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Passcode / PIN</label>
+              <input type="password" id="authCitizenPass" placeholder="••••••••" value="citizen123" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all">
+            </div>
+          </div>
+
+          <!-- Municipal Fields Container -->
+          <div id="authFieldsMunicipal" class="hidden space-y-3">
+            <div id="authMunNameGroup" class="hidden">
+              <label class="block text-xs font-bold text-slate-700 mb-1">Officer Name</label>
+              <input type="text" id="authMunName" placeholder="e.g. Rajesh Rao" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Official Email / Officer ID</label>
+              <input type="text" id="authMunOfficialId" placeholder="e.g. BBMP-ENG-4091 or officer@bbmp.gov.in" value="BBMP-ENG-4091" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Department Jurisdiction</label>
+              <select id="authMunDept" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all">
+                <option value="Roads & Infrastructure">Roads & Infrastructure Maintenance</option>
+                <option value="Water Supply & Sewerage">Water Supply & Sewerage Board (BWSSB)</option>
+                <option value="Solid Waste Management">Solid Waste Management & Sanitation</option>
+                <option value="Electrical & BESCOM">Electrical Grid & BESCOM</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Municipal Security Access Code</label>
+              <input type="password" id="authMunPass" placeholder="••••••••" value="officer2026" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all">
+            </div>
+          </div>
+
+          <!-- Technician Fields Container -->
+          <div id="authFieldsTechnician" class="hidden space-y-3">
+            <div id="authTechNameGroup" class="hidden">
+              <label class="block text-xs font-bold text-slate-700 mb-1">Technician Full Name</label>
+              <input type="text" id="authTechName" placeholder="e.g. Ramesh Kumar" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Registered Phone Number</label>
+              <input type="tel" id="authTechPhone" placeholder="e.g. +91 98450 12345" value="+91 98450 12345" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Primary Trade Skill</label>
+              <select id="authTechTrade" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all">
+                <option value="Electrical & Wiring">Electrical & Wiring</option>
+                <option value="Plumbing & Sanitation">Plumbing & Sanitation</option>
+                <option value="Masonry & Concrete">Masonry & Concrete</option>
+                <option value="Carpentry & Furniture">Carpentry & Furniture</option>
+                <option value="Appliance Repair">Appliance Repair</option>
+                <option value="Painting & Waterproofing">Painting & Waterproofing</option>
+              </select>
+            </div>
+            <div id="authTechRateGroup" class="hidden">
+              <label class="block text-xs font-bold text-slate-700 mb-1">Expected Standard Rate (₹ / hr)</label>
+              <input type="number" id="authTechRate" placeholder="e.g. 450" value="450" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Security PIN</label>
+              <input type="password" id="authTechPass" placeholder="••••••••" value="tech2026" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all">
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="pt-2">
+            <button type="submit" id="authSubmitBtn" class="btn-tactile w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-emerald-600 hover:from-indigo-700 hover:to-emerald-700 text-white font-bold text-xs shadow-md shadow-indigo-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer">
+              <span id="authSubmitText">Continue to Citizen Portal</span>
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </form>
+
+        <!-- Terms & Trust Micro-note -->
+        <p class="text-[10px] text-center text-slate-400">
+          Role-Gated Access Control • Encrypted Local Credentials • Session Secured
+        </p>
+      </div>
+
+    </main>
+  </div>
+  <!-- END VIEW 2: DEDICATED AUTHENTICATION & REGISTRATION GATEWAY -->
+
+
+  <!-- ========================================================================= -->
+  <!-- VIEW 3: CORE ROLE-GATED WORKSPACE (#appWorkspaceView)                     -->
   <!-- ========================================================================= -->
   <div id="appWorkspaceView" class="view-container view-hidden w-full min-h-screen flex flex-col">
 
-    <!-- Sticky Operations Header -->
+    <!-- Sticky Operations Header (Role-Gated & Authenticated) -->
     <header class="sticky top-0 z-40 frosted-glass border-b border-slate-200/80 shadow-xs transition-all">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         
         <!-- Back to Home & Brand -->
         <div class="flex items-center gap-3">
-          <button onclick="showLandingView()" class="btn-tactile flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all mr-1">
+          <a href="#/" class="btn-tactile flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all mr-1">
             <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
             <span class="hidden sm:inline">Home</span>
-          </button>
+          </a>
 
-          <a href="#" onclick="showLandingView(); return false;" class="flex items-center gap-2.5 group select-none transition-opacity duration-150 hover:opacity-95">
+          <a href="#/" class="flex items-center gap-2.5 group select-none transition-opacity duration-150 hover:opacity-95">
             <div class="relative w-9 h-9 flex items-center justify-center rounded-xl bg-white/90 border border-slate-200/90 shadow-sm p-1 flex-shrink-0 group-hover:scale-105 group-hover:shadow-md transition-all duration-200 ease-out">
               <img 
                 src="/static/images/logo.png" 
@@ -527,8 +779,14 @@
             </div>
           </a>
 
+          <!-- Active Role Display Badge (Non-crossable) -->
+          <div id="workspaceRoleBadge" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold shadow-xs">
+            <span id="workspaceRoleIcon">👤</span>
+            <span id="workspaceRoleTitle">Citizen Portal</span>
+          </div>
+
           <!-- Glowing Gemma 4 Live Radar Badge -->
-          <div class="hidden sm:inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50/90 border border-indigo-200/80 text-indigo-700 text-xs font-semibold shadow-xs">
+          <div class="hidden lg:inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-xs font-semibold shadow-xs">
             <span class="relative flex h-2 w-2">
               <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
               <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-600"></span>
@@ -537,24 +795,9 @@
           </div>
         </div>
 
-        <!-- 3-Way Persona Switcher Navigation (Pillar 3) -->
-        <nav class="hidden md:flex items-center bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shadow-inner">
-          <button id="persona-btn-citizen" onclick="switchPersona('citizen')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-indigo-900 shadow-sm border border-slate-200/90 transition-all">
-            <i data-lucide="user" class="w-4 h-4 text-indigo-600"></i>
-            <span>👤 Citizen Portal</span>
-          </button>
-          <button id="persona-btn-admin" onclick="switchPersona('admin')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all">
-            <i data-lucide="shield-alert" class="w-4 h-4 text-rose-500"></i>
-            <span>🛡️ Officer Command</span>
-          </button>
-          <button id="persona-btn-technician" onclick="switchPersona('technician')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all">
-            <i data-lucide="wrench" class="w-4 h-4 text-emerald-600"></i>
-            <span>🔧 Technician Desk</span>
-          </button>
-        </nav>
-
-        <!-- Dynamic GPS Location Pill with Modal Opener -->
+        <!-- Right Side: Dynamic Location + User Profile Pill + Sign Out -->
         <div class="flex items-center gap-2.5">
+          <!-- Dynamic GPS Location Pill with Modal Opener -->
           <button onclick="openCityModal()" class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 border border-slate-200/90 text-xs font-semibold text-slate-800 shadow-xs backdrop-blur-md hover:border-indigo-400 transition-colors cursor-pointer">
             <span class="relative flex h-2 w-2">
               <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -563,22 +806,24 @@
             <span id="location-pill-text">📍 Sector 62, Noida</span>
             <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
           </button>
+
+          <!-- User Identity Pill & Sign Out Button -->
+          <div class="flex items-center gap-2 pl-2 sm:pl-3 border-l border-slate-200/80">
+            <div id="navUserAvatar" class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-emerald-500 text-white flex items-center justify-center font-bold text-xs shadow-xs select-none">
+              A
+            </div>
+            <div class="hidden sm:flex flex-col text-left">
+              <span id="navUserName" class="text-xs font-bold text-slate-800 leading-tight">Ayush Chauhan</span>
+              <span id="navUserRole" class="text-[10px] font-semibold text-emerald-600 capitalize leading-none">Citizen</span>
+            </div>
+            <button onclick="signOut()" title="Sign Out of CivicPulse" class="btn-tactile flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-600 text-xs font-bold transition-all border border-slate-200/80 cursor-pointer">
+              <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+              <span class="hidden sm:inline">Sign Out</span>
+            </button>
+          </div>
         </div>
       </div>
     </header>
-
-    <!-- Mobile 3-Way Persona Navigation -->
-    <div class="md:hidden frosted-glass border-b border-slate-200 px-3 py-2 flex gap-1.5 overflow-x-auto custom-scroll">
-      <button id="mobile-persona-btn-citizen" onclick="switchPersona('citizen')" class="flex-1 py-1.5 px-2 text-center text-xs font-bold rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 whitespace-nowrap">
-        👤 Citizen
-      </button>
-      <button id="mobile-persona-btn-admin" onclick="switchPersona('admin')" class="flex-1 py-1.5 px-2 text-center text-xs font-semibold rounded-xl bg-white text-slate-600 border border-slate-200 whitespace-nowrap">
-        🛡️ Officer
-      </button>
-      <button id="mobile-persona-btn-technician" onclick="switchPersona('technician')" class="flex-1 py-1.5 px-2 text-center text-xs font-semibold rounded-xl bg-white text-slate-600 border border-slate-200 whitespace-nowrap">
-        🔧 Tech Desk
-      </button>
-    </div>
 
     <!-- Main Operations Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
