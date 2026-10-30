@@ -33,11 +33,11 @@ Submitted for **Google Gemma Hackathon 2026**:
 - 🏆 **Open Source Category**
 - 🌟 **Best Use of Gemma Category**
 
-| Team Member | Team Role | 
-| :--- | :--- | :--- |
-| **Ayush Chauhan** | Team Leader | 
-| **Rishav Ranjan** | Member 1 | 
-| **Hardik Kumar** | Member 2 | 
+| Team Member | Team Role |
+| :--- | :--- |
+| Ayush Chauhan | Team Leader |
+| Rishav Ranjan | Member 1 |
+| Hardik Kumar | Member 2 | 
 
 ---
 

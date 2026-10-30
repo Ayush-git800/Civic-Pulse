@@ -179,7 +179,7 @@ def build_pdf(output_path: str):
     # Meta Table on Cover
     meta_data = [
         [Paragraph("<b>Submitted For:</b>", style_body), Paragraph("Google Gemma Hackathon 2026 (Open Source & Best Use of Gemma)", style_body)],
-        [Paragraph("<b>Engineering Team:</b>", style_body), Paragraph("<b>Version Controllers</b> (Ayush Chauhan, Rishav Ranjan, Hardik Kumar)", style_body)],
+        [Paragraph("<b>Engineering Team:</b>", style_body), Paragraph("<b>Version Controllers</b><br/>• Ayush Chauhan (Team Leader)<br/>• Rishav Ranjan (Member 1)<br/>• Hardik Kumar (Member 2)", style_body)],
         [Paragraph("<b>Primary AI Engine:</b>", style_body), Paragraph("Gemma 4 Multimodal (<code>gemma-4-26b-a4b-it</code>) via <code>google-genai</code> SDK", style_body)],
         [Paragraph("<b>Deployment Status:</b>", style_body), Paragraph("Production-Ready Verified Prototype (FastAPI + SQLite WAL + Tailwind UI)", style_body)],
         [Paragraph("<b>Live Evaluation Fast-Pass:</b>", style_body), Paragraph("One-Click Role Switching at <code>http://localhost:8000/#/auth</code>", style_body)]
