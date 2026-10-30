@@ -194,6 +194,12 @@ def init_db() -> None:
         cursor.execute("UPDATE civic_posts SET status = 'IN_PROGRESS', assigned_officer = 'Squad Alpha (Inspector V. Sharma)', officer_note = 'Gravel patching crew dispatched on site. Work order #NOI-94821 in execution.' WHERE id = 'post-demo-001';")
         cursor.execute("UPDATE civic_posts SET status = 'ACKNOWLEDGED', assigned_officer = 'Sanitation Zone 3', officer_note = 'Ticket acknowledged by Ward Officer. Compact truck scheduled for immediate clearance.' WHERE id = 'post-demo-002';")
         cursor.execute("UPDATE civic_posts SET status = 'REPORTED', assigned_officer = 'Unassigned', officer_note = 'Pending review by Electrical Division supervisor.' WHERE id = 'post-demo-003';")
+        cursor.execute("UPDATE civic_posts SET image_url = '/static/images/demo/dark_streetlight.jpg' WHERE id = 'post-demo-005';")
+        cursor.execute("UPDATE civic_posts SET image_url = '/static/images/demo/open_manhole.jpg' WHERE id = 'post-demo-006';")
+        cursor.execute("UPDATE civic_posts SET image_url = '/static/images/demo/broken_sidewalk.jpg' WHERE id = 'post-demo-007';")
+        cursor.execute("UPDATE civic_posts SET image_url = '/static/images/demo/sewer_overflow.jpg' WHERE id = 'post-demo-008';")
+        cursor.execute("UPDATE civic_posts SET image_url = '/static/images/demo/fallen_tree.jpg' WHERE id = 'post-demo-009';")
+        cursor.execute("UPDATE civic_posts SET image_url = '/static/images/demo/construction_debris.jpg' WHERE id = 'post-demo-010';")
 
         # Dynamic Schema Migrations for service_bids
         cursor.execute("PRAGMA table_info(service_bids);")
@@ -872,7 +878,7 @@ def seed_initial_data() -> None:
                 "A 400m stretch on Link Road has 8 consecutive defunct sodium lamps. Complete darkness creates severe security risk "
                 "for women and cyclists after 8 PM."
             ),
-            "image_url": "/static/images/demo/utility_pole.jpg",
+            "image_url": "/static/images/demo/dark_streetlight.jpg",
             "location_city": "Anand Vihar Link Road",
             "ward": "Ward 16, Link Road",
             "lat": 28.6410,
@@ -899,7 +905,7 @@ def seed_initial_data() -> None:
                 "Concrete manhole cover broken into storm drain. Opening is 3 feet wide adjacent to children swing area. "
                 "Immediate barricading and replacement cover required."
             ),
-            "image_url": "/static/images/demo/pothole.jpg",
+            "image_url": "/static/images/demo/open_manhole.jpg",
             "location_city": "Sector 62 Community Park",
             "ward": "Sector 62, Ward 9",
             "lat": 28.6289,
@@ -925,7 +931,7 @@ def seed_initial_data() -> None:
             "description": (
                 "Heavy rains caused 30 feet of pedestrian footpath pavers to cave in. Senior citizens and strollers forced onto busy vehicular road."
             ),
-            "image_url": "/static/images/demo/pothole.jpg",
+            "image_url": "/static/images/demo/broken_sidewalk.jpg",
             "location_city": "Raj Nagar Extension",
             "ward": "Raj Nagar Ext, Ward 22",
             "lat": 28.6900,
@@ -951,7 +957,7 @@ def seed_initial_data() -> None:
             "description": (
                 "Sewer line clogged with commercial waste, overflowing onto shopping arcade walkway. Intense bio-hazard and breeding ground for flies."
             ),
-            "image_url": "/static/images/demo/garbage.jpg",
+            "image_url": "/static/images/demo/sewer_overflow.jpg",
             "location_city": "Vaishali Sector 4",
             "ward": "Vaishali Sector 4, Ward 7",
             "lat": 28.6470,
@@ -977,7 +983,7 @@ def seed_initial_data() -> None:
             "description": (
                 "Storm-damaged banyan tree limb collapsed across two-lane access road. School buses and ambulances unable to pass."
             ),
-            "image_url": "/static/images/demo/pothole.jpg",
+            "image_url": "/static/images/demo/fallen_tree.jpg",
             "location_city": "Vasundhara Sector 11",
             "ward": "Vasundhara Sector 11, Ward 3",
             "lat": 28.6620,
@@ -1003,7 +1009,7 @@ def seed_initial_data() -> None:
             "description": (
                 "Unlicensed dumping of concrete blocks, sharp tiles, and iron rods obstructing the bicycle corridor. Causes puncture hazards and narrows traffic."
             ),
-            "image_url": "/static/images/demo/garbage.jpg",
+            "image_url": "/static/images/demo/construction_debris.jpg",
             "location_city": "Indirapuram Green Corridor",
             "ward": "Ward 11, Indirapuram",
             "lat": 28.6400,

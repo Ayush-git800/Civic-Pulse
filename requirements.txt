@@ -4,3 +4,5 @@ python-dotenv
 google-genai
 pydantic
 python-multipart
+reportlab
+pillow
