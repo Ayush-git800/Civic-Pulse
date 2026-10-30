@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, Field
 
 
@@ -47,20 +47,28 @@ class ServiceJobCreate(BaseModel):
 
 class BidCreate(BaseModel):
     """Schema for a worker submitting a bid on a service job."""
-    worker_name: str = Field(..., min_length=2, description="Name of the contractor or technician")
-    worker_phone: str = Field(..., min_length=7, description="Contact phone number")
-    bid_amount: int = Field(..., gt=0, description="Proposed quotation in INR")
+    worker_name: Optional[str] = Field("Verified Technician", description="Name of the contractor or technician")
+    worker_phone: Optional[str] = Field("+91 98450 12345", description="Contact phone number")
+    technician_id: Optional[int] = Field(1, description="Technician account ID")
+    technician_name: Optional[str] = Field(None, description="Technician display name")
+    technician_trade: Optional[str] = Field("General Repair", description="Trade specialization")
+    amount: Optional[float] = Field(None, description="Proposed quotation in INR")
+    bid_amount: Optional[float] = Field(None, description="Proposed quotation in INR")
+    note: Optional[str] = Field(None, description="Quotation note / turnaround time")
+    notes: Optional[str] = Field(None, description="Quotation note")
 
 
 class CounterBidCreate(BaseModel):
-    """Schema for a resident countering a contractor bid."""
-    counter_amount: int = Field(..., gt=0, description="Counter offered amount in INR")
+    """Schema for a resident or technician submitting a counter offer."""
+    counter_amount: float = Field(..., gt=0, description="Counter offered amount in INR")
+    actor_role: Optional[str] = Field("CITIZEN", description="Role initiating the counter: 'CITIZEN' or 'TECHNICIAN'")
 
 
 class AcceptBidCreate(BaseModel):
     """Schema for confirming and accepting a final agreed bid."""
+    bid_id: Optional[Union[str, int]] = Field(None, description="Associated bid ID to accept")
     job_id: Optional[str] = Field(None, description="Associated service job ID")
-    final_price: str = Field(..., description="Final agreed price string (e.g., ₹600)")
+    final_price: Optional[str] = Field(None, description="Final agreed price string (e.g., ₹600)")
 
 
 class ChatRequest(BaseModel):

@@ -46,6 +46,7 @@ const state = {
   chatHistory: [],
   civicCategory: 'ALL',
   civicSearch: '',
+  civicFeedMode: 'all', // 'all' (community feed) or 'mine' (reported issues)
   serviceCategory: 'ALL',
   serviceSearch: '',
   // Pillar 3: Multi-Sided Persona & Operations State
@@ -389,6 +390,42 @@ function applyServiceFilters() {
 }
 
 // --- 3. Civic Feed Management ---
+function openNewHazardModal() {
+  openModal('modal-civic');
+}
+
+function switchCivicFeed(mode) {
+  state.civicFeedMode = mode;
+  const tabCommunity = document.getElementById('tabFeedCommunity');
+  const tabMine = document.getElementById('tabFeedMine');
+
+  if (tabCommunity && tabMine) {
+    if (mode === 'all') {
+      tabCommunity.className = 'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 text-white shadow-xs transition-all flex items-center gap-2';
+      tabMine.className = 'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all flex items-center gap-2';
+    } else {
+      tabMine.className = 'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 text-white shadow-xs transition-all flex items-center gap-2';
+      tabCommunity.className = 'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all flex items-center gap-2';
+    }
+  }
+  loadCivicFeed();
+}
+
+function formatTimeAgo(dateStr) {
+  if (!dateStr) return 'Recently';
+  const now = new Date();
+  const past = new Date(dateStr.replace(' ', 'T'));
+  const diffSecs = Math.floor((now - past) / 1000);
+  if (isNaN(diffSecs) || diffSecs < 60) return 'Just now';
+  const diffMins = Math.floor(diffSecs / 60);
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return past.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+}
+
 async function updateGrievanceSummaryBar() {
   const totalEl = document.getElementById('summary-total-reported');
   const inProgEl = document.getElementById('summary-in-progress');
@@ -410,11 +447,24 @@ async function updateGrievanceSummaryBar() {
 
 async function loadCivicFeed() {
   const grid = document.getElementById('civic-posts-grid');
+  const badgeCountEl = document.getElementById('myReportsBadgeCount');
+  const userCid = state.auth?.user?.id || 1;
+
   try {
-    const res = await fetch('/api/civic/posts');
+    const feedUrl = `/api/civic/feed?filter=${state.civicFeedMode}&citizen_id=${userCid}`;
+    const res = await fetch(feedUrl);
     state.civicPosts = await res.json();
     applyCivicFilters();
     updateGrievanceSummaryBar();
+
+    // Refresh "My Reported Issues" badge count
+    const mineRes = await fetch(`/api/civic/feed?filter=mine&citizen_id=${userCid}`);
+    if (mineRes.ok) {
+      const minePosts = await mineRes.json();
+      if (badgeCountEl) {
+        badgeCountEl.textContent = Array.isArray(minePosts) ? minePosts.length : 0;
+      }
+    }
   } catch (err) {
     if (grid) {
       grid.innerHTML = `
@@ -581,17 +631,30 @@ function renderCivicLifecycleStepper(status, officerNote, assignedOfficer) {
 
 function renderCivicCards(posts) {
   const grid = document.getElementById('civic-posts-grid');
+  if (!grid) return;
+
+  const isMineTab = state.civicFeedMode === 'mine';
+
   if (!posts || posts.length === 0) {
     grid.innerHTML = `
       <div class="col-span-full py-16 text-center bg-white/80 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div class="w-12 h-12 mx-auto rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mb-3">
-          <i data-lucide="check-circle" class="w-6 h-6"></i>
+        <div class="w-12 h-12 mx-auto rounded-full ${isMineTab ? 'bg-amber-50 text-amber-600' : 'bg-indigo-50 text-indigo-600'} flex items-center justify-center mb-3">
+          <i data-lucide="${isMineTab ? 'clipboard-list' : 'check-circle'}" class="w-6 h-6"></i>
         </div>
-        <h3 class="text-sm font-bold text-slate-800">No matching civic grievances</h3>
-        <p class="text-xs text-slate-500 mt-1">Try clearing filters or search query.</p>
-        <button onclick="setCivicCategory('ALL'); if(document.getElementById('civic-search-input')) document.getElementById('civic-search-input').value=''; handleCivicFilter();" class="mt-3 px-3.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl transition-all">
-          Clear All Filters
-        </button>
+        <h3 class="text-sm font-bold text-slate-800">${isMineTab ? 'No grievances reported yet by your account' : 'No matching community hazards'}</h3>
+        <p class="text-xs text-slate-500 mt-1">${isMineTab ? 'Report your first road hazard or water defect to track its municipal lifecycle.' : 'Try clearing filters or search query.'}</p>
+        <div class="mt-4 flex items-center justify-center gap-2">
+          ${
+            isMineTab
+              ? `<button onclick="openNewHazardModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center gap-1.5">
+                   <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                   <span>Report New Hazard</span>
+                 </button>`
+              : `<button onclick="setCivicCategory('ALL'); if(document.getElementById('civic-search-input')) document.getElementById('civic-search-input').value=''; handleCivicFilter();" class="px-3.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl transition-all">
+                   Clear All Filters
+                 </button>`
+          }
+        </div>
       </div>
     `;
     if (window.lucide) lucide.createIcons();
@@ -603,6 +666,11 @@ function renderCivicCards(posts) {
       const isCentral = post.is_local === 0 || post.is_local === false;
       const portals = Array.isArray(post.external_portals) ? post.external_portals : [];
       const comments = post.comments || [];
+      const authorName = post.citizen_name || 'Resident';
+      const authorInitials = authorName.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase() || 'CP';
+      const postWard = post.ward || post.location_city || 'Sector 62, Noida';
+      const timeAgoStr = formatTimeAgo(post.created_at);
+      const isMyPost = (state.auth?.user?.id && post.citizen_id === state.auth.user.id) || (post.citizen_id === 1 && !state.auth);
 
       // Escalation Card for Non-Municipal Jurisdiction
       let escalationHtml = '';
@@ -659,8 +727,39 @@ function renderCivicCards(posts) {
         .join('');
 
       return `
-        <article class="animate-fade-up card-hover-lift group bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_32px_-6px_rgba(79,70,229,0.12)] flex flex-col justify-between overflow-hidden" style="animation-delay: ${index * 70}ms;">
+        <article class="animate-fade-up card-hover-lift group bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_32px_-6px_rgba(79,70,229,0.12)] flex flex-col justify-between overflow-hidden" style="animation-delay: ${index * 60}ms;">
           <div>
+            <!-- Social Community Author & Location Header -->
+            <div class="p-4 pb-3 border-b border-slate-100 flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-700 to-purple-600 text-white font-extrabold text-xs flex items-center justify-center shadow-xs shrink-0">
+                  ${authorInitials}
+                </div>
+                <div class="min-w-0">
+                  <div class="font-bold text-slate-900 text-xs flex items-center gap-1.5 truncate">
+                    <span>${escapeHtml(authorName)}</span>
+                    ${isMyPost ? `<span class="px-1.5 py-0.2 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200/80 text-[9px] font-black uppercase">You</span>` : ''}
+                  </div>
+                  <div class="text-[10px] text-slate-500 flex items-center gap-1.5 truncate">
+                    <span class="text-indigo-600 font-semibold">📍 ${escapeHtml(postWard)}</span>
+                    <span>•</span>
+                    <span class="text-slate-400">${timeAgoStr}</span>
+                  </div>
+                </div>
+              </div>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                (post.status || '').toUpperCase() === 'RESOLVED'
+                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                  : (post.status || '').toUpperCase() === 'IN_PROGRESS'
+                  ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                  : (post.status || '').toUpperCase() === 'ACKNOWLEDGED'
+                  ? 'bg-indigo-100 text-indigo-800 border border-indigo-300'
+                  : 'bg-slate-100 text-slate-700 border border-slate-200'
+              }">
+                ${escapeHtml(post.status || 'Reported')}
+              </span>
+            </div>
+
             <!-- Image with Zoom & Evidence Lightbox Trigger -->
             ${
               post.image_url
@@ -674,7 +773,7 @@ function renderCivicCards(posts) {
                 </div>
                 <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white text-[11px] font-semibold">
                   <span class="flex items-center gap-1 drop-shadow-sm"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-400"></i> ${escapeHtml(post.location_city)}</span>
-                  <span class="px-2 py-0.5 rounded-full bg-black/40 backdrop-blur-md border border-white/20">${escapeHtml(post.status || 'Reported')}</span>
+                  <span class="px-2 py-0.5 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-[10px]">Evidence</span>
                 </div>
               </div>
             `
@@ -696,7 +795,7 @@ function renderCivicCards(posts) {
                 ${escapeHtml(post.description)}
               </p>
 
-              <!-- Multi-Stage Grievance Lifecycle Stepper -->
+              <!-- Multi-Stage Grievance Lifecycle Stepper (prominent in 'My Reports' view) -->
               ${renderCivicLifecycleStepper(post.status, post.officer_note, post.assigned_officer)}
 
               <!-- Central Escalation Alert (if non-local) -->
@@ -709,9 +808,9 @@ function renderCivicCards(posts) {
             <div class="flex items-center justify-between gap-2">
               <div class="flex flex-wrap items-center gap-2">
                 <button onclick="handleUpvote('${post.id}', this)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-50 border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-300 text-xs font-bold transition-all shadow-xs">
-                  <i data-lucide="heart" class="w-3.5 h-3.5 text-rose-500"></i>
+                  <i data-lucide="thumbs-up" class="w-3.5 h-3.5 text-indigo-600"></i>
                   <span>Upvote</span>
-                  <span id="upvotes-count-${post.id}" class="text-slate-900 font-extrabold ml-0.5">${post.upvotes || 0}</span>
+                  <span id="upvotes-count-${post.id}" class="text-slate-900 font-extrabold ml-0.5">${post.upvotes_count || post.upvotes || 0}</span>
                 </button>
                 <button onclick="handleFlagUrgent('${post.id}', this)" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white hover:bg-rose-50 border border-slate-200 text-slate-700 hover:text-rose-600 hover:border-rose-300 text-xs font-bold transition-all shadow-xs" title="Flag as critical civic emergency">
                   <i data-lucide="flame" class="w-3.5 h-3.5 text-amber-500"></i>
@@ -719,7 +818,7 @@ function renderCivicCards(posts) {
                 </button>
                 <button onclick="openLetterModal('${post.id}')" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white hover:bg-indigo-50 border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-300 text-xs font-bold transition-all shadow-xs" title="Generate formal Municipal Notice or RTI Application">
                   <i data-lucide="file-text" class="w-3.5 h-3.5 text-indigo-600"></i>
-                  <span class="hidden sm:inline">Draft Official Letter</span>
+                  <span class="hidden sm:inline">${isMineTab ? 'Download Formal RTI' : 'Draft Letter'}</span>
                   <span class="sm:hidden">Letter</span>
                 </button>
               </div>
@@ -741,8 +840,8 @@ function renderCivicCards(posts) {
                 ${commentsHtml || '<p class="text-[11px] text-slate-400 italic">No citizen comments yet. Leave the first update!</p>'}
               </div>
               <form onsubmit="handleCommentPost(event, '${post.id}')" class="flex gap-2 pt-1.5">
-                <input id="comm-author-${post.id}" type="text" placeholder="Your name" class="w-1/3 text-xs border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
-                <input id="comm-text-${post.id}" type="text" placeholder="Update or ticket #..." class="flex-1 text-xs border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+                <input id="comm-author-${post.id}" type="text" placeholder="Your name" value="${state.auth?.user?.name || ''}" class="w-1/3 text-xs border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+                <input id="comm-text-${post.id}" type="text" placeholder="Community update..." class="flex-1 text-xs border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
                 <button type="submit" class="px-3 py-1.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-xs transition-colors">Post</button>
               </form>
             </div>
@@ -877,21 +976,93 @@ function renderServiceCards(jobs) {
 
       const bidsHtml = bids
         .map((b) => {
-          const isAccepted = b.status === 'Accepted';
-          const isCountered = b.status === 'Countered';
+          const isAccepted = (b.status || '').toUpperCase() === 'ACCEPTED';
+          const isRejected = (b.status || '').toUpperCase() === 'REJECTED';
+          const isCountered = (b.status || '').toUpperCase() === 'COUNTERED';
+          const lastActionBy = (b.last_action_by || '').toUpperCase();
+          const currentAmt = b.current_amount || b.counter_amount || b.bid_amount || 0;
           const techRating = b.rating ? Number(b.rating).toFixed(1) : '5.0';
           const techReviews = b.review_count !== undefined ? b.review_count : 0;
           const techWorks = b.works_completed !== undefined ? b.works_completed : 0;
+          const techName = b.technician_name || b.worker_name || 'Verified Technician';
+
+          let bidActionHtml = '';
+
+          if (isAccepted) {
+            bidActionHtml = `
+              <div class="flex items-center justify-between pt-2 border-t border-emerald-200 flex-wrap gap-2">
+                <div class="text-[11px] font-extrabold text-emerald-800 flex items-center gap-1.5">
+                  <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
+                  <span>🎉 Deal Confirmed for ₹${currentAmt}! Contract Finalized</span>
+                </div>
+                <button onclick="openReviewModal('${job.id}', ${b.technician_id || 1}, '${escapeHtml(techName)}')" class="px-3 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-xs">
+                  <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-500"></i>
+                  <span>Rate & Review</span>
+                </button>
+              </div>
+            `;
+          } else if (isRejected) {
+            bidActionHtml = `
+              <div class="pt-2 border-t border-slate-100 text-[11px] text-slate-400 font-semibold flex items-center gap-1">
+                <i data-lucide="x-circle" class="w-3.5 h-3.5 text-slate-400"></i>
+                <span>Outbid / Archived</span>
+              </div>
+            `;
+          } else if (isCountered && lastActionBy === 'CITIZEN') {
+            bidActionHtml = `
+              <div class="pt-2 border-t border-amber-100 text-[11px] font-semibold text-amber-800 bg-amber-50/80 p-2.5 rounded-xl flex items-center justify-between gap-2 flex-wrap">
+                <div class="flex items-center gap-1.5">
+                  <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600 animate-spin"></i>
+                  <span>⏳ Waiting for technician response (Your Counter: <strong>₹${currentAmt}</strong>)</span>
+                </div>
+                <span class="text-[10px] text-amber-600 font-bold uppercase tracking-wider">Awaiting Confirmation</span>
+              </div>
+            `;
+          } else {
+            // lastActionBy == 'TECHNICIAN'
+            bidActionHtml = `
+              <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                <div class="text-xs font-bold text-slate-800 flex items-center gap-1">
+                  <span>Technician Offer:</span>
+                  <span class="text-emerald-700 font-black text-sm">₹${currentAmt}</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <button onclick="toggleCounterBox('${b.id}')" class="px-3 py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-700 rounded-xl text-xs font-bold transition-colors flex items-center gap-1">
+                    <i data-lucide="message-square" class="w-3 h-3"></i>
+                    <span>Counter Offer</span>
+                  </button>
+                  <button onclick="handleAcceptDeal('${job.id}', '${b.id}', '₹${currentAmt}')" class="px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1">
+                    <i data-lucide="check" class="w-3 h-3"></i>
+                    <span>Accept Deal</span>
+                  </button>
+                </div>
+              </div>
+              <div id="counter-box-${b.id}" class="hidden mt-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                <div class="text-[11px] font-bold text-slate-600 mb-1.5">Enter your counter offer (₹):</div>
+                <div class="flex items-center gap-2">
+                  <div class="relative flex-1">
+                    <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₹</span>
+                    <input id="counter-val-${b.id}" type="number" placeholder="Enter amount" value="${Math.max(100, currentAmt - 100)}" class="w-full pl-6 pr-2 py-1.5 text-xs font-bold rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                  </div>
+                  <button onclick="handleCounterSubmit('${b.id}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors">
+                    Send Counter
+                  </button>
+                </div>
+              </div>
+            `;
+          }
 
           return `
-            <div class="p-3.5 rounded-xl border ${
+            <div class="p-4 rounded-2xl border ${
               isAccepted
                 ? 'bg-emerald-50/90 border-emerald-300 ring-1 ring-emerald-400'
+                : isCountered
+                ? 'bg-amber-50/50 border-amber-200'
                 : 'bg-white border-slate-200/90'
-            } text-xs space-y-2 shadow-xs">
+            } text-xs space-y-2.5 shadow-xs">
               <div class="flex items-center justify-between flex-wrap gap-2">
                 <div class="flex items-center gap-1.5 flex-wrap">
-                  <span class="font-bold text-slate-900">${escapeHtml(b.worker_name)}</span>
+                  <span class="font-extrabold text-slate-900">${escapeHtml(techName)}</span>
                   <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1 shadow-xs">
                     <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-500"></i>
                     <span>${techRating} (${techReviews} reviews) • ${techWorks} jobs</span>
@@ -900,46 +1071,17 @@ function renderServiceCards(jobs) {
                     <i data-lucide="phone" class="w-2.5 h-2.5"></i> ${escapeHtml(b.worker_phone)}
                   </span>
                 </div>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                  isAccepted ? 'bg-emerald-100 text-emerald-800' :
-                  isCountered ? 'bg-amber-100 text-amber-800' :
-                  'bg-slate-100 text-slate-700'
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                  isAccepted ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
+                  isRejected ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                  isCountered ? 'bg-amber-100 text-amber-800 border border-amber-300' :
+                  'bg-indigo-50 text-indigo-700 border border-indigo-200'
                 }">${escapeHtml(b.status)}</span>
               </div>
 
-              <div class="flex items-center gap-3">
-                <span class="font-extrabold text-sm text-slate-900">Bid: ₹${b.bid_amount}</span>
-                ${b.counter_amount ? `<span class="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">Resident Counter: ₹${b.counter_amount}</span>` : ''}
-              </div>
+              ${b.notes ? `<p class="text-[11px] text-slate-600 italic">"${escapeHtml(b.notes)}"</p>` : ''}
 
-              ${
-                !isConfirmed
-                  ? `
-                <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
-                  <div class="flex items-center gap-1 flex-1 min-w-[160px]">
-                    <input id="counter-val-${b.id}" type="number" placeholder="₹ Counter" class="w-24 border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none bg-white">
-                    <button onclick="handleCounterSubmit('${b.id}')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors">
-                      Counter
-                    </button>
-                  </div>
-                  <button onclick="handleAcceptDeal('${job.id}', '${b.id}', '₹${b.counter_amount || b.bid_amount}')" class="px-3 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all">
-                    Accept Deal
-                  </button>
-                </div>
-              `
-                  : `
-                <div class="flex items-center justify-between pt-1 flex-wrap gap-2">
-                  <div class="text-[11px] font-bold text-emerald-800 flex items-center gap-1">
-                    <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
-                    <span>Rate Agreed & Contract Finalized</span>
-                  </div>
-                  <button onclick="openReviewModal('${job.id}', ${b.technician_id || 1}, '${escapeHtml(b.worker_name)}')" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shadow-xs">
-                    <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-500"></i>
-                    <span>Rate & Review</span>
-                  </button>
-                </div>
-              `
-              }
+              ${bidActionHtml}
             </div>
           `;
         })
@@ -1073,8 +1215,14 @@ async function handleQuickBid(e, jobId) {
   }
 }
 
+function toggleCounterBox(bidId) {
+  const el = document.getElementById(`counter-box-${bidId}`);
+  if (el) el.classList.toggle('hidden');
+}
+
 async function handleCounterSubmit(bidId) {
   const inp = document.getElementById(`counter-val-${bidId}`);
+  if (!inp) return;
   const amt = parseInt(inp.value);
   if (isNaN(amt) || amt <= 0) {
     alert('Please enter a valid counter amount in INR');
@@ -1085,11 +1233,13 @@ async function handleCounterSubmit(bidId) {
     const res = await fetch(`/api/services/bids/${bidId}/counter`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ counter_amount: amt }),
+      body: JSON.stringify({ counter_amount: amt, actor_role: 'CITIZEN' }),
     });
     if (res.ok) {
       showToast(`Counter offer of ₹${amt} sent to contractor.`);
       loadServicesFeed();
+    } else {
+      showToast('Failed to submit counter offer.', 'error');
     }
   } catch (err) {
     showToast('Failed to submit counter offer.', 'error');
@@ -2264,10 +2414,12 @@ function renderTechQuotesAndDeals(activeBids, confirmedJobs) {
 
   // Counter-offers & Active Quotes
   if (negSection) {
-    const counteredBids = activeBids.filter((b) => b.status === 'Countered');
-    const pendingBids = activeBids.filter((b) => b.status === 'Pending');
+    const activeList = activeBids.filter((b) => {
+      const s = (b.status || b.bid_status || '').toUpperCase();
+      return s !== 'REJECTED';
+    });
 
-    if (counteredBids.length === 0 && pendingBids.length === 0) {
+    if (activeList.length === 0) {
       negSection.innerHTML = `
         <div class="p-6 rounded-3xl bg-white/70 border border-slate-200 text-center text-slate-400 text-xs">
           No pending quotes under review. Check "Available Household Leads" to submit bids.
@@ -2275,52 +2427,136 @@ function renderTechQuotesAndDeals(activeBids, confirmedJobs) {
     } else {
       let html = '';
 
-      // Prominent Counter-Offer Alerts
-      if (counteredBids.length > 0) {
-        html += counteredBids
-          .map(
-            (b) => `
-          <div class="p-5 rounded-3xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border-2 border-amber-400 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div class="flex items-start gap-3">
-              <div class="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
-                <i data-lucide="handshake" class="w-5 h-5"></i>
+      const counteredByCitizen = activeList.filter((b) => {
+        const s = (b.status || b.bid_status || '').toUpperCase();
+        const actor = (b.last_action_by || '').toUpperCase();
+        return s === 'COUNTERED' && (actor === 'CITIZEN' || !actor);
+      });
+
+      const acceptedBids = activeList.filter((b) => {
+        const s = (b.status || b.bid_status || '').toUpperCase();
+        return s === 'ACCEPTED';
+      });
+
+      const pendingOrCounteredByTech = activeList.filter((b) => {
+        const s = (b.status || b.bid_status || '').toUpperCase();
+        const actor = (b.last_action_by || '').toUpperCase();
+        return s === 'PENDING' || (s === 'COUNTERED' && actor === 'TECHNICIAN');
+      });
+
+      // 1. Prominent Customer Counter-Offer Alerts
+      if (counteredByCitizen.length > 0) {
+        html += counteredByCitizen
+          .map((b) => {
+            const bidId = b.id || b.bid_id;
+            const counterAmt = b.current_amount || b.counter_amount || 0;
+            const initialAmt = b.initial_bid || b.bid_amount || counterAmt;
+            const recounterDefault = Math.round((initialAmt + counterAmt) / 2);
+            return `
+          <div class="p-5 rounded-3xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border-2 border-amber-400 shadow-md flex flex-col gap-3">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                  <i data-lucide="handshake" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white uppercase tracking-wider mb-1">
+                    <span>🔥 Customer Countered with ₹${counterAmt}</span>
+                  </span>
+                  <h4 class="font-extrabold text-slate-900 text-sm">Citizen offered ₹${counterAmt} (Your initial bid: ₹${initialAmt})</h4>
+                  <p class="text-xs text-slate-600 mt-0.5">Job: ${escapeHtml(b.job_title || ('#' + b.job_id))} • Requester: <strong>${escapeHtml(b.citizen_name || 'Homeowner')}</strong> (${escapeHtml(b.citizen_locality || b.location_city || 'Sector 62')})</p>
+                </div>
               </div>
-              <div>
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white uppercase tracking-wider mb-1">
-                  <span>⚡ Homeowner Counter-Offer Received</span>
-                </span>
-                <h4 class="font-extrabold text-slate-900 text-sm">Citizen offered ₹${b.counter_amount} (Your initial bid: ₹${b.bid_amount})</h4>
-                <p class="text-xs text-slate-600 mt-0.5">Job: #${b.job_id} • Notes: "${escapeHtml(b.notes || 'Ready for quick service')}"</p>
+              <div class="flex items-center gap-2 self-end md:self-auto flex-wrap">
+                <button onclick="toggleTechReCounterBox('${bidId}')" class="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all flex items-center gap-1.5 border border-slate-200">
+                  <i data-lucide="repeat" class="w-4 h-4"></i>
+                  <span>🔄 Re-Counter</span>
+                </button>
+                <button onclick="acceptCounterAsTechnician('${b.job_id}', '${bidId}', ${counterAmt})" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/25 transition-all flex items-center gap-1.5">
+                  <i data-lucide="check-circle" class="w-4 h-4"></i>
+                  <span>✅ Accept ₹${counterAmt} & Lock Payout</span>
+                </button>
               </div>
             </div>
-            <div class="flex items-center gap-2 self-end md:self-auto">
-              <button onclick="acceptCounterAsTechnician('${b.job_id}', ${b.id}, ${b.counter_amount})" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/25 transition-all flex items-center gap-1.5">
-                <i data-lucide="check-circle" class="w-4 h-4"></i>
-                <span>Accept Deal at ₹${b.counter_amount} & Lock Payout</span>
-              </button>
+
+            <!-- Inline Re-Counter Form -->
+            <div id="tech-recounter-box-${bidId}" class="hidden p-3 rounded-2xl bg-white border border-amber-200 shadow-xs">
+              <div class="text-[11px] font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                <i data-lucide="arrow-right-left" class="w-3.5 h-3.5 text-amber-600"></i>
+                <span>Propose a revised counter-offer to the resident:</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="relative flex-1 max-w-xs">
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₹</span>
+                  <input id="tech-recounter-val-${bidId}" type="number" placeholder="Enter amount" value="${recounterDefault}" class="w-full pl-7 pr-3 py-1.5 text-xs font-bold rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:outline-none bg-slate-50">
+                </div>
+                <button onclick="handleTechReCounter('${bidId}')" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors">
+                  Send Re-Counter
+                </button>
+              </div>
             </div>
           </div>
-        `
-          )
+        `;
+          })
           .join('');
       }
 
-      // Pending Quotes awaiting response
-      if (pendingBids.length > 0) {
+      // 2. Confirmed & Accepted Bids
+      if (acceptedBids.length > 0) {
+        html += acceptedBids
+          .map((b) => {
+            const finalAmt = b.current_amount || b.counter_amount || b.bid_amount || 0;
+            const phone = b.citizen_phone || b.user_phone || '+91 98765 43210';
+            return `
+          <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 shadow-xs flex items-center justify-between flex-wrap gap-3 mt-3">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <i data-lucide="party-popper" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <span class="font-extrabold text-emerald-900 text-xs">🎉 Deal Confirmed for ₹${finalAmt}! Contact citizen at ${escapeHtml(phone)}</span>
+                <p class="text-[11px] text-emerald-700 mt-0.5">Job: ${escapeHtml(b.job_title || ('#' + b.job_id))} • Requester: <strong>${escapeHtml(b.citizen_name || 'Homeowner')}</strong></p>
+              </div>
+            </div>
+            <a href="tel:${escapeHtml(phone)}" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1">
+              <i data-lucide="phone" class="w-3.5 h-3.5"></i>
+              <span>Call Client</span>
+            </a>
+          </div>
+        `;
+          })
+          .join('');
+      }
+
+      // 3. Pending Quotes awaiting response
+      if (pendingOrCounteredByTech.length > 0) {
         html += `
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-            ${pendingBids
-              .map(
-                (b) => `
+            ${pendingOrCounteredByTech
+              .map((b) => {
+                const actor = (b.last_action_by || '').toUpperCase();
+                const isTechCounter = actor === 'TECHNICIAN' && (b.status || '').toUpperCase() === 'COUNTERED';
+                const amt = b.current_amount || b.bid_amount || 0;
+                return `
               <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between">
                 <div>
-                  <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Under Homeowner Review</div>
-                  <div class="font-bold text-slate-800 text-xs mt-0.5">Job #${b.job_id} • Submitted: ₹${b.bid_amount}</div>
+                  <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    ${isTechCounter ? 'Your Counter Submitted' : 'Under Homeowner Review'}
+                  </div>
+                  <div class="font-bold text-slate-800 text-xs mt-0.5">
+                    ${escapeHtml(b.job_title || ('Job #' + b.job_id))} • ${isTechCounter ? `Countered: ₹${amt}` : `Submitted: ₹${amt}`}
+                  </div>
                 </div>
-                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">Pending</span>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                  isTechCounter
+                    ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                    : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                }">
+                  ${isTechCounter ? '⏳ Awaiting Resident' : '⏳ Awaiting Review'}
+                </span>
               </div>
-            `
-              )
+            `;
+              })
               .join('')}
           </div>
         `;
@@ -2343,6 +2579,7 @@ function renderTechQuotesAndDeals(activeBids, confirmedJobs) {
     confSection.innerHTML = confirmedJobs
       .map((job) => {
         const price = job.final_price || job.agreed_price || 'Agreed Rate';
+        const phone = job.citizen_phone || job.user_phone || '+91 98100 23456';
         return `
         <div class="p-5 rounded-2xl bg-emerald-50/50 border border-emerald-200 shadow-xs flex flex-col justify-between">
           <div>
@@ -2351,20 +2588,21 @@ function renderTechQuotesAndDeals(activeBids, confirmedJobs) {
                 <i data-lucide="shield-check" class="w-3 h-3"></i>
                 <span>Confirmed & Locked in Escrow</span>
               </span>
-              <span class="text-sm font-black text-emerald-800">₹${price}</span>
+              <span class="text-sm font-black text-emerald-800">${price.startsWith('₹') ? price : '₹' + price}</span>
             </div>
 
             <h4 class="font-bold text-slate-900 text-sm leading-snug">${escapeHtml(job.title || 'Household Utility Repair')}</h4>
             <div class="text-xs text-slate-600 mt-2 space-y-1">
-              <p>📍 <strong>Address:</strong> ${escapeHtml(job.location_city || 'Sector 62, Noida')}</p>
+              <p>👤 <strong>Citizen:</strong> ${escapeHtml(job.citizen_name || 'Resident')}</p>
+              <p>📍 <strong>Address:</strong> ${escapeHtml(job.citizen_locality || job.location_city || 'Sector 62, Noida')}</p>
               <p>🔧 <strong>Defect:</strong> ${escapeHtml(job.description || 'Ball valve replacement and water line repair')}</p>
               <p>🤖 <strong>AI Diagnosis:</strong> ${escapeHtml(job.ai_diagnosis || 'Fault diagnosed by Gemma 4')}</p>
             </div>
           </div>
 
           <div class="pt-4 border-t border-emerald-100 mt-4 flex items-center justify-between">
-            <span class="text-[11px] text-emerald-700 font-semibold">Client Phone: <strong>${escapeHtml(job.user_phone || '+91 98100 23456')}</strong></span>
-            <a href="tel:${escapeHtml(job.user_phone || '+91 98100 23456')}" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5">
+            <span class="text-[11px] text-emerald-700 font-semibold">Client Phone: <strong>${escapeHtml(phone)}</strong></span>
+            <a href="tel:${escapeHtml(phone)}" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5">
               <i data-lucide="phone" class="w-3.5 h-3.5"></i>
               <span>Call Client</span>
             </a>
@@ -2378,12 +2616,42 @@ function renderTechQuotesAndDeals(activeBids, confirmedJobs) {
   if (window.lucide) lucide.createIcons();
 }
 
-async function acceptCounterAsTechnician(jobId, bidId, counterAmount) {
+function toggleTechReCounterBox(bidId) {
+  const el = document.getElementById(`tech-recounter-box-${bidId}`);
+  if (el) el.classList.toggle('hidden');
+}
+
+async function handleTechReCounter(bidId) {
+  const inp = document.getElementById(`tech-recounter-val-${bidId}`);
+  if (!inp) return;
+  const amt = parseInt(inp.value);
+  if (isNaN(amt) || amt <= 0) {
+    alert('Please enter a valid counter amount in INR');
+    return;
+  }
+
   try {
-    const res = await fetch(`/api/services/${jobId}/accept`, {
+    const res = await fetch(`/api/services/bids/${bidId}/counter`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bid_id: bidId }),
+      body: JSON.stringify({ counter_amount: amt, actor_role: 'TECHNICIAN' }),
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    showToast(`Re-counter of ₹${amt} sent to homeowner.`);
+    loadTechnicianWorkspace();
+  } catch (err) {
+    console.error('Error submitting technician re-counter:', err);
+    showToast('Failed to submit re-counter.', 'error');
+  }
+}
+
+async function acceptCounterAsTechnician(jobId, bidId, counterAmount) {
+  try {
+    const res = await fetch(`/api/services/bids/${bidId}/accept`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ job_id: jobId, final_price: `₹${counterAmount}` }),
     });
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);

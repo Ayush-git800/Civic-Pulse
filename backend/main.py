@@ -28,6 +28,7 @@ from backend.database import (
     get_bids_for_job,
     get_citizen_reports,
     get_citizen_service_requests,
+    get_civic_feed_posts,
     get_civic_post_by_id,
     get_comments,
     get_service_job_by_id,
@@ -140,6 +141,20 @@ async def health_check() -> Dict[str, str]:
 
 # --- Civic Grievance Endpoints (Phase 2) ---
 
+@app.get("/api/civic/feed", tags=["Civic"])
+async def get_civic_feed(
+    filter: Optional[str] = Query("all"),
+    citizen_id: Optional[int] = Query(None),
+    sort: Optional[str] = Query("newest"),
+) -> List[Dict[str, Any]]:
+    """
+    Public Community Civic Social Feed & Personal Grievance Tracker:
+    - filter='all': community-wide public feed
+    - filter='mine': grievances reported by citizen_id
+    """
+    return get_civic_feed_posts(filter_type=filter, citizen_id=citizen_id, sort_by=sort)
+
+
 @app.get("/api/civic/posts", tags=["Civic"])
 async def list_civic_posts() -> List[Dict[str, Any]]:
     """Retrieve all civic posts with their attached comments."""
@@ -226,7 +241,7 @@ async def upvote_civic_post(post_id: str) -> Dict[str, Any]:
     if not post:
         raise HTTPException(status_code=404, detail="Civic post not found")
     new_count = upvote_post(post_id)
-    return {"post_id": post_id, "id": post_id, "upvotes": new_count}
+    return {"post_id": post_id, "id": post_id, "upvotes": new_count, "upvotes_count": new_count}
 
 
 @app.post("/api/civic/{post_id}/urgent", tags=["Civic"])
@@ -619,25 +634,36 @@ async def submit_bid_on_job(
     payload: BidCreate,
     _role: str = Depends(require_role(["technician"])),
 ) -> Dict[str, Any]:
-    """Submit worker bid on job and advance job status to Negotiating."""
+    """Submit technician bid on job and advance job status to Negotiating."""
     job = get_service_job_by_id(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Service job not found")
 
+    amount = payload.amount if payload.amount is not None else payload.bid_amount
+    if amount is None or amount <= 0:
+        amount = 350.0
+
     created_bid = create_bid(
         job_id=job_id,
-        worker_name=payload.worker_name,
-        worker_phone=payload.worker_phone,
-        bid_amount=payload.bid_amount,
+        worker_name=payload.technician_name or payload.worker_name or "Verified Technician",
+        worker_phone=payload.worker_phone or "+91 98450 12345",
+        bid_amount=amount,
+        notes=payload.note or payload.notes or "",
+        technician_id=payload.technician_id or 1,
+        technician_trade=payload.technician_trade or job.get("category", "General Repair"),
     )
     return created_bid
 
 
 @app.post("/api/services/bids/{bid_id}/counter", tags=["Services"])
 async def submit_counter_bid(bid_id: str, payload: CounterBidCreate) -> Dict[str, Any]:
-    """Submit resident counter offer for a worker bid."""
+    """Submit resident or technician counter offer for a worker bid."""
     try:
-        updated_bid = counter_bid(bid_id=bid_id, counter_amount=payload.counter_amount)
+        updated_bid = counter_bid(
+            bid_id=bid_id,
+            counter_amount=payload.counter_amount,
+            actor_role=payload.actor_role or "CITIZEN",
+        )
         return updated_bid
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -647,13 +673,30 @@ async def submit_counter_bid(bid_id: str, payload: CounterBidCreate) -> Dict[str
 @app.post("/api/services/jobs/{job_id}/bids/{bid_id}/accept", tags=["Services"])
 async def confirm_accepted_bid(
     bid_id: str,
-    payload: AcceptBidCreate,
+    payload: Optional[AcceptBidCreate] = None,
     job_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Accept worker bid, confirm job contract, and lock final price."""
-    effective_job_id = payload.job_id or job_id
+    effective_job_id = (payload.job_id if payload else None) or job_id
+    final_price = payload.final_price if payload else None
     try:
-        result = accept_bid(bid_id=bid_id, job_id=effective_job_id, final_price=payload.final_price)
+        result = accept_bid(bid_id=bid_id, job_id=effective_job_id, final_price=final_price)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.post("/api/services/{job_id}/accept", tags=["Services"])
+async def confirm_accepted_job_bid(
+    job_id: str,
+    payload: AcceptBidCreate,
+) -> Dict[str, Any]:
+    """Accept worker bid by job id and payload containing bid_id."""
+    target_bid_id = str(payload.bid_id) if payload.bid_id is not None else None
+    if not target_bid_id:
+        raise HTTPException(status_code=400, detail="Missing bid_id in request payload")
+    try:
+        result = accept_bid(bid_id=target_bid_id, job_id=job_id, final_price=payload.final_price)
         return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

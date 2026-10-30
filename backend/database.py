@@ -195,6 +195,46 @@ def init_db() -> None:
         cursor.execute("UPDATE civic_posts SET status = 'ACKNOWLEDGED', assigned_officer = 'Sanitation Zone 3', officer_note = 'Ticket acknowledged by Ward Officer. Compact truck scheduled for immediate clearance.' WHERE id = 'post-demo-002';")
         cursor.execute("UPDATE civic_posts SET status = 'REPORTED', assigned_officer = 'Unassigned', officer_note = 'Pending review by Electrical Division supervisor.' WHERE id = 'post-demo-003';")
 
+        # Dynamic Schema Migrations for service_bids
+        cursor.execute("PRAGMA table_info(service_bids);")
+        bid_cols = [row[1] for row in cursor.fetchall()]
+        if "service_id" not in bid_cols:
+            cursor.execute("ALTER TABLE service_bids ADD COLUMN service_id TEXT DEFAULT NULL;")
+        if "technician_id" not in bid_cols:
+            cursor.execute("ALTER TABLE service_bids ADD COLUMN technician_id INTEGER DEFAULT 1;")
+        if "technician_name" not in bid_cols:
+            cursor.execute("ALTER TABLE service_bids ADD COLUMN technician_name TEXT DEFAULT NULL;")
+        if "technician_trade" not in bid_cols:
+            cursor.execute("ALTER TABLE service_bids ADD COLUMN technician_trade TEXT DEFAULT 'General Repair';")
+        if "initial_bid" not in bid_cols:
+            cursor.execute("ALTER TABLE service_bids ADD COLUMN initial_bid REAL DEFAULT NULL;")
+        if "current_amount" not in bid_cols:
+            cursor.execute("ALTER TABLE service_bids ADD COLUMN current_amount REAL DEFAULT NULL;")
+        if "last_action_by" not in bid_cols:
+            cursor.execute("ALTER TABLE service_bids ADD COLUMN last_action_by TEXT DEFAULT 'TECHNICIAN';")
+        if "notes" not in bid_cols:
+            cursor.execute("ALTER TABLE service_bids ADD COLUMN notes TEXT DEFAULT '';")
+        if "updated_at" not in bid_cols:
+            cursor.execute("ALTER TABLE service_bids ADD COLUMN updated_at TIMESTAMP DEFAULT NULL;")
+
+        # Migrations for civic_posts
+        if "ward" not in columns:
+            cursor.execute("ALTER TABLE civic_posts ADD COLUMN ward TEXT DEFAULT NULL;")
+        if "upvotes_count" not in columns:
+            cursor.execute("ALTER TABLE civic_posts ADD COLUMN upvotes_count INTEGER DEFAULT 0;")
+
+        # Backfill service_bids
+        cursor.execute("UPDATE service_bids SET service_id = job_id WHERE service_id IS NULL;")
+        cursor.execute("UPDATE service_bids SET initial_bid = bid_amount WHERE initial_bid IS NULL;")
+        cursor.execute("UPDATE service_bids SET current_amount = COALESCE(counter_amount, bid_amount) WHERE current_amount IS NULL;")
+        cursor.execute("UPDATE service_bids SET technician_name = worker_name WHERE technician_name IS NULL;")
+        cursor.execute("UPDATE service_bids SET last_action_by = CASE WHEN UPPER(status) = 'COUNTERED' THEN 'CITIZEN' ELSE 'TECHNICIAN' END WHERE last_action_by IS NULL;")
+        cursor.execute("UPDATE service_bids SET status = UPPER(status);")
+
+        # Backfill civic_posts
+        cursor.execute("UPDATE civic_posts SET ward = location_city WHERE ward IS NULL;")
+        cursor.execute("UPDATE civic_posts SET upvotes_count = upvotes WHERE upvotes_count IS NULL OR upvotes_count = 0;")
+
         cursor.execute("PRAGMA table_info(users);")
         user_cols = [row[1] for row in cursor.fetchall()]
         if user_cols:
@@ -259,6 +299,21 @@ def _format_post(row: Union[sqlite3.Row, dict]) -> dict:
             item["external_portals"] = [p.strip() for p in raw_portals.split(",") if p.strip()] if raw_portals else []
     elif raw_portals is None:
         item["external_portals"] = []
+
+    if item.get("upvotes_count") is None:
+        item["upvotes_count"] = item.get("upvotes") or 0
+    if item.get("upvotes") is None:
+        item["upvotes"] = item.get("upvotes_count") or 0
+    if not item.get("ward"):
+        item["ward"] = item.get("location_city") or "Noida"
+    if not item.get("author_name"):
+        item["author_name"] = item.get("citizen_name") or "Resident"
+    if not item.get("citizen_name"):
+        item["citizen_name"] = item.get("author_name") or "Resident"
+    if not item.get("ai_hazard_category"):
+        item["ai_hazard_category"] = item.get("department") or "Civic"
+    if not item.get("ai_urgency"):
+        item["ai_urgency"] = item.get("severity") or "Moderate"
     return item
 
 
@@ -363,13 +418,37 @@ def upvote_post(post_id: str) -> int:
     with db_lock:
         cursor = conn.cursor()
         cursor.execute(
-            "UPDATE civic_posts SET upvotes = upvotes + 1 WHERE id = ?;",
+            "UPDATE civic_posts SET upvotes = upvotes + 1, upvotes_count = upvotes_count + 1 WHERE id = ?;",
             (post_id,),
         )
         conn.commit()
-        cursor.execute("SELECT upvotes FROM civic_posts WHERE id = ?;", (post_id,))
+        cursor.execute("SELECT upvotes, upvotes_count FROM civic_posts WHERE id = ?;", (post_id,))
         row = cursor.fetchone()
-        return row["upvotes"] if row else 0
+        if not row:
+            return 1
+        return row["upvotes_count"] if row["upvotes_count"] is not None else (row["upvotes"] or 1)
+
+
+def get_civic_feed_posts(
+    filter_type: Optional[str] = "all",
+    citizen_id: Optional[int] = None,
+    sort_by: Optional[str] = "newest",
+) -> list[dict]:
+    """Retrieve civic feed posts for community social feed or personal reported grievances."""
+    with db_lock:
+        cursor = conn.cursor()
+        order_clause = "ORDER BY upvotes_count DESC, created_at DESC" if sort_by == "upvoted" else "ORDER BY created_at DESC"
+        if (filter_type or "").lower() == "mine":
+            cid = citizen_id or 1
+            cursor.execute(f"SELECT * FROM civic_posts WHERE citizen_id = ? {order_clause};", (cid,))
+        else:
+            cursor.execute(f"SELECT * FROM civic_posts {order_clause};")
+        rows = cursor.fetchall()
+        posts = [_format_post(r) for r in rows]
+
+    for p in posts:
+        p["comments"] = get_comments(p["id"])
+    return posts
 
 
 def flag_urgent_post(post_id: str) -> int:
@@ -486,42 +565,105 @@ def create_service_job(job_data: dict) -> dict:
     return created
 
 
+def _format_bid_record(r: Union[sqlite3.Row, dict]) -> dict:
+    b = dict(r)
+    if b.get("initial_bid") is None:
+        b["initial_bid"] = b.get("bid_amount") or 0
+    if b.get("current_amount") is None:
+        b["current_amount"] = b.get("counter_amount") or b.get("bid_amount") or 0
+    if not b.get("technician_name"):
+        b["technician_name"] = b.get("worker_name") or "Verified Technician"
+    if not b.get("worker_name"):
+        b["worker_name"] = b["technician_name"]
+    if not b.get("service_id"):
+        b["service_id"] = b.get("job_id")
+    if not b.get("job_id"):
+        b["job_id"] = b.get("service_id")
+    if not b.get("last_action_by"):
+        b["last_action_by"] = "CITIZEN" if (b.get("status") or "").upper() == "COUNTERED" else "TECHNICIAN"
+    b["status"] = (b.get("status") or "PENDING").upper()
+    if b.get("rating") is None:
+        b["rating"] = 5.0
+    if b.get("review_count") is None:
+        b["review_count"] = 0
+    if b.get("works_completed") is None:
+        b["works_completed"] = 0
+    return b
+
+
 def get_bids_for_job(job_id: str) -> list[dict]:
     """Retrieve all bids for a given job ordered by creation date."""
     with db_lock:
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT * FROM service_bids WHERE job_id = ? ORDER BY created_at ASC;",
-            (job_id,),
+            """
+            SELECT b.*,
+                   u.rating, u.review_count, u.works_completed, u.trade AS user_trade,
+                   j.citizen_phone, j.citizen_name, j.title AS job_title
+            FROM service_bids b
+            LEFT JOIN users u ON b.technician_id = u.id
+            LEFT JOIN service_jobs j ON (b.job_id = j.id OR b.service_id = j.id)
+            WHERE b.job_id = ? OR b.service_id = ?
+            ORDER BY b.created_at ASC;
+            """,
+            (job_id, job_id),
         )
         rows = cursor.fetchall()
-        return [dict(r) for r in rows]
+        return [_format_bid_record(r) for r in rows]
 
 
 def get_bid_by_id(bid_id: str) -> Optional[dict]:
     """Retrieve a single bid by its ID."""
     with db_lock:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM service_bids WHERE id = ?;", (bid_id,))
+        cursor.execute(
+            """
+            SELECT b.*,
+                   u.rating, u.review_count, u.works_completed, u.trade AS user_trade,
+                   j.citizen_phone, j.citizen_name, j.title AS job_title
+            FROM service_bids b
+            LEFT JOIN users u ON b.technician_id = u.id
+            LEFT JOIN service_jobs j ON (b.job_id = j.id OR b.service_id = j.id)
+            WHERE b.id = ?;
+            """,
+            (bid_id,),
+        )
         row = cursor.fetchone()
-        return dict(row) if row else None
+        return _format_bid_record(row) if row else None
 
 
-def create_bid(job_id: str, worker_name: str, worker_phone: str, bid_amount: int) -> dict:
+def create_bid(
+    job_id: str,
+    worker_name: str = "Verified Technician",
+    worker_phone: str = "+91 98450 12345",
+    bid_amount: float = 350.0,
+    notes: str = "",
+    technician_id: int = 1,
+    technician_trade: str = "General Repair",
+) -> dict:
     """Create a new service bid on a job and update job status to Negotiating."""
     bid_id = str(uuid.uuid4())
+    numeric_amount = float(bid_amount)
     with db_lock:
         cursor = conn.cursor()
         cursor.execute(
             """
-            INSERT INTO service_bids (id, job_id, worker_name, worker_phone, bid_amount, status)
-            VALUES (?, ?, ?, ?, ?, 'Pending');
+            INSERT INTO service_bids (
+                id, job_id, service_id, worker_name, technician_name, worker_phone,
+                technician_id, technician_trade, bid_amount, initial_bid, current_amount,
+                last_action_by, status, notes
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'TECHNICIAN', 'PENDING', ?);
             """,
-            (bid_id, job_id, worker_name, worker_phone, bid_amount),
+            (
+                bid_id, job_id, job_id, worker_name, worker_name, worker_phone,
+                technician_id, technician_trade, int(numeric_amount), numeric_amount, numeric_amount,
+                notes or "",
+            ),
         )
-        # Update parent job status to Negotiating
+        # Update parent job status to Negotiating if not confirmed
         cursor.execute(
-            "UPDATE service_jobs SET status = 'Negotiating' WHERE id = ?;",
+            "UPDATE service_jobs SET status = 'Negotiating' WHERE id = ? AND status NOT IN ('Confirmed', 'IN_PROGRESS');",
             (job_id,),
         )
         conn.commit()
@@ -532,17 +674,19 @@ def create_bid(job_id: str, worker_name: str, worker_phone: str, bid_amount: int
     return created
 
 
-def counter_bid(bid_id: str, counter_amount: int) -> dict:
-    """Submit a counter offer for a worker's bid."""
+def counter_bid(bid_id: str, counter_amount: float, actor_role: str = "CITIZEN") -> dict:
+    """Submit a two-way counter offer for a service bid."""
+    role = (actor_role or "CITIZEN").upper()
+    numeric_counter = float(counter_amount)
     with db_lock:
         cursor = conn.cursor()
         cursor.execute(
             """
             UPDATE service_bids
-            SET counter_amount = ?, status = 'Countered'
+            SET counter_amount = ?, current_amount = ?, last_action_by = ?, status = 'COUNTERED', updated_at = CURRENT_TIMESTAMP
             WHERE id = ?;
             """,
-            (counter_amount, bid_id),
+            (int(numeric_counter), numeric_counter, role, bid_id),
         )
         conn.commit()
 
@@ -552,37 +696,45 @@ def counter_bid(bid_id: str, counter_amount: int) -> dict:
     return updated
 
 
-def accept_bid(bid_id: str, job_id: Optional[str] = None, final_price: str = "") -> dict:
+def accept_bid(bid_id: str, job_id: Optional[str] = None, final_price: Optional[str] = None) -> dict:
     """Accept a worker bid, confirm the job, and update final negotiated price."""
     with db_lock:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM service_bids WHERE id = ?;", (bid_id,))
-        bid = cursor.fetchone()
-        if not bid:
+        row = cursor.fetchone()
+        if not row:
             raise ValueError(f"Bid not found with id: {bid_id}")
+        bid = dict(row)
 
-        resolved_job_id = job_id or bid["job_id"]
-
+        resolved_job_id = job_id or bid["job_id"] or bid["service_id"]
         worker_phone = bid["worker_phone"]
+        tech_id = bid.get("technician_id") or 1
+        price_val = bid.get("current_amount") or bid.get("counter_amount") or bid.get("bid_amount") or 0
+        resolved_price = final_price or f"₹{int(price_val)}"
 
         # Accept selected bid
         cursor.execute(
-            "UPDATE service_bids SET status = 'Accepted' WHERE id = ?;",
+            "UPDATE service_bids SET status = 'ACCEPTED', updated_at = CURRENT_TIMESTAMP WHERE id = ?;",
             (bid_id,),
         )
-        # Mark other bids for this job as Rejected
+        # Mark other bids for this job as REJECTED
         cursor.execute(
-            "UPDATE service_bids SET status = 'Rejected' WHERE job_id = ? AND id != ?;",
-            (resolved_job_id, bid_id),
+            "UPDATE service_bids SET status = 'REJECTED', updated_at = CURRENT_TIMESTAMP WHERE (job_id = ? OR service_id = ?) AND id != ?;",
+            (resolved_job_id, resolved_job_id, bid_id),
         )
-        # Update job status to Confirmed, final price, and assigned worker phone
+        # Update job status to IN_PROGRESS, final price, and assigned worker phone
         cursor.execute(
             """
             UPDATE service_jobs
-            SET status = 'Confirmed', final_price = ?, assigned_worker_phone = ?
+            SET status = 'IN_PROGRESS', final_price = ?, assigned_worker_phone = ?
             WHERE id = ?;
             """,
-            (final_price, worker_phone, resolved_job_id),
+            (resolved_price, worker_phone, resolved_job_id),
+        )
+        # Increment completed jobs count for the technician
+        cursor.execute(
+            "UPDATE users SET works_completed = works_completed + 1 WHERE id = ?;",
+            (tech_id,),
         )
         conn.commit()
 
@@ -590,98 +742,311 @@ def accept_bid(bid_id: str, job_id: Optional[str] = None, final_price: str = "")
     updated_job = get_service_job_by_id(resolved_job_id)
     if not updated_bid:
         raise ValueError(f"Bid not found with id: {bid_id}")
-    return {"bid": updated_bid, "job": updated_job}
+    return {"bid": updated_bid, "job": updated_job, "status": "success", "final_price": resolved_price}
 
 
 def seed_initial_data() -> None:
     """Seed realistic Indian demo data for civic posts and service jobs if empty."""
     with db_lock:
         cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) AS count FROM civic_posts;")
-        civic_count = cursor.fetchone()["count"]
+        cursor.execute("SELECT id FROM civic_posts;")
+        existing_post_ids = {r["id"] for r in cursor.fetchall()}
 
         cursor.execute("SELECT COUNT(*) AS count FROM service_jobs;")
         jobs_count = cursor.fetchone()["count"]
 
-    if civic_count == 0:
-        # Seed realistic Indian municipal concerns
-        demo_posts = [
-            {
-                "id": "post-demo-001",
-                "title": "Deep Pothole near Sector 62 Metro Station",
-                "description": (
-                    "Dangerous crater-sized pothole right after exiting the metro station towards "
-                    "the electronic city roundabout. Two-wheelers frequently skid during waterlogging, "
-                    "causing immediate hazard for daily commuters."
-                ),
-                "image_url": "/static/images/demo/pothole.jpg",
-                "location_city": "Noida",
-                "lat": 28.6271,
-                "lng": 77.3617,
-                "department": "Road & Infrastructure",
-                "severity": "High",
-                "is_local": 1,
-                "external_portals": ["CPGRAMS", "UP Jansunwai", "Noida Authority Citizen App"],
-                "upvotes": 42,
-                "urgent_flags": 14,
-                "status": "In Review",
-            },
-            {
-                "id": "post-demo-002",
-                "title": "Overflowing Garbage Dumpster along Indirapuram Market",
-                "description": (
-                    "Community garbage dump near Shipra Mall market has not been cleared for over 4 days. "
-                    "Stray cattle are scattering plastic bags across the road, and the stench is severely "
-                    "affecting local shopkeepers and nearby apartments."
-                ),
-                "image_url": "/static/images/demo/garbage.jpg",
-                "location_city": "Ghaziabad",
-                "lat": 28.6434,
-                "lng": 77.3752,
-                "department": "Sanitation & Waste Management",
-                "severity": "Critical",
-                "is_local": 1,
-                "external_portals": ["Swachhata-MoHUA", "Nagar Nigam Ghaziabad Portal"],
-                "upvotes": 68,
-                "urgent_flags": 27,
-                "status": "Reported",
-            },
-            {
-                "id": "post-demo-003",
-                "title": "Broken High-Tension Streetlight on Link Road",
-                "description": (
-                    "A 200m stretch on Anand Vihar Link Road has been plunged into total darkness for "
-                    "a week due to a snapped overhead wire and burnt fixture. High risk of mugging and "
-                    "pedestrian accidents at night."
-                ),
-                "image_url": "/static/images/demo/utility_pole.jpg",
-                "location_city": "Delhi NCR",
-                "lat": 28.6315,
-                "lng": 77.3168,
-                "department": "Electrical & Public Lighting",
-                "severity": "Medium",
-                "is_local": 1,
-                "external_portals": ["BSES Complaints", "MCD 311"],
-                "upvotes": 19,
-                "urgent_flags": 5,
-                "status": "Reported",
-            },
-        ]
+    # Seed 10 realistic Indian municipal concerns across multiple citizen personas and wards
+    demo_posts = [
+        {
+            "id": "post-demo-001",
+            "title": "Deep Monsoon Pothole with Exposed Gravel (NH-24)",
+            "description": (
+                "Dangerous crater-sized pothole on the NH-24 service corridor towards electronic city roundabout. "
+                "Two-wheelers frequently skid during waterlogging, causing immediate hazard for daily commuters."
+            ),
+            "image_url": "/static/images/demo/pothole.jpg",
+            "location_city": "NH-24 Corridor, Ghaziabad",
+            "ward": "Ward 12, NH-24 Bypass",
+            "lat": 28.6271,
+            "lng": 77.3617,
+            "department": "Road & Infrastructure",
+            "severity": "High",
+            "is_local": 1,
+            "external_portals": ["CPGRAMS", "UP Jansunwai", "NHAI Citizen Portal"],
+            "upvotes": 49,
+            "upvotes_count": 49,
+            "urgent_flags": 14,
+            "status": "IN_PROGRESS",
+            "assigned_officer": "Squad Alpha (Inspector V. Sharma)",
+            "sla_hours": 48,
+            "citizen_id": 2,
+            "citizen_name": "Rahul Verma",
+            "citizen_phone": "+91 98100 11223",
+            "officer_note": "Gravel patching crew dispatched on site. Work order #NOI-94821 in execution.",
+        },
+        {
+            "id": "post-demo-002",
+            "title": "Overflowing Garbage Compactor Near School Gate (Ward 8)",
+            "description": (
+                "Community garbage compactor near Shipra Mall primary school has not been cleared for 4 days. "
+                "Stray cattle are scattering plastic bags across the road, and the stench severely impacts students."
+            ),
+            "image_url": "/static/images/demo/garbage.jpg",
+            "location_city": "Indirapuram Market",
+            "ward": "Ward 8, Indirapuram",
+            "lat": 28.6434,
+            "lng": 77.3752,
+            "department": "Sanitation & Waste Management",
+            "severity": "Critical",
+            "is_local": 1,
+            "external_portals": ["Swachhata-MoHUA", "Nagar Nigam Ghaziabad Portal"],
+            "upvotes": 68,
+            "upvotes_count": 68,
+            "urgent_flags": 27,
+            "status": "ACKNOWLEDGED",
+            "assigned_officer": "Sanitation Zone 3",
+            "sla_hours": 24,
+            "citizen_id": 3,
+            "citizen_name": "Priya Sharma",
+            "citizen_phone": "+91 98200 22334",
+            "officer_note": "Ticket acknowledged by Ward Officer. Compact truck scheduled for immediate clearance.",
+        },
+        {
+            "id": "post-demo-003",
+            "title": "Dangling Live Overhead Power Cable on Main Road",
+            "description": (
+                "Snapped high-tension overhead cable hanging 4 feet above pedestrian sidewalk. Sparks noticed during morning dew. "
+                "Extremely hazardous for school children and morning joggers."
+            ),
+            "image_url": "/static/images/demo/utility_pole.jpg",
+            "location_city": "Block C, Sector 18",
+            "ward": "Block C, Sector 18",
+            "lat": 28.6315,
+            "lng": 77.3168,
+            "department": "Electrical & Public Lighting",
+            "severity": "Critical",
+            "is_local": 1,
+            "external_portals": ["BSES Complaints", "UPPCL Discom Portal"],
+            "upvotes": 34,
+            "upvotes_count": 34,
+            "urgent_flags": 12,
+            "status": "REPORTED",
+            "assigned_officer": "Unassigned",
+            "sla_hours": 24,
+            "citizen_id": 4,
+            "citizen_name": "Vikramaditya Rao",
+            "citizen_phone": "+91 98300 33445",
+            "officer_note": "Pending review by Electrical Division supervisor.",
+        },
+        {
+            "id": "post-demo-004",
+            "title": "Broken Water Supply Main Line Flooding Road",
+            "description": (
+                "300mm drinking water distribution main ruptured under asphalt. Thousands of liters potable water wasting per hour "
+                "while residential colony faces zero pressure."
+            ),
+            "image_url": "/static/images/demo/drain_leak.jpg",
+            "location_city": "Sector 14 Main Road",
+            "ward": "Sector 14, Ward 5",
+            "lat": 28.6350,
+            "lng": 77.3400,
+            "department": "Water Supply & Drainage",
+            "severity": "High",
+            "is_local": 1,
+            "external_portals": ["Jal Board Portal", "Noida Authority Citizen App"],
+            "upvotes": 56,
+            "upvotes_count": 56,
+            "urgent_flags": 19,
+            "status": "IN_PROGRESS",
+            "assigned_officer": "Er. R. Mathur - Jal Board",
+            "sla_hours": 48,
+            "citizen_id": 1,
+            "citizen_name": "Ayush Chauhan",
+            "citizen_phone": "+91 98765 43210",
+            "officer_note": "Jal Board emergency valve team on-site isolating ruptured line.",
+        },
+        {
+            "id": "post-demo-005",
+            "title": "Inactive Streetlights Causing Dark Stretch at Night",
+            "description": (
+                "A 400m stretch on Link Road has 8 consecutive defunct sodium lamps. Complete darkness creates severe security risk "
+                "for women and cyclists after 8 PM."
+            ),
+            "image_url": "/static/images/demo/utility_pole.jpg",
+            "location_city": "Anand Vihar Link Road",
+            "ward": "Ward 16, Link Road",
+            "lat": 28.6410,
+            "lng": 77.3200,
+            "department": "Electrical & Public Lighting",
+            "severity": "Moderate",
+            "is_local": 1,
+            "external_portals": ["MCD 311", "Delhi Traffic Police"],
+            "upvotes": 27,
+            "upvotes_count": 27,
+            "urgent_flags": 6,
+            "status": "REPORTED",
+            "assigned_officer": "Unassigned",
+            "sla_hours": 72,
+            "citizen_id": 5,
+            "citizen_name": "Ananya Deshmukh",
+            "citizen_phone": "+91 98400 44556",
+            "officer_note": "Scheduled for night audit by electrical squad.",
+        },
+        {
+            "id": "post-demo-006",
+            "title": "Open Manhole Hazard Near Children Playground",
+            "description": (
+                "Concrete manhole cover broken into storm drain. Opening is 3 feet wide adjacent to children swing area. "
+                "Immediate barricading and replacement cover required."
+            ),
+            "image_url": "/static/images/demo/pothole.jpg",
+            "location_city": "Sector 62 Community Park",
+            "ward": "Sector 62, Ward 9",
+            "lat": 28.6289,
+            "lng": 77.3670,
+            "department": "Road & Infrastructure",
+            "severity": "Critical",
+            "is_local": 1,
+            "external_portals": ["Noida Authority Citizen App", "UP Jansunwai"],
+            "upvotes": 82,
+            "upvotes_count": 82,
+            "urgent_flags": 31,
+            "status": "RESOLVED",
+            "assigned_officer": "Inspector V. Sharma - Zone 4",
+            "sla_hours": 24,
+            "citizen_id": 1,
+            "citizen_name": "Ayush Chauhan",
+            "citizen_phone": "+91 98765 43210",
+            "officer_note": "Heavy reinforced cast iron cover installed and barricade removed.",
+        },
+        {
+            "id": "post-demo-007",
+            "title": "Collapsed Pedestrian Sidewalk and Exposed Curbstones",
+            "description": (
+                "Heavy rains caused 30 feet of pedestrian footpath pavers to cave in. Senior citizens and strollers forced onto busy vehicular road."
+            ),
+            "image_url": "/static/images/demo/pothole.jpg",
+            "location_city": "Raj Nagar Extension",
+            "ward": "Raj Nagar Ext, Ward 22",
+            "lat": 28.6900,
+            "lng": 77.4100,
+            "department": "Road & Infrastructure",
+            "severity": "Moderate",
+            "is_local": 1,
+            "external_portals": ["UP Jansunwai", "Ghaziabad Nagar Nigam"],
+            "upvotes": 18,
+            "upvotes_count": 18,
+            "urgent_flags": 4,
+            "status": "REPORTED",
+            "assigned_officer": "Unassigned",
+            "sla_hours": 72,
+            "citizen_id": 6,
+            "citizen_name": "Rohan Kapoor",
+            "citizen_phone": "+91 98500 55667",
+            "officer_note": "Surveyed by junior engineer for curb realignment.",
+        },
+        {
+            "id": "post-demo-008",
+            "title": "Burst Sewer Drain Spreading Foul Sludge Across Market",
+            "description": (
+                "Sewer line clogged with commercial waste, overflowing onto shopping arcade walkway. Intense bio-hazard and breeding ground for flies."
+            ),
+            "image_url": "/static/images/demo/garbage.jpg",
+            "location_city": "Vaishali Sector 4",
+            "ward": "Vaishali Sector 4, Ward 7",
+            "lat": 28.6470,
+            "lng": 77.3410,
+            "department": "Sanitation & Waste Management",
+            "severity": "High",
+            "is_local": 1,
+            "external_portals": ["Swachhata-MoHUA", "Nagar Nigam Ghaziabad Portal"],
+            "upvotes": 41,
+            "upvotes_count": 41,
+            "urgent_flags": 15,
+            "status": "ACKNOWLEDGED",
+            "assigned_officer": "Sanitation Squad B",
+            "sla_hours": 48,
+            "citizen_id": 7,
+            "citizen_name": "Sunita Iyer",
+            "citizen_phone": "+91 98600 66778",
+            "officer_note": "Suction jetting machine dispatched to clear blockage.",
+        },
+        {
+            "id": "post-demo-009",
+            "title": "Fallen Tree Branch Blocking School Bus Route",
+            "description": (
+                "Storm-damaged banyan tree limb collapsed across two-lane access road. School buses and ambulances unable to pass."
+            ),
+            "image_url": "/static/images/demo/pothole.jpg",
+            "location_city": "Vasundhara Sector 11",
+            "ward": "Vasundhara Sector 11, Ward 3",
+            "lat": 28.6620,
+            "lng": 77.3710,
+            "department": "Horticulture & Public Works",
+            "severity": "High",
+            "is_local": 1,
+            "external_portals": ["UP Forest & Urban Services", "UP 112"],
+            "upvotes": 23,
+            "upvotes_count": 23,
+            "urgent_flags": 8,
+            "status": "RESOLVED",
+            "assigned_officer": "Horticulture Rapid Team",
+            "sla_hours": 24,
+            "citizen_id": 8,
+            "citizen_name": "Arjun Nair",
+            "citizen_phone": "+91 98700 77889",
+            "officer_note": "Tree trunk chopped and removed from roadway. Traffic normal.",
+        },
+        {
+            "id": "post-demo-010",
+            "title": "Hazardous Construction Debris Dump on Bicycle Lane",
+            "description": (
+                "Unlicensed dumping of concrete blocks, sharp tiles, and iron rods obstructing the bicycle corridor. Causes puncture hazards and narrows traffic."
+            ),
+            "image_url": "/static/images/demo/garbage.jpg",
+            "location_city": "Indirapuram Green Corridor",
+            "ward": "Ward 11, Indirapuram",
+            "lat": 28.6400,
+            "lng": 77.3800,
+            "department": "Sanitation & Waste Management",
+            "severity": "Moderate",
+            "is_local": 1,
+            "external_portals": ["CPGRAMS", "UP Jansunwai"],
+            "upvotes": 35,
+            "upvotes_count": 35,
+            "urgent_flags": 7,
+            "status": "REPORTED",
+            "assigned_officer": "Unassigned",
+            "sla_hours": 72,
+            "citizen_id": 1,
+            "citizen_name": "Ayush Chauhan",
+            "citizen_phone": "+91 98765 43210",
+            "officer_note": "Notice issued to nearby builder to clear rubble within 48h.",
+        },
+    ]
 
-        for post in demo_posts:
+    for post in demo_posts:
+        if post["id"] not in existing_post_ids:
             create_civic_post(post)
 
-        # Seed starter comments for each post
-        demo_comments = [
-            ("post-demo-001", "Aarav Sharma", "Two bike riders slipped here yesterday during the evening drizzle! Needs urgent gravel patching."),
-            ("post-demo-001", "Pooja Verma", "Raised grievance ticket on Noida Authority citizen portal as well (#NOI-94821). Upvoted!"),
-            ("post-demo-002", "Rajesh Gupta (RWA Sec)", "Sanitation truck missed morning round 3 days in a row. It is breeding dengue mosquitoes."),
-            ("post-demo-002", "Neha Saxena", "Tagged Nagar Nigam Ghaziabad commissioner on Twitter/X with photos."),
-            ("post-demo-003", "Vikas Malhotra", "Pole number is BSES-DL-412. It's very risky for women walking from the bus stop."),
-        ]
+    # Seed starter comments for posts if missing
+    demo_comments = [
+        ("post-demo-001", "Aarav Sharma", "Two bike riders slipped here yesterday during the evening drizzle! Needs urgent gravel patching."),
+        ("post-demo-001", "Pooja Verma", "Raised grievance ticket on Noida Authority citizen portal as well (#NOI-94821). Upvoted!"),
+        ("post-demo-002", "Rajesh Gupta (RWA Sec)", "Sanitation truck missed morning round 3 days in a row. It is breeding dengue mosquitoes."),
+        ("post-demo-002", "Neha Saxena", "Tagged Nagar Nigam Ghaziabad commissioner on Twitter/X with photos."),
+        ("post-demo-003", "Vikas Malhotra", "Pole number is BSES-DL-412. It's very risky for women walking from the bus stop."),
+        ("post-demo-004", "Manish Tiwari", "Water supply line has been leaking since 5 AM. Please close the main feeder valve!"),
+        ("post-demo-006", "Kavita Sethi", "My 7-year old was playing right near this crater! Very dangerous situation."),
+        ("post-demo-008", "Deepak Mittal", "Market shopkeepers have placed makeshift wooden planks to cross the sewer overflow."),
+    ]
 
-        for post_id, author, comment in demo_comments:
-            add_comment(post_id=post_id, author=author, comment=comment)
+    for post_id, author, comment in demo_comments:
+        with db_lock:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) AS c FROM civic_comments WHERE post_id = ? AND author = ?;", (post_id, author))
+            if cursor.fetchone()["c"] == 0:
+                add_comment(post_id=post_id, author=author, comment=comment)
 
     if jobs_count == 0:
         # Seed realistic household service jobs
@@ -961,15 +1326,17 @@ def get_technician_jobs_and_bids(worker_phone: str) -> dict:
         # 1. Active Bids by this worker
         cursor.execute(
             """
-            SELECT b.id AS bid_id, b.job_id, b.worker_name, b.worker_phone,
-                   b.bid_amount, b.counter_amount, b.status AS bid_status,
+            SELECT b.id AS bid_id, b.id, b.job_id, b.worker_name, b.worker_phone,
+                   b.bid_amount, b.initial_bid, b.counter_amount, b.current_amount,
+                   b.last_action_by, b.status, b.status AS bid_status, b.notes,
                    b.created_at AS bid_created_at,
                    j.title AS job_title, j.description AS job_description,
                    j.category AS job_category, j.media_url, j.location_city,
+                   j.citizen_name, j.citizen_phone, j.citizen_address,
                    j.estimated_price, j.status AS job_status, j.final_price
             FROM service_bids b
             JOIN service_jobs j ON b.job_id = j.id
-            WHERE b.worker_phone = ? AND b.status IN ('Pending', 'Countered')
+            WHERE b.worker_phone = ? AND UPPER(b.status) IN ('PENDING', 'COUNTERED', 'ACCEPTED')
             ORDER BY b.created_at DESC;
             """,
             (clean_phone,),
@@ -979,10 +1346,11 @@ def get_technician_jobs_and_bids(worker_phone: str) -> dict:
         # 2. Confirmed Jobs for this worker
         cursor.execute(
             """
-            SELECT j.*, b.bid_amount, b.counter_amount, b.worker_name
+            SELECT j.*, b.bid_amount, b.initial_bid, b.counter_amount, b.current_amount, b.worker_name, b.id AS bid_id
             FROM service_jobs j
-            LEFT JOIN service_bids b ON j.id = b.job_id AND b.worker_phone = ? AND b.status = 'Accepted'
-            WHERE j.status = 'Confirmed' AND (j.assigned_worker_phone = ? OR b.id IS NOT NULL)
+            LEFT JOIN service_bids b ON j.id = b.job_id AND b.worker_phone = ? AND UPPER(b.status) = 'ACCEPTED'
+            WHERE (UPPER(j.status) IN ('CONFIRMED', 'IN_PROGRESS') OR j.status IN ('Confirmed', 'In Progress'))
+              AND (j.assigned_worker_phone = ? OR b.id IS NOT NULL)
             ORDER BY j.created_at DESC;
             """,
             (clean_phone, clean_phone),
@@ -995,12 +1363,30 @@ def get_technician_jobs_and_bids(worker_phone: str) -> dict:
             SELECT j.*, COUNT(b.id) AS total_bids
             FROM service_jobs j
             LEFT JOIN service_bids b ON j.id = b.job_id
-            WHERE j.status IN ('Open', 'Negotiating')
+            WHERE UPPER(j.status) IN ('OPEN', 'NEGOTIATING') OR j.status IN ('Open', 'Negotiating')
             GROUP BY j.id
             ORDER BY j.created_at DESC;
             """
         )
         available_leads = [dict(r) for r in cursor.fetchall()]
+
+    for b in active_bids:
+        if not b.get("citizen_locality"):
+            b["citizen_locality"] = b.get("citizen_address") or b.get("location_city") or "Sector 62, Noida"
+        if not b.get("current_amount"):
+            b["current_amount"] = b.get("counter_amount") or b.get("bid_amount")
+        if not b.get("bid_amount"):
+            b["bid_amount"] = b.get("initial_bid") or b.get("current_amount")
+        if not b.get("counter_amount") and b.get("last_action_by") == "CITIZEN":
+            b["counter_amount"] = b.get("current_amount")
+        if not b.get("id"):
+            b["id"] = b.get("bid_id")
+
+    for job in confirmed_jobs:
+        if not job.get("final_price") and job.get("current_amount"):
+            job["final_price"] = f"₹{job['current_amount']}"
+        if not job.get("user_phone") and job.get("citizen_phone"):
+            job["user_phone"] = job.get("citizen_phone")
 
     for job in available_leads:
         if not job.get("citizen_name"):
