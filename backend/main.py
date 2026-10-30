@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile, status
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -24,7 +24,10 @@ from backend.database import (
     get_admin_overview_stats,
     get_all_civic_posts,
     get_all_service_jobs,
+    get_available_service_jobs,
     get_bids_for_job,
+    get_citizen_reports,
+    get_citizen_service_requests,
     get_civic_post_by_id,
     get_comments,
     get_service_job_by_id,
@@ -50,6 +53,7 @@ from backend.models import (
     BidCreate,
     ChatRequest,
     CivicPostCreate,
+    CivicStatusPatch,
     CivicStatusUpdate,
     CommentCreate,
     CounterBidCreate,
@@ -160,10 +164,12 @@ async def report_civic_issue_multimodal(
     location_city: str = Form("Sector 62, Noida"),
     lat: float = Form(28.6289),
     lng: float = Form(77.3670),
+    citizen_name: Optional[str] = Form("Ayush Chauhan"),
+    citizen_phone: Optional[str] = Form("+91 98765 43210"),
 ) -> Dict[str, Any]:
     """
     1. POST /api/civic/report:
-    - Accepts multipart form data (image, description, location_city, lat, lng).
+    - Accepts multipart form data (image, description, location_city, lat, lng, citizen details).
     - Saves uploaded binary image into uploads/ with a unique UUID filename.
     - Audits hazard using Gemma 4 Multimodal model with fallback to Gemini 2.5 Flash.
     - Inserts structured record directly into SQLite civic_posts table via create_civic_post().
@@ -198,6 +204,9 @@ async def report_civic_issue_multimodal(
         "is_local": is_local_flag,
         "external_portals": analysis.get("external_portals") or [],
         "status": "Reported",
+        "citizen_name": citizen_name,
+        "citizen_phone": citizen_phone,
+        "officer_note": "",
     }
 
     created_post = create_civic_post(post_record)
@@ -316,6 +325,45 @@ async def get_admin_overview() -> Dict[str, Any]:
     return get_admin_overview_stats()
 
 
+@app.get("/api/civic/my-reports", tags=["Civic"])
+async def get_my_civic_reports(
+    citizen_id: Optional[int] = Query(None),
+    citizen_phone: Optional[str] = Query(None),
+) -> Dict[str, Any]:
+    """
+    Returns aggregated grievance summary metrics (total_reported, in_progress_count, resolved_count)
+    and the full list of reports for the authenticated citizen.
+    """
+    return get_citizen_reports(citizen_id=citizen_id, citizen_phone=citizen_phone)
+
+
+@app.patch("/api/civic/{post_id}/status", tags=["Command Center"])
+@app.patch("/api/civic/posts/{post_id}/status", tags=["Command Center"])
+async def patch_civic_status(
+    post_id: str,
+    payload: CivicStatusPatch,
+    _role: str = Depends(require_role(["municipal"])),
+) -> Dict[str, Any]:
+    """
+    Municipal Officer Multi-Stage Civic Status Transition:
+    Accepts: {"status": "ACKNOWLEDGED" | "IN_PROGRESS" | "RESOLVED", "officer_note": str}
+    Updates status in SQLite and records an audit timestamp.
+    """
+    post = get_civic_post_by_id(post_id)
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Civic post with ID '{post_id}' not found.",
+        )
+    updated = update_civic_status_and_officer(
+        post_id=post_id,
+        status=payload.status,
+        assigned_officer=payload.assigned_officer,
+        officer_note=payload.officer_note,
+    )
+    return updated or post
+
+
 @app.post("/api/civic/{post_id}/status", tags=["Command Center"])
 @app.post("/api/civic/posts/{post_id}/status", tags=["Command Center"])
 @app.put("/api/civic/{post_id}/status", tags=["Command Center"])
@@ -327,7 +375,7 @@ async def update_post_status(
 ) -> Dict[str, Any]:
     """
     Municipal Officer Complaint Lifecycle & Field Inspector Assignment:
-    Updates status ('Reported', 'Assigned', 'In Progress', 'Resolved')
+    Updates status ('Reported', 'Acknowledged', 'Assigned', 'In Progress', 'Resolved')
     and assigns a field inspector / squad to the civic hazard.
     """
     post = get_civic_post_by_id(post_id)
@@ -340,6 +388,7 @@ async def update_post_status(
         post_id=post_id,
         status=payload.status,
         assigned_officer=payload.assigned_officer,
+        officer_note=payload.officer_note,
     )
     return updated or post
 
@@ -465,11 +514,36 @@ async def list_service_jobs() -> List[Dict[str, Any]]:
     return jobs
 
 
+@app.get("/api/services/available", tags=["Services"])
+async def list_available_services() -> List[Dict[str, Any]]:
+    """
+    Retrieve open utility repair requests with complete citizen requester details,
+    preferred time slots, and bids for the technician dashboard.
+    """
+    return get_available_service_jobs()
+
+
+@app.get("/api/services/my-requests", tags=["Services"])
+async def list_my_service_requests(
+    citizen_id: Optional[int] = Query(None),
+    citizen_phone: Optional[str] = Query(None),
+) -> List[Dict[str, Any]]:
+    """
+    Retrieve all utility repair requests submitted by a citizen,
+    along with real-time technician bids and worker reputation metrics.
+    """
+    return get_citizen_service_requests(citizen_id=citizen_id, citizen_phone=citizen_phone)
+
+
 @app.post("/api/services/create", status_code=status.HTTP_201_CREATED, tags=["Services"])
 async def create_service_job_with_ai(
     media: UploadFile = File(...),
     description: str = Form(...),
     location_city: str = Form("Sector 62, Noida"),
+    citizen_name: Optional[str] = Form("Ayush Chauhan"),
+    citizen_phone: Optional[str] = Form("+91 98765 43210"),
+    citizen_address: Optional[str] = Form(None),
+    preferred_slot: Optional[str] = Form("Today, 4:00 PM - 6:00 PM"),
 ) -> Dict[str, Any]:
     """Post household service defect with Gemma AI technical diagnosis and price estimation."""
     media_bytes = await media.read()
@@ -506,6 +580,10 @@ async def create_service_job_with_ai(
         "estimated_price": estimated_price,
         "final_price": None,
         "status": "Open",
+        "citizen_name": citizen_name,
+        "citizen_phone": citizen_phone,
+        "citizen_address": citizen_address or location_city,
+        "preferred_slot": preferred_slot,
     }
 
     created_job = create_service_job(job_record)

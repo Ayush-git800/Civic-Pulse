@@ -856,6 +856,31 @@
         <!-- ==================== TAB 1: CIVIC INFRASTRUCTURE FEED ==================== -->
         <section id="view-civic" class="space-y-6">
         
+          <!-- Citizen Grievance Summary Bar (Live Lifecycle Counters) -->
+          <div id="grievance-summary-bar" class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <div class="p-4 rounded-2xl bg-white/95 border border-slate-200/90 shadow-xs flex items-center gap-3.5">
+              <span class="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-200/70 text-indigo-700 flex items-center justify-center text-lg font-bold shadow-xs">📋</span>
+              <div>
+                <div class="text-[10px] sm:text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Total Reported</div>
+                <div id="summary-total-reported" class="text-xl sm:text-2xl font-black text-slate-900 mt-0.5">0</div>
+              </div>
+            </div>
+            <div class="p-4 rounded-2xl bg-white/95 border border-amber-200/90 shadow-xs flex items-center gap-3.5">
+              <span class="w-11 h-11 rounded-xl bg-amber-50 border border-amber-200/70 text-amber-700 flex items-center justify-center text-lg font-bold shadow-xs">⏳</span>
+              <div>
+                <div class="text-[10px] sm:text-[11px] font-extrabold text-amber-700 uppercase tracking-wider">In Progress / Triage</div>
+                <div id="summary-in-progress" class="text-xl sm:text-2xl font-black text-amber-950 mt-0.5">0</div>
+              </div>
+            </div>
+            <div class="p-4 rounded-2xl bg-white/95 border border-emerald-200/90 shadow-xs flex items-center gap-3.5">
+              <span class="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-200/70 text-emerald-700 flex items-center justify-center text-lg font-bold shadow-xs">✅</span>
+              <div>
+                <div class="text-[10px] sm:text-[11px] font-extrabold text-emerald-700 uppercase tracking-wider">Resolved Hazards</div>
+                <div id="summary-resolved" class="text-xl sm:text-2xl font-black text-emerald-950 mt-0.5">0</div>
+              </div>
+            </div>
+          </div>
+
           <!-- Hero Action Bar with Shimmer Headline & Floating Glow -->
           <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-900 text-white relative overflow-hidden shadow-xl border border-indigo-800/40">
             <!-- Floating orbs inside hero container -->
@@ -1128,8 +1153,8 @@
                   <th class="py-3.5 px-3">Severity</th>
                   <th class="py-3.5 px-3">Statutory SLA</th>
                   <th class="py-3.5 px-3">Assigned Inspector</th>
-                  <th class="py-3.5 px-3">Lifecycle Status</th>
-                  <th class="py-3.5 px-4 text-right">Dispatch Action</th>
+                  <th class="py-3.5 px-3">Lifecycle Stage & Remarks</th>
+                  <th class="py-3.5 px-4 text-right">Status Action</th>
                 </tr>
               </thead>
               <tbody id="admin-triage-tbody" class="divide-y divide-slate-100">
@@ -1621,6 +1646,35 @@
             <div id="job-scanner-overlay" class="hidden scanner-overlay">
               <div class="scanner-laser"></div>
             </div>
+          </div>
+        </div>
+
+        <!-- Requester Information -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1.5">Requester Full Name</label>
+            <input id="job-citizen-name" type="text" placeholder="e.g. Ayush Chauhan" value="Ayush Chauhan" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1.5">Contact Phone Number</label>
+            <input id="job-citizen-phone" type="tel" placeholder="e.g. +91 98765 43210" value="+91 98765 43210" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1.5">Specific House / Ward Address</label>
+            <input id="job-citizen-address" type="text" placeholder="e.g. Hostel Block B, Room 204" value="Hostel Block B, Sector 62" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1.5">Preferred Service Time Slot</label>
+            <select id="job-preferred-slot" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+              <option value="Today, 4:00 PM - 6:00 PM">Today, 4:00 PM - 6:00 PM</option>
+              <option value="Today Evening, 6:00 PM - 8:00 PM">Today Evening, 6:00 PM - 8:00 PM</option>
+              <option value="Tomorrow Morning, 9:00 AM - 12:00 PM">Tomorrow Morning, 9:00 AM - 12:00 PM</option>
+              <option value="Tomorrow Afternoon, 1:00 PM - 4:00 PM">Tomorrow Afternoon, 1:00 PM - 4:00 PM</option>
+              <option value="Immediate Emergency Visit">Immediate Emergency Visit (Next 45 mins)</option>
+            </select>
           </div>
         </div>
 

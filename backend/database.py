@@ -154,11 +154,46 @@ def init_db() -> None:
             cursor.execute("ALTER TABLE civic_posts ADD COLUMN assigned_officer TEXT DEFAULT 'Unassigned';")
         if "sla_hours" not in columns:
             cursor.execute("ALTER TABLE civic_posts ADD COLUMN sla_hours INTEGER DEFAULT 48;")
+        if "citizen_id" not in columns:
+            cursor.execute("ALTER TABLE civic_posts ADD COLUMN citizen_id INTEGER DEFAULT 1;")
+        if "citizen_name" not in columns:
+            cursor.execute("ALTER TABLE civic_posts ADD COLUMN citizen_name TEXT DEFAULT 'Ayush Chauhan';")
+        if "citizen_phone" not in columns:
+            cursor.execute("ALTER TABLE civic_posts ADD COLUMN citizen_phone TEXT DEFAULT '+91 98765 43210';")
+        if "officer_note" not in columns:
+            cursor.execute("ALTER TABLE civic_posts ADD COLUMN officer_note TEXT DEFAULT '';")
+        if "acknowledged_at" not in columns:
+            cursor.execute("ALTER TABLE civic_posts ADD COLUMN acknowledged_at TIMESTAMP DEFAULT NULL;")
+        if "resolved_at" not in columns:
+            cursor.execute("ALTER TABLE civic_posts ADD COLUMN resolved_at TIMESTAMP DEFAULT NULL;")
+        if "updated_at" not in columns:
+            cursor.execute("ALTER TABLE civic_posts ADD COLUMN updated_at TIMESTAMP DEFAULT NULL;")
 
         cursor.execute("PRAGMA table_info(service_jobs);")
         job_cols = [row[1] for row in cursor.fetchall()]
         if "assigned_worker_phone" not in job_cols:
             cursor.execute("ALTER TABLE service_jobs ADD COLUMN assigned_worker_phone TEXT DEFAULT NULL;")
+        if "citizen_id" not in job_cols:
+            cursor.execute("ALTER TABLE service_jobs ADD COLUMN citizen_id INTEGER DEFAULT 1;")
+        if "citizen_name" not in job_cols:
+            cursor.execute("ALTER TABLE service_jobs ADD COLUMN citizen_name TEXT DEFAULT 'Ayush Chauhan';")
+        if "citizen_phone" not in job_cols:
+            cursor.execute("ALTER TABLE service_jobs ADD COLUMN citizen_phone TEXT DEFAULT '+91 98765 43210';")
+        if "citizen_address" not in job_cols:
+            cursor.execute("ALTER TABLE service_jobs ADD COLUMN citizen_address TEXT DEFAULT 'Hostel Block B, Sector 62';")
+        if "preferred_slot" not in job_cols:
+            cursor.execute("ALTER TABLE service_jobs ADD COLUMN preferred_slot TEXT DEFAULT 'Today, 4:00 PM - 6:00 PM';")
+
+        # Backfill default values for existing rows
+        cursor.execute("UPDATE service_jobs SET citizen_name = 'Ayush Chauhan' WHERE citizen_name IS NULL OR citizen_name = '';")
+        cursor.execute("UPDATE service_jobs SET citizen_phone = '+91 98765 43210' WHERE citizen_phone IS NULL OR citizen_phone = '';")
+        cursor.execute("UPDATE service_jobs SET citizen_address = 'Hostel Block B, Sector 62' WHERE citizen_address IS NULL OR citizen_address = '';")
+        cursor.execute("UPDATE service_jobs SET preferred_slot = 'Today, 4:00 PM - 6:00 PM' WHERE preferred_slot IS NULL OR preferred_slot = '';")
+        cursor.execute("UPDATE civic_posts SET citizen_name = 'Ayush Chauhan' WHERE citizen_name IS NULL OR citizen_name = '';")
+        cursor.execute("UPDATE civic_posts SET citizen_phone = '+91 98765 43210' WHERE citizen_phone IS NULL OR citizen_phone = '';")
+        cursor.execute("UPDATE civic_posts SET status = 'IN_PROGRESS', assigned_officer = 'Squad Alpha (Inspector V. Sharma)', officer_note = 'Gravel patching crew dispatched on site. Work order #NOI-94821 in execution.' WHERE id = 'post-demo-001';")
+        cursor.execute("UPDATE civic_posts SET status = 'ACKNOWLEDGED', assigned_officer = 'Sanitation Zone 3', officer_note = 'Ticket acknowledged by Ward Officer. Compact truck scheduled for immediate clearance.' WHERE id = 'post-demo-002';")
+        cursor.execute("UPDATE civic_posts SET status = 'REPORTED', assigned_officer = 'Unassigned', officer_note = 'Pending review by Electrical Division supervisor.' WHERE id = 'post-demo-003';")
 
         cursor.execute("PRAGMA table_info(users);")
         user_cols = [row[1] for row in cursor.fetchall()]
@@ -275,6 +310,11 @@ def create_civic_post(post_data: dict) -> dict:
     sla_map = {"critical": 24, "high": 48, "moderate": 72, "medium": 72, "low": 120}
     sla_hours = int(post_data.get("sla_hours") or sla_map.get(str(severity).lower(), 48))
 
+    citizen_id = int(post_data.get("citizen_id") or 1)
+    citizen_name = post_data.get("citizen_name") or "Ayush Chauhan"
+    citizen_phone = post_data.get("citizen_phone") or "+91 98765 43210"
+    officer_note = post_data.get("officer_note") or ""
+
     with db_lock:
         cursor = conn.cursor()
         cursor.execute(
@@ -283,8 +323,9 @@ def create_civic_post(post_data: dict) -> dict:
                 id, title, description, image_url, location_city,
                 lat, lng, department, severity, is_local,
                 external_portals, upvotes, urgent_flags, status,
-                assigned_officer, sla_hours
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                assigned_officer, sla_hours, citizen_id, citizen_name,
+                citizen_phone, officer_note
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """,
             (
                 post_id,
@@ -303,6 +344,10 @@ def create_civic_post(post_data: dict) -> dict:
                 status,
                 assigned_officer,
                 sla_hours,
+                citizen_id,
+                citizen_name,
+                citizen_phone,
+                officer_note,
             ),
         )
         conn.commit()
@@ -400,6 +445,11 @@ def create_service_job(job_data: dict) -> dict:
     estimated_price = job_data.get("estimated_price")
     final_price = job_data.get("final_price")
     status = job_data.get("status", "Open")
+    citizen_id = int(job_data.get("citizen_id") or 1)
+    citizen_name = job_data.get("citizen_name") or "Ayush Chauhan"
+    citizen_phone = job_data.get("citizen_phone") or "+91 98765 43210"
+    citizen_address = job_data.get("citizen_address") or job_data.get("location_city") or "Hostel Block B, Sector 62"
+    preferred_slot = job_data.get("preferred_slot") or "Today, 4:00 PM - 6:00 PM"
 
     with db_lock:
         cursor = conn.cursor()
@@ -407,8 +457,9 @@ def create_service_job(job_data: dict) -> dict:
             """
             INSERT INTO service_jobs (
                 id, title, description, category, media_url,
-                location_city, estimated_price, final_price, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+                location_city, estimated_price, final_price, status,
+                citizen_id, citizen_name, citizen_phone, citizen_address, preferred_slot
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """,
             (
                 job_id,
@@ -420,6 +471,11 @@ def create_service_job(job_data: dict) -> dict:
                 estimated_price,
                 final_price,
                 status,
+                citizen_id,
+                citizen_name,
+                citizen_phone,
+                citizen_address,
+                preferred_slot,
             ),
         )
         conn.commit()
@@ -733,31 +789,44 @@ def update_civic_status_and_officer(
     post_id: str,
     status: str,
     assigned_officer: Optional[str] = None,
+    officer_note: Optional[str] = None,
 ) -> Optional[dict]:
     """
-    Updates the operational lifecycle status and field inspector assignment
-    for a municipal civic complaint.
+    Updates the multi-stage operational lifecycle status ('REPORTED', 'ACKNOWLEDGED', 'IN_PROGRESS', 'RESOLVED'),
+    officer inspection notes, audit timestamps, and field inspector assignment for a civic grievance.
     """
+    canonical_status = status.strip()
+    status_upper = canonical_status.upper().replace(" ", "_").replace("-", "_")
+    if status_upper in ("REPORTED",):
+        canonical_status = "REPORTED"
+    elif status_upper in ("ACKNOWLEDGED", "ASSIGNED"):
+        canonical_status = "ACKNOWLEDGED"
+    elif status_upper in ("IN_PROGRESS", "INPROGRESS", "RESOLVING"):
+        canonical_status = "IN_PROGRESS"
+    elif status_upper in ("RESOLVED",):
+        canonical_status = "RESOLVED"
+
     with db_lock:
         cursor = conn.cursor()
-        if assigned_officer:
-            cursor.execute(
-                """
-                UPDATE civic_posts
-                SET status = ?, assigned_officer = ?
-                WHERE id = ?;
-                """,
-                (status, assigned_officer, post_id),
-            )
-        else:
-            cursor.execute(
-                """
-                UPDATE civic_posts
-                SET status = ?
-                WHERE id = ?;
-                """,
-                (status, post_id),
-            )
+        updates = ["status = ?", "updated_at = CURRENT_TIMESTAMP"]
+        params: list[Any] = [canonical_status]
+
+        if assigned_officer is not None:
+            updates.append("assigned_officer = ?")
+            params.append(assigned_officer)
+
+        if officer_note is not None:
+            updates.append("officer_note = ?")
+            params.append(officer_note)
+
+        if canonical_status == "ACKNOWLEDGED":
+            updates.append("acknowledged_at = CURRENT_TIMESTAMP")
+        elif canonical_status == "RESOLVED":
+            updates.append("resolved_at = CURRENT_TIMESTAMP")
+
+        params.append(post_id)
+        sql = f"UPDATE civic_posts SET {', '.join(updates)} WHERE id = ?;"
+        cursor.execute(sql, tuple(params))
         conn.commit()
 
     return get_civic_post_by_id(post_id)
@@ -932,6 +1001,17 @@ def get_technician_jobs_and_bids(worker_phone: str) -> dict:
             """
         )
         available_leads = [dict(r) for r in cursor.fetchall()]
+
+    for job in available_leads:
+        if not job.get("citizen_name"):
+            job["citizen_name"] = "Ayush Chauhan"
+        if not job.get("citizen_locality"):
+            job["citizen_locality"] = job.get("citizen_address") or job.get("location_city") or "Hostel Block B, Sector 62"
+        if not job.get("citizen_phone"):
+            job["citizen_phone"] = "+91 98765 43210"
+        if not job.get("preferred_slot"):
+            job["preferred_slot"] = "Today, 4:00 PM - 6:00 PM"
+        job["bids_count"] = job.get("total_bids") or 0
 
     # Calculate total earnings from confirmed contracts
     total_earnings = 0
@@ -1113,5 +1193,136 @@ def add_technician_review(
         "total_reviews": rev_count,
         "technician": updated_tech,
     }
+
+
+def get_available_service_jobs() -> List[dict]:
+    """
+    Retrieve open utility repair requests with complete citizen requester details,
+    preferred time slots, and bids for the technician dashboard.
+    """
+    with db_lock:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT j.*, COUNT(b.id) AS bids_count
+            FROM service_jobs j
+            LEFT JOIN service_bids b ON j.id = b.job_id
+            WHERE j.status IN ('Open', 'Negotiating', 'Open for Bids')
+            GROUP BY j.id
+            ORDER BY j.created_at DESC;
+            """
+        )
+        rows = [dict(r) for r in cursor.fetchall()]
+
+    for job in rows:
+        bids = get_bids_for_job(job["id"])
+        job["bids"] = bids
+        if not job.get("citizen_name"):
+            job["citizen_name"] = "Ayush Chauhan"
+        if not job.get("citizen_locality"):
+            job["citizen_locality"] = job.get("citizen_address") or job.get("location_city") or "Hostel Block B, Sector 62"
+        if not job.get("citizen_phone"):
+            job["citizen_phone"] = "+91 98765 43210"
+        if not job.get("preferred_slot"):
+            job["preferred_slot"] = "Today, 4:00 PM - 6:00 PM"
+        if job.get("status") == "Open":
+            job["status"] = "Open for Bids"
+        job["bids_count"] = len(bids)
+
+    return rows
+
+
+def get_citizen_reports(
+    citizen_id: Optional[int] = None,
+    citizen_phone: Optional[str] = None,
+) -> dict:
+    """
+    Retrieve multi-stage civic grievance metrics and full report history
+    for the citizen lifecycle tracker.
+    """
+    with db_lock:
+        cursor = conn.cursor()
+        if citizen_id:
+            cursor.execute("SELECT * FROM civic_posts WHERE citizen_id = ? ORDER BY created_at DESC;", (citizen_id,))
+        elif citizen_phone:
+            cursor.execute("SELECT * FROM civic_posts WHERE citizen_phone = ? ORDER BY created_at DESC;", (citizen_phone,))
+        else:
+            cursor.execute("SELECT * FROM civic_posts ORDER BY created_at DESC;")
+        rows = [dict(r) for r in cursor.fetchall()]
+
+    for post in rows:
+        post["comments"] = get_comments(post["id"])
+        # Format external portals if JSON string
+        ep = post.get("external_portals")
+        if isinstance(ep, str):
+            try:
+                post["external_portals"] = json.loads(ep)
+            except Exception:
+                post["external_portals"] = []
+
+    total_reported = len(rows)
+    in_progress_count = 0
+    resolved_count = 0
+
+    for post in rows:
+        st = (post.get("status") or "").upper().replace(" ", "_").replace("-", "_")
+        if st in ("IN_PROGRESS", "ASSIGNED", "ACKNOWLEDGED"):
+            in_progress_count += 1
+        elif st in ("RESOLVED",):
+            resolved_count += 1
+
+    return {
+        "total_reported": total_reported,
+        "in_progress_count": in_progress_count,
+        "resolved_count": resolved_count,
+        "reports": rows,
+    }
+
+
+def get_citizen_service_requests(
+    citizen_id: Optional[int] = None,
+    citizen_phone: Optional[str] = None,
+) -> List[dict]:
+    """
+    Retrieve all utility repair requests submitted by a citizen,
+    along with real-time technician bids and worker reputation metrics.
+    """
+    with db_lock:
+        cursor = conn.cursor()
+        if citizen_id:
+            cursor.execute("SELECT * FROM service_jobs WHERE citizen_id = ? ORDER BY created_at DESC;", (citizen_id,))
+        elif citizen_phone:
+            cursor.execute("SELECT * FROM service_jobs WHERE citizen_phone = ? ORDER BY created_at DESC;", (citizen_phone,))
+        else:
+            cursor.execute("SELECT * FROM service_jobs ORDER BY created_at DESC;")
+        jobs = [dict(r) for r in cursor.fetchall()]
+
+    for job in jobs:
+        bids = get_bids_for_job(job["id"])
+        for b in bids:
+            tech = get_technician_by_phone(b["worker_phone"])
+            if tech:
+                b["technician_id"] = tech["id"]
+                b["rating"] = tech["rating"]
+                b["review_count"] = tech["review_count"]
+                b["works_completed"] = tech["works_completed"]
+            else:
+                b["technician_id"] = 1
+                b["rating"] = 5.0
+                b["review_count"] = 0
+                b["works_completed"] = 0
+        job["bids"] = bids
+        job["bids_count"] = len(bids)
+        if not job.get("citizen_name"):
+            job["citizen_name"] = "Ayush Chauhan"
+        if not job.get("citizen_locality"):
+            job["citizen_locality"] = job.get("citizen_address") or job.get("location_city") or "Hostel Block B, Sector 62"
+        if not job.get("citizen_phone"):
+            job["citizen_phone"] = "+91 98765 43210"
+        if not job.get("preferred_slot"):
+            job["preferred_slot"] = "Today, 4:00 PM - 6:00 PM"
+
+    return jobs
+
 
 

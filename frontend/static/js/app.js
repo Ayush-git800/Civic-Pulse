@@ -389,18 +389,40 @@ function applyServiceFilters() {
 }
 
 // --- 3. Civic Feed Management ---
+async function updateGrievanceSummaryBar() {
+  const totalEl = document.getElementById('summary-total-reported');
+  const inProgEl = document.getElementById('summary-in-progress');
+  const resolvedEl = document.getElementById('summary-resolved');
+  if (!totalEl || !inProgEl || !resolvedEl) return;
+
+  try {
+    const res = await fetch('/api/civic/my-reports');
+    if (res.ok) {
+      const data = await res.json();
+      totalEl.textContent = data.total_reported ?? 0;
+      inProgEl.textContent = data.in_progress_count ?? 0;
+      resolvedEl.textContent = data.resolved_count ?? 0;
+    }
+  } catch (err) {
+    console.warn('Failed to update grievance summary bar:', err);
+  }
+}
+
 async function loadCivicFeed() {
   const grid = document.getElementById('civic-posts-grid');
   try {
     const res = await fetch('/api/civic/posts');
     state.civicPosts = await res.json();
     applyCivicFilters();
+    updateGrievanceSummaryBar();
   } catch (err) {
-    grid.innerHTML = `
-      <div class="col-span-full p-8 text-center bg-white rounded-2xl border border-slate-200/80 shadow-xs">
-        <p class="text-sm font-medium text-slate-500">Unable to load infrastructure feed. Ensure the CivicPulse server is active.</p>
-      </div>
-    `;
+    if (grid) {
+      grid.innerHTML = `
+        <div class="col-span-full p-8 text-center bg-white rounded-2xl border border-slate-200/80 shadow-xs">
+          <p class="text-sm font-medium text-slate-500">Unable to load infrastructure feed. Ensure the CivicPulse server is active.</p>
+        </div>
+      `;
+    }
   }
 }
 
@@ -456,6 +478,105 @@ function getSeverityBadge(severity) {
     <span class="w-2 h-2 rounded-full bg-slate-400"></span>
     <span>Low</span>
   </span>`;
+}
+
+function renderCivicLifecycleStepper(status, officerNote, assignedOfficer) {
+  const normStatus = (status || 'REPORTED').toUpperCase().replace(/\s+/g, '_');
+  const stages = [
+    { key: 'REPORTED', label: 'Reported' },
+    { key: 'ACKNOWLEDGED', label: 'Acknowledged' },
+    { key: 'IN_PROGRESS', label: 'In Progress' },
+    { key: 'RESOLVED', label: 'Resolved' }
+  ];
+
+  let currentIdx = 0;
+  if (normStatus === 'ACKNOWLEDGED' || normStatus === 'ASSIGNED') currentIdx = 1;
+  else if (normStatus === 'IN_PROGRESS') currentIdx = 2;
+  else if (normStatus === 'RESOLVED') currentIdx = 3;
+
+  const stepsHtml = stages.map((st, idx) => {
+    const isCompleted = idx < currentIdx;
+    const isCurrent = idx === currentIdx;
+
+    let circleBg = 'bg-slate-100 text-slate-400 border-slate-300';
+    let labelColor = 'text-slate-400 font-medium';
+    let iconHtml = `<span class="text-[10px] font-bold">${idx + 1}</span>`;
+
+    if (isCompleted) {
+      circleBg = 'bg-emerald-600 text-white border-emerald-600 shadow-xs';
+      labelColor = 'text-emerald-700 font-bold';
+      iconHtml = `<i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>`;
+    } else if (isCurrent) {
+      if (st.key === 'RESOLVED') {
+        circleBg = 'bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-300 shadow-xs';
+        labelColor = 'text-emerald-700 font-extrabold';
+        iconHtml = `<i data-lucide="check-circle" class="w-3.5 h-3.5"></i>`;
+      } else if (st.key === 'IN_PROGRESS') {
+        circleBg = 'bg-amber-500 text-white border-amber-500 ring-2 ring-amber-300 shadow-xs animate-pulse';
+        labelColor = 'text-amber-800 font-extrabold';
+        iconHtml = `<i data-lucide="activity" class="w-3.5 h-3.5"></i>`;
+      } else if (st.key === 'ACKNOWLEDGED') {
+        circleBg = 'bg-indigo-600 text-white border-indigo-600 ring-2 ring-indigo-300 shadow-xs';
+        labelColor = 'text-indigo-800 font-extrabold';
+        iconHtml = `<i data-lucide="shield" class="w-3 h-3"></i>`;
+      } else {
+        circleBg = 'bg-indigo-600 text-white border-indigo-600 ring-2 ring-indigo-300 shadow-xs';
+        labelColor = 'text-indigo-800 font-bold';
+        iconHtml = `<i data-lucide="file-check" class="w-3 h-3"></i>`;
+      }
+    }
+
+    return `
+      <div class="flex-1 flex flex-col items-center relative text-center">
+        <div class="w-6 h-6 rounded-full border flex items-center justify-center text-[10px] z-10 transition-all ${circleBg}">
+          ${iconHtml}
+        </div>
+        <span class="text-[10px] mt-1 leading-tight tracking-tight ${labelColor}">${st.label}</span>
+      </div>
+    `;
+  }).join('');
+
+  const progressPercent = currentIdx === 0 ? 10 : currentIdx === 1 ? 38 : currentIdx === 2 ? 68 : 100;
+
+  const officerNoteHtml = (officerNote || assignedOfficer) ? `
+    <div class="mt-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-700 flex items-start gap-2 shadow-xs">
+      <span class="p-1 rounded-lg bg-indigo-50 text-indigo-600 flex-shrink-0 mt-0.5"><i data-lucide="message-square" class="w-3.5 h-3.5"></i></span>
+      <div class="min-w-0">
+        <div class="font-bold text-slate-800 flex items-center gap-1.5 flex-wrap">
+          <span>Officer Remark</span>
+          ${assignedOfficer ? `<span class="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200/60">• ${escapeHtml(assignedOfficer)}</span>` : ''}
+        </div>
+        <p class="text-slate-600 italic mt-0.5 leading-snug break-words">${escapeHtml(officerNote || 'Acknowledged and assigned for municipal inspection.')}</p>
+      </div>
+    </div>
+  ` : '';
+
+  return `
+    <div class="mt-3.5 pt-3 border-t border-slate-100">
+      <div class="flex items-center justify-between text-[11px] font-bold text-slate-700 mb-2">
+        <span class="flex items-center gap-1.5 text-slate-900">
+          <i data-lucide="git-commit" class="w-3.5 h-3.5 text-indigo-600"></i>
+          Lifecycle Pipeline
+        </span>
+        <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${
+          normStatus === 'RESOLVED' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+          normStatus === 'IN_PROGRESS' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+          normStatus === 'ACKNOWLEDGED' || normStatus === 'ASSIGNED' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' :
+          'bg-slate-100 text-slate-700 border border-slate-200'
+        }">
+          ${stages[currentIdx].label}
+        </span>
+      </div>
+      <div class="relative py-1">
+        <div class="absolute top-4 left-6 right-6 h-0.5 bg-slate-200 -translate-y-1/2 z-0"></div>
+        <div class="absolute top-4 left-6 h-0.5 bg-emerald-500 -translate-y-1/2 z-0 transition-all duration-500" style="width: calc(${progressPercent}% - 3rem);"></div>
+        <div class="flex justify-between relative z-10">
+          ${stepsHtml}
+        </div>
+      </div>
+      ${officerNoteHtml}
+    </div>
+  `;
 }
 
 function renderCivicCards(posts) {
@@ -574,6 +695,9 @@ function renderCivicCards(posts) {
               <p class="text-xs text-slate-600 mt-2 leading-relaxed line-clamp-3">
                 ${escapeHtml(post.description)}
               </p>
+
+              <!-- Multi-Stage Grievance Lifecycle Stepper -->
+              ${renderCivicLifecycleStepper(post.status, post.officer_note, post.assigned_officer)}
 
               <!-- Central Escalation Alert (if non-local) -->
               ${escalationHtml}
@@ -852,6 +976,19 @@ function renderServiceCards(jobs) {
               <i data-lucide="map-pin" class="w-3 h-3 text-slate-400"></i> ${escapeHtml(job.location_city)}
             </p>
 
+            <!-- Requester Details Badge -->
+            <div class="mt-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs flex flex-wrap items-center justify-between gap-2 shadow-xs">
+              <div class="flex items-center gap-1.5 text-slate-700">
+                <span class="font-bold text-slate-900">👤 ${escapeHtml(job.citizen_name || 'Resident')}</span>
+                <span class="text-slate-400">•</span>
+                <span class="text-slate-600">📍 ${escapeHtml(job.citizen_locality || job.citizen_address || job.location_city || 'Sector 62, Noida')}</span>
+              </div>
+              <div class="text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-200/60 flex items-center gap-1">
+                <i data-lucide="clock" class="w-3 h-3 text-indigo-500"></i>
+                <span>${escapeHtml(job.preferred_slot || 'Flexible / Today')}</span>
+              </div>
+            </div>
+
             <!-- Gemma Diagnostic & Price Recommendation Card -->
             <div class="mt-4 p-4 rounded-xl bg-gradient-to-br from-indigo-50/70 via-purple-50/40 to-slate-50 border border-indigo-100 text-xs space-y-1.5 shadow-xs">
               <div class="flex items-center justify-between font-bold text-indigo-950">
@@ -1076,6 +1213,8 @@ async function submitCivicForm(e) {
   formData.append('location_city', loc || 'Sector 62, Noida');
   formData.append('lat', state.coords.lat);
   formData.append('lng', state.coords.lng);
+  formData.append('citizen_name', state.auth?.user?.name || 'Ayush Chauhan');
+  formData.append('citizen_phone', state.auth?.user?.phone || '+91 98765 43210');
 
   btn.disabled = true;
   btn.innerHTML = `<span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></span> Gemma 4 Auditing Hazard...`;
@@ -1151,10 +1290,19 @@ async function submitServiceForm(e) {
     return;
   }
 
+  const citizenName = document.getElementById('job-citizen-name')?.value.trim() || state.auth?.user?.name || 'Ayush Chauhan';
+  const citizenPhone = document.getElementById('job-citizen-phone')?.value.trim() || state.auth?.user?.phone || '+91 98765 43210';
+  const citizenAddress = document.getElementById('job-citizen-address')?.value.trim() || loc || 'Sector 62, Noida';
+  const preferredSlot = document.getElementById('job-preferred-slot')?.value.trim() || 'Today, 4:00 PM - 6:00 PM';
+
   const formData = new FormData();
   formData.append('media', fileInput.files[0]);
   formData.append('description', desc);
   formData.append('location_city', loc || 'Sector 62, Noida');
+  formData.append('citizen_name', citizenName);
+  formData.append('citizen_phone', citizenPhone);
+  formData.append('citizen_address', citizenAddress);
+  formData.append('preferred_slot', preferredSlot);
 
   btn.disabled = true;
   btn.innerHTML = `<span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></span> Gemma AI Diagnosing Fault...`;
@@ -1717,21 +1865,22 @@ function renderAdminTriageTable() {
           </select>
         </td>
 
-        <!-- Lifecycle Status -->
-        <td class="py-3.5 px-3">
-          <select id="admin-status-select-${post.id}" class="bg-white border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-            <option value="Reported" ${postStatus === 'Reported' ? 'selected' : ''}>Reported</option>
-            <option value="Assigned" ${postStatus === 'Assigned' ? 'selected' : ''}>Assigned</option>
-            <option value="In Progress" ${postStatus === 'In Progress' ? 'selected' : ''}>In Progress</option>
-            <option value="Resolved" ${postStatus === 'Resolved' ? 'selected' : ''}>Resolved</option>
+        <!-- Lifecycle Stage & Remarks -->
+        <td class="py-3.5 px-3 min-w-[210px]">
+          <select id="admin-status-select-${post.id}" class="w-full bg-white border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none mb-1.5 shadow-xs">
+            <option value="REPORTED" ${postStatus.toUpperCase() === 'REPORTED' ? 'selected' : ''}>📋 REPORTED</option>
+            <option value="ACKNOWLEDGED" ${postStatus.toUpperCase() === 'ACKNOWLEDGED' || postStatus.toUpperCase() === 'ASSIGNED' ? 'selected' : ''}>🛡️ ACKNOWLEDGED</option>
+            <option value="IN_PROGRESS" ${postStatus.toUpperCase() === 'IN_PROGRESS' || postStatus.toUpperCase() === 'IN PROGRESS' ? 'selected' : ''}>⏳ IN PROGRESS</option>
+            <option value="RESOLVED" ${postStatus.toUpperCase() === 'RESOLVED' ? 'selected' : ''}>✅ RESOLVED</option>
           </select>
+          <input id="admin-note-${post.id}" type="text" placeholder="Officer dispatch note..." value="${escapeHtml(post.officer_note || '')}" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-[11px] text-slate-700 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors">
         </td>
 
-        <!-- Dispatch Action -->
+        <!-- Status Action -->
         <td class="py-3.5 px-4 text-right">
-          <button id="admin-dispatch-btn-${post.id}" onclick="updatePostOfficerStatus(${post.id})" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 ml-auto">
-            <i data-lucide="send" class="w-3.5 h-3.5"></i>
-            <span>Dispatch</span>
+          <button id="admin-dispatch-btn-${post.id}" onclick="patchPostOfficerStatus('${post.id}')" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 ml-auto whitespace-nowrap">
+            <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+            <span>Update Status</span>
           </button>
         </td>
       </tr>
@@ -1742,15 +1891,17 @@ function renderAdminTriageTable() {
   if (window.lucide) lucide.createIcons();
 }
 
-async function updatePostOfficerStatus(postId) {
+async function patchPostOfficerStatus(postId) {
   const officerSelect = document.getElementById(`admin-officer-select-${postId}`);
   const statusSelect = document.getElementById(`admin-status-select-${postId}`);
+  const noteInput = document.getElementById(`admin-note-${postId}`);
   const dispatchBtn = document.getElementById(`admin-dispatch-btn-${postId}`);
 
-  if (!officerSelect || !statusSelect) return;
+  if (!statusSelect) return;
 
-  const assigned_officer = officerSelect.value;
+  const assigned_officer = officerSelect ? officerSelect.value : 'Unassigned';
   const status = statusSelect.value;
+  const officer_note = noteInput ? noteInput.value.trim() : '';
 
   if (dispatchBtn) {
     dispatchBtn.disabled = true;
@@ -1760,39 +1911,57 @@ async function updatePostOfficerStatus(postId) {
   try {
     const role = state.auth?.user?.role || 'municipal';
     const effectiveRole = role === 'admin' ? 'municipal' : role;
+    
+    // Call PATCH /api/civic/{postId}/status
     const res = await fetch(`/api/civic/${postId}/status`, {
-      method: 'POST',
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         'X-User-Role': effectiveRole,
       },
-      body: JSON.stringify({ status, assigned_officer }),
+      body: JSON.stringify({ status, officer_note, assigned_officer }),
     });
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const updated = await res.json();
+    if (!res.ok) {
+      // Fallback to POST if needed
+      const fallbackRes = await fetch(`/api/civic/${postId}/status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Role': effectiveRole,
+        },
+        body: JSON.stringify({ status, officer_note, assigned_officer }),
+      });
+      if (!fallbackRes.ok) throw new Error(`HTTP ${fallbackRes.status}`);
+      var updated = await fallbackRes.json();
+    } else {
+      var updated = await res.json();
+    }
 
-    // Update in-memory state
+    // Update in-memory admin state
     if (state.adminData && state.adminData.prioritized_posts) {
-      const idx = state.adminData.prioritized_posts.findIndex((p) => p.id === postId);
+      const idx = state.adminData.prioritized_posts.findIndex((p) => String(p.id) === String(postId));
       if (idx !== -1) {
         state.adminData.prioritized_posts[idx] = updated;
       }
     }
 
-    showToast(`✓ Incident #${postId} updated to "${status}" (${assigned_officer})`, 'success');
-    loadAdminDashboard(); // Refresh metrics
+    showToast(`✓ Incident #${postId} updated to "${status}"!`, 'success');
+    loadAdminDashboard(); // Refresh operational metrics
+    loadCivicFeed(); // Live sync citizen feed and summary bar
   } catch (err) {
-    console.error('Error dispatching officer status:', err);
-    showToast('Failed to update incident status.', 'error');
+    console.error('Error updating officer status:', err);
+    showToast('Failed to update incident status. Ensure municipal role.', 'error');
   } finally {
     if (dispatchBtn) {
       dispatchBtn.disabled = false;
-      dispatchBtn.innerHTML = `<i data-lucide="send" class="w-3.5 h-3.5"></i><span>Dispatch</span>`;
+      dispatchBtn.innerHTML = `<i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i><span>Update Status</span>`;
       if (window.lucide) lucide.createIcons();
     }
   }
 }
+
+const updatePostOfficerStatus = patchPostOfficerStatus;
 
 // --- Technician & Worker Workspace ---
 
@@ -1987,6 +2156,27 @@ function renderTechLeads(leads) {
               </div>
               <h4 class="font-extrabold text-slate-900 text-sm mt-1 leading-snug">${escapeHtml(job.title || 'Household Utility Issue')}</h4>
               <p class="text-xs text-slate-500 mt-0.5">📍 ${escapeHtml(job.location_city || 'Sector 62, Noida')}</p>
+            </div>
+          </div>
+
+          <!-- Requester Details Section -->
+          <div class="p-3 rounded-2xl bg-indigo-50/70 border border-indigo-100/90 mb-3.5 text-xs space-y-1.5 shadow-xs">
+            <div class="flex items-center justify-between flex-wrap gap-1.5">
+              <div class="flex items-center gap-1.5 font-bold text-slate-900">
+                <i data-lucide="user" class="w-3.5 h-3.5 text-indigo-600"></i>
+                <span>Requested by: ${escapeHtml(job.citizen_name || 'Ayush Chauhan')}</span>
+                <span class="text-slate-400 font-normal">•</span>
+                <span class="text-indigo-700 font-semibold">📍 ${escapeHtml(job.citizen_locality || job.citizen_address || job.location_city || 'Sector 62, Noida')}</span>
+              </div>
+              <a href="tel:${escapeHtml(job.citizen_phone || '+91 98765 43210')}" class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100/90 hover:bg-emerald-200 px-2.5 py-1 rounded-lg border border-emerald-300 transition-colors shadow-xs">
+                <i data-lucide="phone" class="w-3 h-3"></i>
+                <span>${escapeHtml(job.citizen_phone || '+91 98765 43210')}</span>
+              </a>
+            </div>
+            <div class="text-[11px] text-slate-600 flex items-center gap-1.5 pt-0.5">
+              <i data-lucide="clock" class="w-3 h-3 text-indigo-500"></i>
+              <span class="font-medium text-slate-700">Preferred Slot:</span>
+              <span class="font-bold text-indigo-950">${escapeHtml(job.preferred_slot || 'Today, 4:00 PM - 6:00 PM')}</span>
             </div>
           </div>
 

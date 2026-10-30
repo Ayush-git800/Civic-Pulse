@@ -19,6 +19,9 @@ class CivicPostCreate(BaseModel):
         default_factory=list,
         description="List of relevant government portals (e.g., CPGRAMS, Swachhata)"
     )
+    citizen_id: Optional[int] = Field(1, description="Citizen user ID")
+    citizen_name: Optional[str] = Field("Ayush Chauhan", description="Citizen name")
+    citizen_phone: Optional[str] = Field("+91 98765 43210", description="Citizen phone")
 
 
 class CommentCreate(BaseModel):
@@ -35,6 +38,11 @@ class ServiceJobCreate(BaseModel):
     media_url: Optional[str] = Field(None, description="Attached image or video URL")
     location_city: str = Field(..., min_length=2, description="City or neighborhood")
     estimated_price: Optional[str] = Field(None, description="User estimated budget or quote range")
+    citizen_id: Optional[int] = Field(1, description="Citizen user ID")
+    citizen_name: Optional[str] = Field("Ayush Chauhan", description="Name of requester")
+    citizen_phone: Optional[str] = Field("+91 98765 43210", description="Phone number of requester")
+    citizen_address: Optional[str] = Field(None, description="Address or locality of requester")
+    preferred_slot: Optional[str] = Field("Today, 4:00 PM - 6:00 PM", description="Preferred inspection/service time slot")
 
 
 class BidCreate(BaseModel):
@@ -80,11 +88,31 @@ class CivicStatusUpdate(BaseModel):
     """Schema for municipal officer updating complaint lifecycle status and assigned inspector."""
     status: str = Field(
         ...,
-        description="Operational status: 'Reported', 'Assigned', 'In Progress', 'Resolved'"
+        description="Operational status: 'Reported', 'Acknowledged', 'Assigned', 'In Progress', 'Resolved'"
     )
     assigned_officer: Optional[str] = Field(
         "Unassigned",
         description="Designated field inspector, junior engineer, or response squad"
+    )
+    officer_note: Optional[str] = Field(
+        None,
+        description="Optional inspection remarks or resolution notes"
+    )
+
+
+class CivicStatusPatch(BaseModel):
+    """Schema for municipal officer multi-stage lifecycle transitions via PATCH."""
+    status: str = Field(
+        ...,
+        description="Target status: 'REPORTED', 'ACKNOWLEDGED', 'IN_PROGRESS', 'RESOLVED'"
+    )
+    officer_note: Optional[str] = Field(
+        None,
+        description="Officer remarks or resolution notes"
+    )
+    assigned_officer: Optional[str] = Field(
+        None,
+        description="Assigned field inspector or response squad"
     )
 
 
