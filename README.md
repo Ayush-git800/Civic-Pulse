@@ -1,6 +1,5 @@
 <div align="center">
 
-<img src="frontend/static/images/logo.png" width="130" height="130" alt="CivicPulse Logo" style="filter: drop-shadow(0 10px 20px rgba(79, 70, 229, 0.25));" />
 
 # 🏛️ CivicPulse
 ### Multimodal Civic Infrastructure Triage & Hyperlocal Home Utility Marketplace
@@ -34,11 +33,11 @@ Submitted for **Google Gemma Hackathon 2026**:
 - 🏆 **Open Source Category**
 - 🌟 **Best Use of Gemma Category**
 
-| Team Member | Project Role | Responsibilities |
+| Team Member | Team Role | 
 | :--- | :--- | :--- |
-| **Ayush Chauhan** | Team Leader & System Architect | Full-Stack Core, Negotiation Engine, Gemma 4 Integration |
-| **Rishav Ranjan** | AI & Backend Engineer | Multimodal Triage Pipeline, REST API & RBAC Guards |
-| **Hardik Kumar** | Frontend & UX Lead | Responsive Glassmorphism, Stepper Tracker & Voice-to-Triage |
+| **Ayush Chauhan** | Team Leader | 
+| **Rishav Ranjan** | Member 1 | 
+| **Hardik Kumar** | Member 2 | 
 
 ---
 
